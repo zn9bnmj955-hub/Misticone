@@ -1,0 +1,353 @@
+<title>OrgaSport directions visuelles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Instrument+Sans:wght@400;500;600;700&family=Archivo:ital,wdth,wght@0,62..125,400..900;1,62..125,400..900&family=Saira:ital,wdth,wght@0,75..125,400..900;1,75..125,400..900&display=swap">
+<style>
+/* Page = planche de présentation neutre ; chaque maquette porte sa propre palette (jetons --d-*) */
+:root {
+  --bg: #f3f4f6; --panel: #ffffff; --fg: #15171c; --muted: #5d6371; --line: #dde0e6; --chip: #e8eaef;
+  --f-ui: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0e1015; --panel: #161920; --fg: #eceef2; --muted: #9aa0ad; --line: #272b35; --chip: #20242d; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0e1015; --panel: #161920; --fg: #eceef2; --muted: #9aa0ad; --line: #272b35; --chip: #20242d; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--f-ui); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 80px; display: grid; gap: 56px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+p { margin: 0; }
+.intro { display: grid; gap: 14px; max-width: 70ch; }
+.eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.intro h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; letter-spacing: -.01em; }
+.intro p { color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg { display: inline-flex; background: var(--chip); border-radius: 999px; padding: 4px; gap: 2px; }
+.seg button { font: 600 14px var(--f-ui); color: var(--muted); background: none; border: 0; border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--panel); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.seg button:focus-visible, .modebtn:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+.dir { display: grid; gap: 24px; padding-top: 32px; border-top: 1px solid var(--line); }
+.dir-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 24px; align-items: end; }
+.dir-head h2 { font-size: 26px; }
+.dir-head .tag { font-size: 13px; font-weight: 600; color: var(--muted); }
+.dir-head p { grid-column: 1 / -1; color: var(--muted); max-width: 72ch; }
+.modebtn { font: 600 13px var(--f-ui); color: var(--fg); background: var(--chip); border: 0; border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+
+.board { display: grid; grid-template-columns: minmax(0, 300px) repeat(2, minmax(0, 320px)); gap: 24px; align-items: start; justify-content: start; }
+@media (max-width: 1020px) { .board { grid-template-columns: repeat(2, minmax(0, 320px)); } .spec { grid-column: 1 / -1; } }
+@media (max-width: 700px) { .board { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Fiche (palette, typo, logo) ---------- */
+.spec { background: var(--d-bg); color: var(--d-fg); border-radius: 20px; padding: 22px; display: grid; gap: 20px; border: 1px solid var(--d-line); min-width: 0; }
+.spec .label { font: 600 11px var(--f-ui); letter-spacing: .12em; text-transform: uppercase; color: var(--d-muted); }
+.swatches { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.sw { aspect-ratio: 1; border-radius: 10px; border: 1px solid var(--d-line); max-width: 100%; }
+.swnames { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; font: 500 10px var(--f-ui); color: var(--d-muted); }
+.specimen { display: grid; gap: 6px; }
+.specimen .big { font-family: var(--d-display); font-size: 44px; line-height: .95; font-weight: var(--d-display-w); letter-spacing: var(--d-display-ls); text-transform: var(--d-display-tt); font-style: var(--d-display-style); font-stretch: var(--d-display-stretch); }
+.specimen .body { font-family: var(--d-body); font-size: 14px; color: var(--d-muted); }
+.specimen .nums { font-family: var(--d-display); font-variant-numeric: tabular-nums; font-size: 28px; font-weight: 800; font-stretch: var(--d-display-stretch); font-style: var(--d-display-style); color: var(--d-accent); }
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo svg { width: 44px; height: 44px; flex: none; }
+.wordmark { font-family: var(--d-display); font-weight: var(--d-display-w); font-size: 28px; letter-spacing: var(--d-display-ls); text-transform: uppercase; font-style: var(--d-display-style); font-stretch: var(--d-display-stretch); line-height: 1; }
+.wordmark b { color: var(--d-accent); font-weight: inherit; }
+
+/* ---------- Téléphones ---------- */
+.phone { background: var(--d-bg); color: var(--d-fg); border-radius: 34px; border: 8px solid #0b0c0f; overflow: hidden; display: flex; flex-direction: column; min-height: 600px; max-width: 100%; font-family: var(--d-body); position: relative; }
+.cap { font: 600 12px var(--f-ui); color: var(--muted); margin-top: 10px; text-align: center; }
+.statusbar { display: flex; justify-content: space-between; padding: 10px 20px 4px; font: 600 12px var(--f-ui); font-variant-numeric: tabular-nums; }
+.screen { flex: 1; padding: 8px 16px 16px; display: grid; gap: 14px; align-content: start; }
+.topline { display: flex; align-items: center; justify-content: space-between; }
+.topline .wordmark { font-size: 20px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--d-surface); border: 1px solid var(--d-line); display: grid; place-items: center; font: 700 12px var(--f-ui); }
+
+.find { background: var(--d-surface); border: 1px solid var(--d-line); border-radius: var(--d-radius); padding: 12px; display: grid; gap: 8px; }
+.find .t { font-family: var(--d-display); font-weight: var(--d-display-w); font-size: 20px; text-transform: var(--d-display-tt); letter-spacing: var(--d-display-ls); font-style: var(--d-display-style); font-stretch: var(--d-display-stretch); line-height: 1; }
+.find .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.find .input { background: var(--d-bg); border: 1.5px solid var(--d-line); border-radius: calc(var(--d-radius) - 4px); padding: 10px 12px; font: 600 16px var(--d-body); letter-spacing: .18em; color: var(--d-muted); font-variant-numeric: tabular-nums; }
+.find .qr { background: var(--d-accent); color: var(--d-on-accent); border-radius: calc(var(--d-radius) - 4px); padding: 0 12px; display: grid; place-items: center; font: 700 13px var(--d-body); }
+
+.pills { display: flex; gap: 10px; overflow: hidden; }
+.pill { display: grid; justify-items: center; gap: 4px; font: 600 11px var(--d-body); color: var(--d-muted); flex: none; }
+.pill i { width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--d-line); display: grid; place-items: center; font-style: normal; font-size: 18px; background: var(--d-surface); }
+.pill.on { color: var(--d-fg); }
+.pill.on i { border-color: var(--d-accent); box-shadow: 0 0 0 2px var(--d-bg) inset; background: var(--d-accent-soft); }
+.pill svg { width: 22px; height: 22px; }
+
+.doors { display: grid; gap: 8px; }
+.door { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 14px; border-radius: var(--d-radius); background: var(--d-surface); border: 1px solid var(--d-line); }
+.door strong { font-family: var(--d-display); font-weight: var(--d-display-w); font-size: 22px; text-transform: var(--d-display-tt); letter-spacing: var(--d-display-ls); font-style: var(--d-display-style); font-stretch: var(--d-display-stretch); line-height: 1; display: block; }
+.door span { font-size: 12px; color: var(--d-muted); }
+.door.main { background: var(--d-accent); color: var(--d-on-accent); border-color: transparent; }
+.door.main span { color: inherit; opacity: .8; }
+.door .arrow { font: 700 18px var(--d-body); }
+.live { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.live div { padding: 10px 12px; border-radius: calc(var(--d-radius) - 2px); border: 1px solid var(--d-line); }
+.live b { font-family: var(--d-display); font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; display: block; line-height: 1; font-stretch: var(--d-display-stretch); font-style: var(--d-display-style); }
+.live span { font-size: 11px; color: var(--d-muted); }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--d-live); margin-right: 5px; vertical-align: 1px; }
+
+.tabbar { display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; padding: 8px 8px 14px; border-top: 1px solid var(--d-line); background: var(--d-surface); font: 600 10px var(--d-body); color: var(--d-muted); text-align: center; }
+.tabbar div { display: grid; justify-items: center; gap: 3px; }
+.tabbar .ico { width: 20px; height: 20px; border-radius: 6px; border: 2px solid currentColor; opacity: .7; }
+.tabbar .on { color: var(--d-fg); }
+.tabbar .center .ico { width: 50px; height: 50px; border-radius: var(--d-center-r); background: var(--d-accent); border: 0; opacity: 1; margin-top: -24px; box-shadow: 0 6px 18px var(--d-accent-soft); display: grid; place-items: center; color: var(--d-on-accent); font: 800 11px var(--d-body); }
+.tabbar .center { color: var(--d-fg); }
+
+/* Vue terrain : même jetons, régime sobre */
+.terrain .screen { gap: 12px; }
+.t-head { display: grid; gap: 2px; }
+.t-head .name { font: 700 16px var(--d-body); }
+.t-head .meta { font-size: 13px; color: var(--d-muted); }
+.status { display: inline-flex; align-items: center; font: 700 12px var(--d-body); padding: 4px 10px; border-radius: 999px; border: 1.5px solid var(--d-fg); width: max-content; }
+.next { border-radius: var(--d-radius); border: 2px solid var(--d-fg); overflow: hidden; }
+.next .team { padding: 10px 14px; font: 700 14px var(--d-body); border-bottom: 2px solid var(--d-fg); display: flex; justify-content: space-between; gap: 8px; }
+.next .team span { color: var(--d-muted); font-weight: 600; }
+.next .grid { display: grid; grid-template-columns: 1fr 1fr; }
+.next .cell { padding: 12px 14px; }
+.next .cell + .cell { border-left: 2px solid var(--d-fg); }
+.next .k { font: 700 11px var(--d-body); letter-spacing: .1em; text-transform: uppercase; color: var(--d-muted); }
+.next .v { font-family: var(--d-display); font-weight: 900; font-size: 48px; line-height: 1; font-variant-numeric: tabular-nums; font-stretch: var(--d-display-stretch); font-style: var(--d-display-style); }
+.next .vs { padding: 10px 14px; border-top: 2px solid var(--d-fg); background: var(--d-accent); color: var(--d-on-accent); font: 700 15px var(--d-body); }
+.draw { display: grid; border-top: 1px solid var(--d-line); }
+.draw .r { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--d-line); font-size: 13px; align-items: center; font-variant-numeric: tabular-nums; }
+.draw .r b { font-family: var(--d-display); font-size: 18px; font-weight: 800; font-stretch: var(--d-display-stretch); font-style: var(--d-display-style); }
+.draw .r .s { font-weight: 700; }
+.draw .r.me { background: var(--d-accent-soft); margin-inline: -8px; padding-inline: 8px; border-radius: 6px; }
+.draw .r .w { color: var(--d-muted); font-weight: 600; }
+.notify { border: 1.5px dashed var(--d-line); border-radius: var(--d-radius); padding: 10px 12px; font: 600 13px var(--d-body); text-align: center; }
+
+/* ========== Direction A — Nocturne ========== */
+.dA { --d-display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif; --d-display-w: 900; --d-display-ls: .01em; --d-display-tt: uppercase; --d-display-style: normal; --d-display-stretch: normal;
+  --d-body: "Instrument Sans", system-ui, sans-serif; --d-radius: 16px; --d-center-r: 50%; --d-live: #ff4d5e; }
+.dA[data-mode="dark"]  { --d-bg: #0a0d14; --d-surface: rgba(255,255,255,.06); --d-fg: #f4f1ea; --d-muted: #8e94a3; --d-line: rgba(255,255,255,.12); }
+.dA[data-mode="light"] { --d-bg: #f6f5f1; --d-surface: #ffffff; --d-fg: #0a0d14; --d-muted: #5a6070; --d-line: #dedbd2; }
+.dA[data-sport="petanque"] { --d-accent: #f2a93b; --d-on-accent: #1a1204; --d-accent-soft: rgba(242,169,59,.28); }
+.dA[data-sport="foot"]     { --d-accent: #2bf07a; --d-on-accent: #04170b; --d-accent-soft: rgba(43,240,122,.26); }
+.dA[data-mode="dark"] .find, .dA[data-mode="dark"] .door:not(.main) { backdrop-filter: blur(10px); }
+.dA[data-mode="dark"].phone.home { background: radial-gradient(120% 60% at 80% 0%, var(--d-accent-soft), transparent 60%), var(--d-bg); }
+
+/* ========== Direction B — Plein soleil ========== */
+.dB { --d-display: "Archivo", "Arial Black", sans-serif; --d-display-w: 900; --d-display-ls: -.02em; --d-display-tt: uppercase; --d-display-style: normal; --d-display-stretch: 125%;
+  --d-body: "Archivo", system-ui, sans-serif; --d-radius: 4px; --d-center-r: 4px; --d-live: #d7263d; }
+.dB[data-mode="light"] { --d-bg: #ece6da; --d-surface: #faf8f3; --d-fg: #111111; --d-muted: #5c574d; --d-line: #c9c1b1; }
+.dB[data-mode="dark"]  { --d-bg: #141311; --d-surface: #1f1d1a; --d-fg: #f2ede3; --d-muted: #a39d90; --d-line: #3a3731; }
+.dB[data-sport="petanque"] { --d-accent: #e4572e; --d-on-accent: #ffffff; --d-accent-soft: rgba(228,87,46,.18); }
+.dB[data-sport="foot"]     { --d-accent: #138a43; --d-on-accent: #ffffff; --d-accent-soft: rgba(19,138,67,.18); }
+.dB .next .v { font-stretch: 100%; font-size: 42px; }
+.spec.dB .wordmark { font-size: 22px; }
+.dB .door, .dB .find { border-width: 2px; border-color: var(--d-fg); }
+
+/* ========== Direction C — Direct ========== */
+.dC { --d-display: "Saira", "Arial Narrow", sans-serif; --d-display-w: 800; --d-display-ls: -.01em; --d-display-tt: uppercase; --d-display-style: italic; --d-display-stretch: 75%;
+  --d-body: "Saira", system-ui, sans-serif; --d-radius: 12px; --d-center-r: 14px; --d-live: #ff3b30; }
+.dC[data-mode="light"] { --d-bg: #eef0f7; --d-surface: #ffffff; --d-fg: #0b1640; --d-muted: #58628a; --d-line: #d3d8ea; }
+.dC[data-mode="dark"]  { --d-bg: #070c24; --d-surface: #0f1736; --d-fg: #eef1ff; --d-muted: #8d97c4; --d-line: #222c58; }
+.dC[data-sport="petanque"] { --d-accent: #ffb020; --d-on-accent: #0b1640; --d-accent-soft: rgba(255,176,32,.25); }
+.dC[data-sport="foot"]     { --d-accent: #00d68f; --d-on-accent: #04121f; --d-accent-soft: rgba(0,214,143,.24); }
+.phone.home.dC .find { background: var(--d-fg); color: var(--d-bg); border: 0; }
+.phone.home.dC .find .input { background: var(--d-bg); color: var(--d-muted); border: 0; }
+.dC .wordmark, .dC .door strong, .dC .find .t { font-stretch: 75%; }
+
+.note { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; display: grid; gap: 10px; max-width: 80ch; }
+.note h3 { font-size: 17px; }
+.note ul { margin: 0; padding-left: 18px; color: var(--muted); display: grid; gap: 6px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .phone, .spec { transition: background-color .25s ease, color .25s ease; }
+}
+</style>
+
+<div class="wrap">
+  <header class="intro">
+    <span class="eyebrow">OrgaSport · Phase 0 · à valider</span>
+    <h1>Trois directions visuelles</h1>
+    <p>Chaque direction montre sa palette, sa typographie, un logo provisoire, l'accueil (vitrine) et l'écran « Mon prochain match » (régime terrain). Change de sport pour voir l'accent changer, et passe chaque maquette en clair ou en sombre.</p>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Sport affiché">
+        <button type="button" id="sport-petanque" data-sport="petanque" aria-pressed="true">Pétanque</button>
+        <button type="button" id="sport-foot" data-sport="foot" aria-pressed="false">Football</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== A ===================== -->
+  <section class="dir" id="A">
+    <div class="dir-head">
+      <h2>A · Nocturne</h2>
+      <button type="button" class="modebtn" id="mode-A" data-target="A">Voir en clair</button>
+      <p>Ta direction par défaut. Fond bleu nuit profond, accent ambre doré pour la pétanque et vert électrique pour le football, titres très gras et condensés, verre dépoli seulement sur la vitrine. L'écran terrain garde le même accent mais aucun effet.</p>
+    </div>
+    <div class="board">
+      <div class="spec dA" data-mode="dark" data-sport="petanque">
+        <div class="logo">
+          <svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="20" cy="22" r="15" fill="none" stroke="currentColor" stroke-width="3"/><path d="M8 17 Q20 24 32 17 M8 27 Q20 20 32 27" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="38" cy="10" r="4" fill="var(--d-accent)"/></svg>
+          <span class="wordmark">Orga<b>Sport</b></span>
+        </div>
+        <div class="specimen"><span class="label">Titres · Big Shoulders Display</span><span class="big">Tirage publié</span><span class="nums">13 – 11 · 15:40</span><span class="body">Texte courant · Instrument Sans. Lisible, neutre, chiffres alignés pour les horaires.</span></div>
+        <div><span class="label">Palette</span>
+          <div class="swatches"><div class="sw" style="background:#0a0d14"></div><div class="sw" style="background:#1b2030"></div><div class="sw" style="background:#f4f1ea"></div><div class="sw" style="background:#f2a93b"></div><div class="sw" style="background:#2bf07a"></div></div>
+          <div class="swnames"><span>Nuit</span><span>Verre</span><span>Craie</span><span>Ambre</span><span>Pelouse</span></div>
+        </div>
+      </div>
+      <figure style="margin:0"><div class="phone home dA" data-mode="dark" data-sport="petanque"></div><figcaption class="cap">Accueil · vitrine</figcaption></figure>
+      <figure style="margin:0"><div class="phone terrain dA" data-mode="dark" data-sport="petanque"></div><figcaption class="cap">Mon prochain match · terrain</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- ===================== B ===================== -->
+  <section class="dir" id="B">
+    <div class="dir-head">
+      <h2>B · Plein soleil</h2>
+      <button type="button" class="modebtn" id="mode-B" data-target="B">Voir en sombre</button>
+      <p>Pensée pour le boulodrome à 15 h en août. Fond clair couleur stabilisé, encre noire, accent orange signal (vert gazon en football), lettres très larges et grasses comme une affiche de concours, angles presque droits, gros contours. Le contraste est maximal partout.</p>
+    </div>
+    <div class="board">
+      <div class="spec dB" data-mode="light" data-sport="petanque">
+        <div class="logo">
+          <svg viewBox="0 0 44 44" aria-hidden="true"><rect x="2" y="2" width="40" height="40" fill="var(--d-fg)"/><circle cx="22" cy="22" r="11" fill="var(--d-accent)"/><circle cx="33" cy="33" r="3" fill="var(--d-bg)"/></svg>
+          <span class="wordmark">Orga<b>Sport</b></span>
+        </div>
+        <div class="specimen"><span class="label">Titres et texte · Archivo (large et étroit)</span><span class="big">Tirage publié</span><span class="nums">13 – 11 · 15:40</span><span class="body">Une seule famille en plusieurs largeurs : cohérent et léger à charger.</span></div>
+        <div><span class="label">Palette</span>
+          <div class="swatches"><div class="sw" style="background:#ece6da"></div><div class="sw" style="background:#faf8f3"></div><div class="sw" style="background:#111111"></div><div class="sw" style="background:#e4572e"></div><div class="sw" style="background:#138a43"></div></div>
+          <div class="swnames"><span>Stabilisé</span><span>Papier</span><span>Encre</span><span>Signal</span><span>Gazon</span></div>
+        </div>
+      </div>
+      <figure style="margin:0"><div class="phone home dB" data-mode="light" data-sport="petanque"></div><figcaption class="cap">Accueil · vitrine</figcaption></figure>
+      <figure style="margin:0"><div class="phone terrain dB" data-mode="light" data-sport="petanque"></div><figcaption class="cap">Mon prochain match · terrain</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- ===================== C ===================== -->
+  <section class="dir" id="C">
+    <div class="dir-head">
+      <h2>C · Direct</h2>
+      <button type="button" class="modebtn" id="mode-C" data-target="C">Voir en sombre</button>
+      <p>L'esprit d'un habillage de retransmission sportive. Bleu cobalt profond, italiques étroites et nerveuses, chiffres de tableau d'affichage, bandeaux qui évoquent le direct. Plus spectaculaire que B, plus lumineux que A.</p>
+    </div>
+    <div class="board">
+      <div class="spec dC" data-mode="light" data-sport="petanque">
+        <div class="logo">
+          <svg viewBox="0 0 44 44" aria-hidden="true"><path d="M10 6 H24 L16 38 H2 Z" fill="var(--d-fg)"/><path d="M28 6 H42 L34 38 H20 Z" fill="var(--d-accent)"/></svg>
+          <span class="wordmark">Orga<b>Sport</b></span>
+        </div>
+        <div class="specimen"><span class="label">Titres et texte · Saira (étroite italique)</span><span class="big">Tirage publié</span><span class="nums">13 – 11 · 15:40</span><span class="body">Texte courant en Saira droite, titres en italique étroite pour l'effet direct.</span></div>
+        <div><span class="label">Palette</span>
+          <div class="swatches"><div class="sw" style="background:#eef0f7"></div><div class="sw" style="background:#0b1640"></div><div class="sw" style="background:#58628a"></div><div class="sw" style="background:#ffb020"></div><div class="sw" style="background:#00d68f"></div></div>
+          <div class="swnames"><span>Studio</span><span>Cobalt</span><span>Ardoise</span><span>Or</span><span>Menthe</span></div>
+        </div>
+      </div>
+      <figure style="margin:0"><div class="phone home dC" data-mode="light" data-sport="petanque"></div><figcaption class="cap">Accueil · vitrine</figcaption></figure>
+      <figure style="margin:0"><div class="phone terrain dC" data-mode="light" data-sport="petanque"></div><figcaption class="cap">Mon prochain match · terrain</figcaption></figure>
+    </div>
+  </section>
+
+  <aside class="note">
+    <h3>Ce qui ne change pas, quelle que soit la direction</h3>
+    <ul>
+      <li>Le champ « Retrouver mon tirage » est la première chose affichée, avant toute animation.</li>
+      <li>L'écran terrain n'a ni verre dépoli ni dégradé : gros chiffres, contours épais, contraste fort, lisible imprimé en noir et blanc.</li>
+      <li>L'accent change avec le sport ; tout le reste (espacements, composants, onglets) reste identique.</li>
+      <li>Les maquettes sont des esquisses : les icônes et le logo définitifs viendront en phase 1.</li>
+    </ul>
+  </aside>
+</div>
+
+<script>
+(function () {
+  var SPORT = {
+    petanque: {
+      venue: "Terrain", venueVal: "12", time: "15:40",
+      team: "Équipe 14", teamNames: "Dupont / Martin",
+      vs: "contre l'équipe 27 · Lefèvre / Garcia",
+      name: "Grand Prix de la Saint-Michel", meta: "Doublettes · 32 équipes · Boulodrome de Carnoux",
+      round: "2e tour · en cours",
+      rows: [["12", "Éq. 14 – Éq. 27", "à venir", true], ["3", "Éq. 2 – Éq. 19", "13 – 9"], ["7", "Éq. 31 – Éq. 8", "11 – 13"], ["9", "Éq. 22 – Éq. 5", "en cours"], ["—", "Éq. 11 – Éq. 30", "attente terrain"]],
+      live: ["12", "concours en direct"], players: ["1 284", "joueurs inscrits"]
+    },
+    foot: {
+      venue: "Terrain", venueVal: "2", time: "15:40",
+      team: "FC Gémenos", teamNames: "Vétérans",
+      vs: "contre AS Aubagne · match de 2 × 10 min",
+      name: "Tournoi des fêtes de Gémenos", meta: "Foot à 7 · 8 équipes · Stade municipal",
+      round: "Poule A · journée 2",
+      rows: [["2", "FC Gémenos – AS Aubagne", "15:40", true], ["1", "Cassis FC – US Roquevaire", "2 – 1"], ["2", "Ent. Cuges – SC La Ciotat", "0 – 0"], ["1", "Auriol – Carnoux", "16:05"]],
+      live: ["3", "tournois en direct"], players: ["412", "joueurs inscrits"]
+    }
+  };
+  var ICON = {
+    all: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>',
+    petanque: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="13" r="7"/><path d="M4 10q6 4 12 0M4 16q6-4 12 0"/><circle cx="20" cy="5" r="2" fill="currentColor"/></svg>',
+    foot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7l4 3-1.5 5h-5L8 10z"/></svg>',
+    darts: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>',
+    table: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="M13 13l7 7"/><circle cx="19" cy="6" r="2" fill="currentColor"/></svg>'
+  };
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  function home(s, sport) {
+    var pills = [["all", "Tous"], ["petanque", "Pétanque"], ["foot", "Football"], ["darts", "Fléchettes"], ["table", "Ping"]].map(function (p) {
+      return '<div class="pill' + (p[0] === sport ? " on" : "") + '"><i>' + ICON[p[0]] + "</i>" + p[1] + "</div>";
+    }).join("");
+    return '<div class="statusbar"><span>15:32</span><span>4G ▮▮▮</span></div>' +
+      '<div class="screen">' +
+        '<div class="topline"><span class="wordmark">Orga<b>Sport</b></span><span class="avatar">SM</span></div>' +
+        '<div class="find"><span class="t">Retrouver mon tirage</span><div class="row"><span class="input">7KQ2</span><span class="qr">QR</span></div></div>' +
+        '<div class="pills">' + pills + "</div>" +
+        '<div class="doors">' +
+          '<div class="door main"><div><strong>Je joue</strong><span>Concours près de chez moi</span></div><span class="arrow">→</span></div>' +
+          '<div class="door"><div><strong>J\'organise</strong><span>Créer un lien concours</span></div><span class="arrow">→</span></div>' +
+          '<div class="door"><div><strong>Sans compte</strong><span>Voir les concours</span></div><span class="arrow">→</span></div>' +
+        "</div>" +
+        '<div class="live"><div><b>' + s.live[0] + '</b><span><i class="dot"></i>' + s.live[1] + '</span></div><div><b>' + s.players[0] + "</b><span>" + s.players[1] + "</span></div></div>" +
+      "</div>" +
+      '<nav class="tabbar"><div class="on"><span class="ico"></span>Accueil</div><div><span class="ico"></span>Concours</div><div class="center"><span class="ico">GO</span>Mon tirage</div><div><span class="ico"></span>Assistant</div><div><span class="ico"></span>Profil</div></nav>';
+  }
+
+  function terrain(s) {
+    var rows = s.rows.map(function (r) {
+      return '<div class="r' + (r[3] ? " me" : "") + '"><b>' + esc(r[0]) + "</b><span>" + esc(r[1]) + '</span><span class="' + (/\d – \d/.test(r[2]) ? "s" : "w") + '">' + esc(r[2]) + "</span></div>";
+    }).join("");
+    return '<div class="statusbar"><span>15:32</span><span>orgasport.fr/c/7KQ2</span></div>' +
+      '<div class="screen">' +
+        '<div class="t-head"><span class="name">' + esc(s.name) + '</span><span class="meta">' + esc(s.meta) + "</span></div>" +
+        '<span class="status"><i class="dot"></i>' + esc(s.round) + "</span>" +
+        '<div class="next">' +
+          '<div class="team">' + esc(s.team) + "<span>" + esc(s.teamNames) + "</span></div>" +
+          '<div class="grid"><div class="cell"><div class="k">' + s.venue + '</div><div class="v">' + s.venueVal + '</div></div><div class="cell"><div class="k">Heure</div><div class="v">' + s.time + "</div></div></div>" +
+          '<div class="vs">' + esc(s.vs) + "</div>" +
+        "</div>" +
+        '<div class="notify">🔔 Me prévenir quand c\'est à moi</div>' +
+        '<div class="draw">' + rows + "</div>" +
+      "</div>";
+  }
+
+  var sport = "petanque";
+  function render() {
+    var s = SPORT[sport];
+    document.querySelectorAll(".phone, .spec").forEach(function (el) { el.setAttribute("data-sport", sport); });
+    document.querySelectorAll(".phone.home").forEach(function (el) { el.innerHTML = home(s, sport); });
+    document.querySelectorAll(".phone.terrain").forEach(function (el) { el.innerHTML = terrain(s); });
+  }
+  document.querySelectorAll(".seg button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      sport = b.getAttribute("data-sport");
+      document.querySelectorAll(".seg button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      render();
+    });
+  });
+  document.querySelectorAll(".modebtn").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var sec = document.getElementById(b.getAttribute("data-target"));
+      var els = sec.querySelectorAll(".phone, .spec");
+      var next = els[0].getAttribute("data-mode") === "dark" ? "light" : "dark";
+      els.forEach(function (el) { el.setAttribute("data-mode", next); });
+      b.textContent = next === "dark" ? "Voir en clair" : "Voir en sombre";
+    });
+  });
+  render();
+})();
+</script>
