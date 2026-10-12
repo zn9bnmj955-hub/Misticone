@@ -33,6 +33,8 @@ pnpm dev             # ouvre http://localhost:3000
 
 Les emails (liens magiques) arrivent dans la boîte de test locale : http://127.0.0.1:54324
 
+Si une page se recharge en boucle pendant le développement (cela arrive après un `pnpm build` ou un redémarrage de l'ordinateur pendant que `pnpm dev` tournait) : arrêtez `pnpm dev`, supprimez le dossier `apps/web/.next`, puis relancez `pnpm dev`.
+
 ## Comptes et codes de démonstration
 
 Mot de passe pour tous les comptes : `orgasport-demo` (données locales uniquement).

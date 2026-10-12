@@ -139,14 +139,23 @@ test.describe("scoring table", () => {
 
   test("backup printing works from the data on the device", async ({ page }) => {
     await pinLogin(page);
+    // Record what is on the page at the moment the print dialog would open:
+    // the document only exists while printing, so polling the DOM is racy.
     await page.evaluate(() => {
-      window.print = () => window.dispatchEvent(new Event("afterprint"));
+      const w = window as unknown as { __printed?: string };
+      window.print = () => {
+        w.__printed = document.getElementById("print-root")?.textContent ?? "";
+        window.dispatchEvent(new Event("afterprint"));
+      };
     });
     await page.getByRole("button", { name: /Impression/ }).click();
-    const printed = page.waitForSelector("#print-root", { state: "attached" });
     await page.getByRole("button", { name: /Feuilles de match/ }).click();
-    const root = await printed;
-    expect(await root.textContent()).toContain("Feuille de match");
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __printed?: string }).__printed ?? null))
+      .toContain("Feuille de match");
+    // Once printed, the page goes back to normal.
+    await expect(page.locator("#print-root")).toHaveCount(0);
+    await expect(page.locator("html")).not.toHaveClass(/printing/);
   });
 
   test("organizer: check-in, on-site registration, draw, then the public page shows it", async ({ page }) => {
