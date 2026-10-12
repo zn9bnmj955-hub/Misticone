@@ -433,7 +433,7 @@ export async function uploadClubLogo(_prev: ActionState, fd: FormData): Promise<
   return done(texts().info.logo.saved);
 }
 
-export async function removeClubLogo(_prev: ActionState): Promise<ActionState> {
+export async function removeClubLogo(): Promise<ActionState> {
   const gate = await requireClubAdmin();
   if (!gate.ok) return gate.state;
   const { club } = gate.ctx;
@@ -446,4 +446,35 @@ export async function removeClubLogo(_prev: ActionState): Promise<ActionState> {
   updateTag(clubTag(club.slug));
   revalidatePath("/club", "layout");
   return done(texts().info.logo.removed);
+}
+
+// ---------------------------------------------------------------------------
+// Following a club (public club page)
+// ---------------------------------------------------------------------------
+
+export type FollowResult = { ok: true; following: boolean } | { ok: false; error: string };
+
+/** Follows or unfollows a club for the signed-in person (RLS: own follows only). */
+export async function setFollowClub(clubId: string, follow: boolean): Promise<FollowResult> {
+  const viewer = await getViewer();
+  if (!viewer) return { ok: false, error: texts().errors.auth };
+  const id = uuid.safeParse(clubId);
+  if (!id.success || typeof follow !== "boolean") return { ok: false, error: texts().errors.notFound };
+
+  const supabase = await createClient();
+  const { data: club } = await supabase.from("clubs").select("id").eq("id", id.data).maybeSingle();
+  if (!club) return { ok: false, error: texts().errors.notFound };
+
+  // No unique constraint on follows: look before inserting (and remove every copy).
+  const { data: existing } = await supabase.from("follows").select("id").eq("user_id", viewer.id).eq("club_id", club.id);
+  if (follow && !existing?.length) {
+    const { error } = await supabase.from("follows").insert({ user_id: viewer.id, club_id: club.id });
+    if (error) return { ok: false, error: texts().errors.save };
+  }
+  if (!follow && existing?.length) {
+    const { error } = await supabase.from("follows").delete().eq("user_id", viewer.id).eq("club_id", club.id);
+    if (error) return { ok: false, error: texts().errors.save };
+  }
+  revalidateTag(`follows:${viewer.id}`, "max");
+  return { ok: true, following: follow };
 }

@@ -157,6 +157,9 @@ export const admin = {
     notOnline: "Pas encore en ligne",
     noDate: "Date à définir",
     payment: "Paiement : {status}",
+    noPayment: "Paiement : aucun",
+    upcoming: "À venir",
+    starts: "Le {date}",
   },
 
   errors: {

@@ -94,10 +94,16 @@ async function ProfileContent() {
         <ButtonLink href="/inscription/joueur" variant="outline" className="justify-self-start">{p.edit}</ButtonLink>
       </Card>
       {viewer.isAdmin && (
-        <p className="text-sm text-ink-soft">
-          <Icon name="club" size={16} className="mr-1 inline" />
-          {p.admin} : phase 3
-        </p>
+        <Link
+          href="/admin"
+          className="flex min-h-12 items-center gap-3 rounded-[var(--radius-lg)] border border-line bg-surface p-4 transition hover:border-ink-soft"
+        >
+          <Icon name="club" size={24} className="shrink-0 text-accent-ink" />
+          <span className="grid">
+            <span className="font-bold">{m.admin.profileLink}</span>
+            <span className="text-sm text-ink-soft">{m.admin.profileLinkSub}</span>
+          </span>
+        </Link>
       )}
       <form action="/auth/signout" method="post">
         <button type="submit" className="flex min-h-12 items-center gap-2 font-bold text-danger">

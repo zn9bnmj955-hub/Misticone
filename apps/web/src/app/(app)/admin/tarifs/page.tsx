@@ -15,6 +15,9 @@ import { listPlans, requireAdmin, type AdminPlan } from "@/lib/data/admin";
 
 const t = getMessages().admin.plans;
 
+// Per-user area: a non-admin gets notFound() from inside the layout's Suspense,
+// which the dev-time instant validation would report as an error.
+export const instant = false;
 export const metadata: Metadata = { title: t.title };
 
 function formValues(p: AdminPlan): PlanFormValues {
@@ -101,8 +104,11 @@ async function Plans() {
 
 export default function AdminPlansPage() {
   return (
-    <Suspense fallback={<Skeleton className="h-96" />}>
-      <Plans />
-    </Suspense>
+    <div className="grid gap-4">
+      <h2 className="display text-3xl">{t.title}</h2>
+      <Suspense fallback={<Skeleton className="h-96" />}>
+        <Plans />
+      </Suspense>
+    </div>
   );
 }

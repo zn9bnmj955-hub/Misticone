@@ -4,7 +4,7 @@ import type { Enums, Tables } from "@orgasport/db";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer, type Viewer } from "@/lib/viewer";
 import { isoToParis, parisToIso } from "@/lib/tournament-form/time";
-import { promoState } from "@/components/admin/forms";
+import { promoState, type PromoState } from "@/components/admin/forms";
 
 /**
  * Data of the platform administration. Everything goes through the user's
@@ -63,8 +63,9 @@ export type AdminOverview = {
   activePromos: number;
 };
 
-export async function getAdminOverview(nowMs: number): Promise<AdminOverview> {
+export async function getAdminOverview(): Promise<AdminOverview> {
   await requireAdmin();
+  const nowMs = Date.now();
   const supabase = await createClient();
   const countTournaments = (statuses: TournamentStatus[]) =>
     supabase.from("tournaments").select("id", { count: "exact", head: true }).in("status", statuses);
@@ -104,7 +105,8 @@ export async function listPlans(): Promise<AdminPlan[]> {
   return data ?? [];
 }
 
-export type AdminPromo = Tables<"promo_codes">;
+/** A promo code and where it stands right now (same rules as the checkout). */
+export type AdminPromo = Tables<"promo_codes"> & { state: PromoState };
 
 export async function listPromoCodes(): Promise<AdminPromo[]> {
   await requireAdmin();
@@ -115,7 +117,8 @@ export async function listPromoCodes(): Promise<AdminPromo[]> {
     .order("active", { ascending: false })
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return data ?? [];
+  const nowMs = Date.now();
+  return (data ?? []).map((p) => ({ ...p, state: promoState(p, nowMs) }));
 }
 
 const PAYMENT_COLUMNS =

@@ -6,7 +6,7 @@ import { buttonClass } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Section, Skeleton } from "@/components/ui/Section";
 import { Disclosure } from "@/components/admin/fields";
-import { centsToEurosInput, parisDayOf, promoState, type PromoState } from "@/components/admin/forms";
+import { centsToEurosInput, parisDayOf, type PromoState } from "@/components/admin/forms";
 import { EMPTY_PROMO, PromoForm, type PromoFormValues } from "@/components/admin/PromoForm";
 import { formatLongDay } from "@/components/admin/display";
 import { formatCount, formatEuros } from "@/lib/format";
@@ -15,6 +15,9 @@ import { setPromoActive } from "../actions";
 
 const t = getMessages().admin.promos;
 
+// Per-user area: a non-admin gets notFound() from inside the layout's Suspense,
+// which the dev-time instant validation would report as an error.
+export const instant = false;
 export const metadata: Metadata = { title: t.title };
 
 const STATE_TONES: Record<PromoState, "success" | "neutral" | "warning"> = {
@@ -47,7 +50,6 @@ function discountOf(p: AdminPromo): string {
 async function Promos() {
   await requireAdmin();
   const promos = await listPromoCodes();
-  const now = Date.now();
 
   return (
     <div className="grid gap-8">
@@ -58,7 +60,6 @@ async function Promos() {
         ) : (
           <ul className="grid gap-3">
             {promos.map((p) => {
-              const state = promoState(p, now);
               return (
                 <li key={p.id}>
                   <Card className="grid gap-2">
@@ -70,7 +71,7 @@ async function Promos() {
                       <span className="display text-4xl tabular">{discountOf(p)}</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <Badge tone={STATE_TONES[state]}>{t.states[state]}</Badge>
+                      <Badge tone={STATE_TONES[p.state]}>{t.states[p.state]}</Badge>
                       <span className="text-ink-soft tabular">
                         {p.max_redemptions === null
                           ? fmt(t.uses, { count: formatCount(p.redemptions) })
@@ -108,8 +109,11 @@ async function Promos() {
 
 export default function AdminPromosPage() {
   return (
-    <Suspense fallback={<Skeleton className="h-96" />}>
-      <Promos />
-    </Suspense>
+    <div className="grid gap-4">
+      <h2 className="display text-3xl">{t.title}</h2>
+      <Suspense fallback={<Skeleton className="h-96" />}>
+        <Promos />
+      </Suspense>
+    </div>
   );
 }

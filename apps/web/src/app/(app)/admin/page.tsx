@@ -8,6 +8,9 @@ import { getAdminOverview, requireAdmin } from "@/lib/data/admin";
 
 const t = getMessages().admin;
 
+// Per-user area: a non-admin gets notFound() from inside the layout's Suspense,
+// which the dev-time instant validation would report as an error.
+export const instant = false;
 export const metadata: Metadata = { title: t.nav.overview };
 
 function Stat({ value, label, sub, href }: { value: string; label: string; sub?: string; href: string }) {
@@ -27,7 +30,7 @@ function Stat({ value, label, sub, href }: { value: string; label: string; sub?:
 
 async function Overview() {
   await requireAdmin();
-  const o = await getAdminOverview(Date.now());
+  const o = await getAdminOverview();
   const n = (v: number) => formatCount(v);
   return (
     <div className="grid gap-8">

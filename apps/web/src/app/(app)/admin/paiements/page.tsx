@@ -13,6 +13,9 @@ import { LIST_LIMIT, PAYMENT_STATUSES, listPayments, pickStatus, requireAdmin, t
 const m = getMessages();
 const t = m.admin.payments;
 
+// Per-user area: a non-admin gets notFound() from inside the layout's Suspense,
+// which the dev-time instant validation would report as an error.
+export const instant = false;
 export const metadata: Metadata = { title: t.title };
 
 type Search = Promise<{ statut?: string | string[] }>;
