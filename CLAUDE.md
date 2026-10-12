@@ -2,7 +2,7 @@
 
 SaaS de gestion de concours sportifs. Un club achète un « lien concours » (`/c/7KQ2`) qui gère inscriptions, tirage, terrains, scores et résultats. Lancement pétanque, **multi-sport dès le départ**.
 
-> État : **phase 1 (socle) terminée**. Prochaine : phase 2 (moteur de tirage + lien concours).
+> État : **phases 1 (socle) et 2 (moteur de tirage + lien concours) terminées**. Prochaine : phase 3 (espace clubs, formulaire, paiement Stripe).
 > Plan validé : `docs/PLAN.md`. Direction visuelle validée : **C « Direct »** (maquettes : `docs/design/directions.html`).
 
 ## Priorités (en cas de conflit, dans cet ordre)
@@ -27,26 +27,42 @@ apps/web                  Next.js
   src/app/(vitrine)       accueil public "/", pages légales (vides)
   src/app/(app)           app avec navigation : accueil, concours, tirage, assistant, profil, club
   src/app/(auth)          connexion, inscription/[joueur|club|invite] (une question par écran)
-  src/app/c/[code]        lien concours (PROVISOIRE en phase 1 — réécrit en phase 2)
+  src/app/c/[code]        lien concours PUBLIC : route.ts = HTML serveur léger (pas de React côté client)
+    score/ affiche/ qr.svg/   saisie capitaines (formulaire POST), affiche A4, QR code
+    table/                table de marque (page Next + client hors ligne)
+  src/app/api/t/[code]/*  API table de marque : state, commands, undo, history, pin, staff
+  src/app/api/cron/tick   tirages automatiques à l'heure (protégé par CRON_SECRET)
+  src/terrain/            rendu des pages terrain : html.ts (échappement), render.ts, view-model.ts,
+                          live-script.ts (seul JS de la page, ES5), terrain.css → styles.generated.ts
+  src/lib/tournament/     load.ts (état moteur depuis la base), execute.ts (commandes, annulation,
+                          diffusion), staff.ts (compte ou PIN signé), auto-draw.ts, command-schema.ts
   src/app/auth/*          callback lien magique / OAuth, déconnexion
   src/app/api/geocode     proxy géocodage (Géoplateforme IGN)
-  src/components          ui/ (primitives), shell/ (navigation), draw/, onboarding/, profile/, tournament/
+  src/components          ui/, shell/, draw/, onboarding/, profile/, tournament/,
+                          table/ (table de marque : store.ts = file hors ligne + moteur local)
   src/lib                 supabase/ (server, client, admin, public, proxy), data/, viewer.ts, prefs.ts, format.ts
   src/i18n                textes FR (fr.ts) — aucun texte en dur dans les composants
   e2e/                    tests Playwright
 packages/sports           configs de sports (zod) : petanque.ts, football.ts
-packages/engine           moteur de tirage (phase 2) — pour l'instant : codes courts
+packages/engine           moteur de tirage — TS pur, 80 tests (dont tests aléatoires massifs)
+  commands.ts             commandes organisateur + « règlement » automatique (forfaits, tours suivants,
+                          terrains, fin du concours)
+  formats.ts              élimination (fixe / nouveau tirage), poules (4 en 3 parties / chacun contre
+                          chacun) + phase finale, suisse, championnat, mêlée tournante, complémentaire
+  pairing.ts bracket.ts venues.ts standings.ts scoring.ts tx.ts (changements + inverses) rng.ts
 packages/ui               tokens.css (TOUTES les couleurs), icônes, logo
-packages/db               types générés + générateur du seed de démo
+packages/db               types générés, engine-mapping.ts (moteur ↔ tables), générateur du seed
+                          (les concours de démo sont joués par le moteur)
 supabase/                 config.toml, migrations/, seed.sql (généré), tests/rls.sql
 ```
 
 ## Règles d'architecture (non négociables)
 - **Le sport est une configuration** : aucun `if (sport === 'petanque')` dans le moteur ni dans les composants partagés. Tout passe par `packages/sports` (nom des emplacements, formats, score, classement, licence, modèles de notifications, valeurs par défaut).
 - **Couleurs** : uniquement dans `packages/ui/src/tokens.css` (variables `--os-*`, mappées en utilitaires Tailwind `bg-accent`, `text-ink`… dans `apps/web/src/app/globals.css`). Accent par sport via l'attribut `data-sport` (sur `<html>` ou sur un élément). Clair/sombre : système par défaut, choix mémorisé (`localStorage os_theme`) appliqué avant le premier affichage.
-- **Moteur pur** : `(état, action) → nouvel état`. Tirages reproductibles via une graine enregistrée.
-- **Toute action de la table de marque** sera enregistrée dans `tournament_actions` avec son inverse et un `client_op_id` (anti-doublon, file hors ligne).
-- **Pages « terrain »** (`/c/...`) : rendu serveur, sans JS, < 100 Ko, hors du `proxy`. En phase 2 elles seront servies par des Route Handlers produisant du HTML léger (pas de runtime React côté client) — car toute page App Router embarque ~100 Ko de JS et le streaming `<Suspense>` ne s'affiche pas sans JS.
+- **Moteur pur** : `applyCommand(état, commande, {now, newId, seed})` → `{state, changes}`. Aucune horloge, aucun hasard non contrôlé : les ids sont dérivés du `clientOpId`, les tirages d'une graine. Résultat identique sur le serveur et sur un appareil hors ligne.
+- **Écriture en base** : uniquement via `executeCommand` (serveur) → RPC `apply_tournament_changes` (atomique, verrou optimiste `tournaments.state_version`, anti-doublon `client_op_id`). Chaque action est dans `tournament_actions` avec ses changements moteur ; annuler = appliquer l'inverse, refusé si une action plus récente touche les mêmes éléments (`conflictsWithLater`).
+- **Pages « terrain »** (`/c/...`) : Route Handlers qui produisent du HTML (pas de runtime React côté client), lisibles sans JS, < 100 Ko (13 à 20 Ko mesurés), hors du `proxy`. CSS = tokens + `terrain.css`, généré par `scripts/build-terrain-css.mjs` (lancé avant dev/build/test). Pas de `gap` en flexbox, script ES5 : compatibles navigateurs anciens. Direct : WebSocket Supabase Realtime (diffusion `tournament:CODE`) sinon rafraîchissement 30 s ; service worker `public/sw.js` = dernier tirage lisible hors ligne.
+- **Table de marque** : moteur exécuté dans le navigateur ; chaque saisie est appliquée tout de suite, gardée dans `localStorage` (`os_outbox_CODE`) et envoyée dans l'ordre jusqu'à confirmation. Témoin de connexion toujours visible. Accès : organisateur connecté ou PIN (cookie HMAC signé `STAFF_SESSION_SECRET`, 24 h, révocable). Seuls les échecs de PIN sont comptés (8 / appareil, 60 / concours par 15 min).
 - **Données privées** : licences (`players_private`, `profiles_private`), contacts (`registrations`), PIN (`tournament_staff.pin_hash`, colonne non lisible par l'API). Le public ne lit jamais `players` directement : le serveur applique « noms complets / initiales » (`lib/names.ts`).
 - **Publication** : un concours ne quitte `draft` que via le serveur (rôle service = webhook Stripe), garanti par un trigger SQL.
 - **Paiement** : activation uniquement par webhook Stripe signé ; aucune donnée bancaire chez nous ; prix en base (`pricing_plans`).
@@ -73,6 +89,7 @@ pnpm -r test           # tests unitaires
 pnpm test:db           # tests de sécurité (RLS) en SQL
 pnpm test:e2e          # parcours Playwright (lance le serveur si besoin)
 ```
+Variables locales nécessaires dans `apps/web/.env.local` : voir `.env.example` (dont `STAFF_SESSION_SECRET`, `CRON_SECRET`). Les tests Playwright lisent ce fichier (aucune clé dans les tests).
 Comptes de démo (local uniquement, mot de passe `orgasport-demo`) : `joueur@demo.orgasport.fr`, `club@demo.orgasport.fr`, `benevole@demo.orgasport.fr`, `admin@demo.orgasport.fr`. PIN table de marque du concours 7KQ2 : `4821`.
 Codes de démo : `7KQ2` (en cours, 32 doublettes, 2e tour), `GP3M` (à venir), `TR8E` (terminé), `FT8S` (foot à 7, 8 équipes).
 
@@ -91,4 +108,14 @@ CGV, mentions légales, confidentialité, cookies (pages vides `/legal/*` + tabl
 - « Mon tirage » ouvre directement le prochain match si le joueur connecté joue un concours en cours (`?saisir=1` pour forcer la saisie d'un code).
 - Licence : vérification du format uniquement (regex par sport), jamais affichée publiquement.
 - Logo club : bucket public `club-logos`, envoi par le serveur après contrôle d'appartenance (2 Mo max).
+- Phase 2 — formats : élimination avec **nouveau tirage à chaque tour** par défaut en pétanque (tableau fixe en option) ; un exempt par tour impair, jamais deux fois la même équipe si possible ; en tableau fixe les exempts vont aux mieux placés pour atteindre une puissance de 2.
+- Phase 2 — complémentaire : perdants d'**un** tour choisi (`consolation.losersOfRound`, 1 par défaut) ; en poules, les non-qualifiés. Tiré automatiquement dès que ce tour est complet.
+- Phase 2 — poules : poules de 4 « en 3 parties » (gagnants / perdants / barrage) pour la pétanque, chacun contre chacun pour le foot ; poules de 3 quand le nombre ne tombe pas juste ; 2 qualifiés par poule ; phase finale en tableau fixe, vainqueurs de poule têtes de série, jamais deux équipes d'une même poule au 1er tour.
+- Phase 2 — mêlée tournante : nouvelles équipes à chaque partie en évitant les mêmes partenaires ; les joueurs en surnombre sont exempts (comptés comme victoire) à tour de rôle.
+- Phase 2 — forfait et exempt : score de forfait par défaut = cible du sport à 0 (13–0 en pétanque, 3–0 en foot), configurable (`forfeitScore`).
+- Phase 2 — terrains : file « premier arrivé, premier servi » ; terrains réservés utilisables seulement à partir des demi-finales du tableau principal (`reservedVenuesFrom`) ; foot = créneaux horaires (aucune équipe sur deux matchs à la fois).
+- Phase 2 — corrections : changer un vainqueur est accepté tant que les matchs suivants concernés ne sont pas joués (sinon message « annulez d'abord… ») ; en poules, refusé si le tableau final est déjà tiré et que les qualifiés changeraient.
+- Phase 2 — scores capitaines : option `scoreEntry: "captains"` ; code équipe à 4 chiffres (`team_secrets`, visible par la table de marque et sur la liste imprimée) ; validé si les deux capitaines saisissent le même score, sinon « à vérifier » par la table.
+- Phase 2 — « C'est mon équipe » : cookie `os_t_CODE` (30 jours) sur l'appareil, sans compte ; l'équipe est ensuite mise en avant automatiquement.
+- Phase 2 — tirage automatique : `config.autoDrawAt` ; à brancher en production sur un appel minute de `/api/cron/tick` (Supabase pg_cron ou service gratuit), avec en filet de sécurité un déclenchement après l'affichage de la page publique.
 - Environnement de dev cloud : Docker Hub limite les téléchargements anonymes ; `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io` et relances. Le géocodage IGN est bloqué par le réseau de cet environnement (pas en production).
