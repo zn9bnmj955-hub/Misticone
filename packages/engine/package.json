@@ -5,12 +5,18 @@
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
-  "exports": { ".": "./src/index.ts" },
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@orgasport/sports": "workspace:*"
+    "@orgasport/sports": "workspace:*",
+    "zod": "^4.6.6"
+  },
+  "devDependencies": {
+    "fast-check": "^4.10.2"
   }
 }

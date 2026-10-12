@@ -66,6 +66,8 @@ export const petanque: SportConfigInput = {
     consolationFromRound: 1,
     avoidSameClubFirstRound: true,
     redrawEachRound: true,
+    poolSystem: "gsl",
+    poolSize: 4,
   },
   notifications: {
     yourTurn: "À vous ! {venueLabel} {venue} · {time} · contre {opponent}",

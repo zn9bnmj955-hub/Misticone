@@ -53,6 +53,8 @@ export const football: SportConfigInput = {
     consolationFromRound: null,
     avoidSameClubFirstRound: false,
     redrawEachRound: false,
+    poolSystem: "round_robin",
+    poolSize: 4,
   },
   notifications: {
     yourTurn: "Match dans {minutes} min, {venue} {venueLabel} · contre {opponent}",

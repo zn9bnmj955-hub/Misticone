@@ -1,0 +1,40 @@
+/**
+ * Engine errors carry a stable code. The web app maps codes to French
+ * messages (src/i18n); `details` gives the values to show.
+ */
+export type EngineErrorCode =
+  | "NOT_FOUND"
+  | "TOURNAMENT_CLOSED"
+  | "INVALID_STATUS_CHANGE"
+  | "NOT_ENOUGH_TEAMS"
+  | "ROUND_INCOMPLETE"
+  | "ROUND_ALREADY_DRAWN"
+  | "NOTHING_TO_DRAW"
+  | "ROUND_HAS_RESULTS"
+  | "MATCH_NOT_PLAYABLE"
+  | "MATCH_HAS_RESULT"
+  | "INVALID_SCORE"
+  | "DRAW_NOT_ALLOWED"
+  | "TIEBREAK_REQUIRED"
+  | "NEXT_MATCH_PLAYED"
+  | "FINAL_PHASE_DRAWN"
+  | "VENUE_BUSY"
+  | "VENUE_UNAVAILABLE"
+  | "SWAP_NOT_ALLOWED"
+  | "NO_FREE_SLOT"
+  | "TEAM_ALREADY_PLAYING"
+  | "UNDO_CONFLICT";
+
+export class EngineError extends Error {
+  constructor(
+    readonly code: EngineErrorCode,
+    readonly details: Record<string, string | number> = {},
+  ) {
+    super(`${code}${Object.keys(details).length ? ` ${JSON.stringify(details)}` : ""}`);
+    this.name = "EngineError";
+  }
+}
+
+export function fail(code: EngineErrorCode, details?: Record<string, string | number>): never {
+  throw new EngineError(code, details);
+}

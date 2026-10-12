@@ -131,6 +131,9 @@ export const sportConfigSchema = z.object({
     consolationFromRound: z.number().int().min(1).nullable(),
     avoidSameClubFirstRound: z.boolean(),
     redrawEachRound: z.boolean(),
+    /** Pools: "gsl" = pétanque 4-team pool in 3 games, "round_robin" = everyone plays everyone. */
+    poolSystem: z.enum(["gsl", "round_robin"]),
+    poolSize: z.number().int().min(3).max(8),
   }),
   notifications: notificationTemplatesSchema,
 });
