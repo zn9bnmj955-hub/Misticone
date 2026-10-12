@@ -77,9 +77,15 @@ export function SummaryStep({
   const [paying, startPay] = useTransition();
 
   // The server checks and prices the saved draft: save first.
+  // Only the latest price request may update the screen: the first quote
+  // (after saving and checking the draft) must not overwrite a promo code
+  // applied in the meantime.
+  const priceSeq = useRef(0);
+
   useEffect(() => {
     let alive = true;
     const checkedForm = formRef.current;
+    const mySeq = ++priceSeq.current;
     flush()
       .then(() => checkDraft(tournamentId))
       .then((res) => {
@@ -88,7 +94,7 @@ export function SummaryStep({
         return previewPrice(tournamentId, null);
       })
       .then((res) => {
-        if (!alive) return;
+        if (!alive || mySeq !== priceSeq.current) return;
         if (res.ok) setPrice(res.price);
         else setPriceError(w.price.errors[res.error] ?? getMessages().common.error);
       })
@@ -101,8 +107,10 @@ export function SummaryStep({
   async function applyPromo(code: string | null) {
     setPromoBusy(true);
     setPromoError(null);
+    const mySeq = ++priceSeq.current;
     try {
       const res = await previewPrice(tournamentId, code);
+      if (mySeq !== priceSeq.current) return;
       if (!res.ok) {
         setPriceError(w.price.errors[res.error] ?? getMessages().common.error);
         return;
