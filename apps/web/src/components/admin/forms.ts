@@ -8,6 +8,9 @@ import { DATE_RE, isoToParis, parisToIso } from "@/lib/tournament-form/time";
  * Errors are codes; their French texts live in `getMessages().admin.errors`.
  */
 
+/** Row ids posted back by the edit forms. */
+export const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** Upper bound for any price typed in the admin (100 000 €): catches typos like an extra zero or two. */
 export const MAX_CENTS = 10_000_000;
 

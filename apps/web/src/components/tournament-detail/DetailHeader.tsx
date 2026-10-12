@@ -7,6 +7,8 @@ import { formatTime } from "@/lib/format";
 import type { TournamentDetail } from "@/app/(app)/concours/[code]/data";
 import { dateTile, longDay } from "./links";
 
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
 /** Name, date, place and organizer: everything a player checks first. */
 export function DetailHeader({ t, sport, badge }: { t: TournamentDetail; sport: SportConfig; badge: ReactNode }) {
   const m = getMessages();
@@ -37,8 +39,8 @@ export function DetailHeader({ t, sport, badge }: { t: TournamentDetail; sport: 
             {t.starts_at && (
               <span className="inline-flex items-center gap-1.5 font-semibold text-ink">
                 <Icon name="calendar" size={18} />
-                <span className="tabular first-letter:uppercase">
-                  {longDay(t.starts_at)} · {formatTime(t.starts_at)}
+                <span className="tabular">
+                  {capitalize(longDay(t.starts_at))} · <span className="whitespace-nowrap">{formatTime(t.starts_at)}</span>
                 </span>
               </span>
             )}

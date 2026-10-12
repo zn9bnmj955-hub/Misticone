@@ -119,7 +119,7 @@ export async function RegistrationCta({ t, code }: { t: TournamentDetail; code: 
 /** "23 / 64 équipes · 41 places restantes", or "Complet · liste d'attente". */
 export async function PlacesGauge({ t, sport }: { t: TournamentDetail; sport: SportConfig }) {
   const f = getMessages().detail.facts;
-  const { roster } = await readLive(t);
+  const { roster, window } = await readLive(t);
   if (!roster) return <span className="text-ink-soft">—</span>;
   const count = roster.active;
   if (t.max_teams === null) {
@@ -128,12 +128,17 @@ export async function PlacesGauge({ t, sport }: { t: TournamentDetail; sport: Sp
   const max = t.max_teams;
   const left = Math.max(0, max - count);
   const fill = Math.min(1, count / max);
+  const noun = registrantNoun(t, sport, max);
+  // Remaining places and the waiting list only matter while registrations are open.
+  const open = window !== "closed";
   const text =
     left === 0
-      ? t.waitlist_enabled
+      ? open && t.waitlist_enabled
         ? f.gaugeFull
         : f.gaugeFullClosed
-      : fmt(f.gauge, { count, max, noun: registrantNoun(t, sport, max), left: left === 1 ? f.leftOne : fmt(f.left, { count: left }) });
+      : open
+        ? fmt(f.gauge, { count, max, noun, left: left === 1 ? f.leftOne : fmt(f.left, { count: left }) })
+        : fmt(f.gaugeCount, { count, max, noun });
   return (
     <span className="grid gap-1.5">
       <span
@@ -147,7 +152,7 @@ export async function PlacesGauge({ t, sport }: { t: TournamentDetail; sport: Sp
         <span className={`block h-full rounded-full ${left === 0 ? "bg-warning" : "bg-accent"}`} style={{ width: `${Math.round(fill * 100)}%` }} />
       </span>
       <span className="text-sm font-bold tabular">{text}</span>
-      {roster.waitlist > 0 && <span className="text-xs text-ink-soft tabular">{fmt(f.waitlist, { count: roster.waitlist })}</span>}
+      {open && roster.waitlist > 0 && <span className="text-xs text-ink-soft tabular">{fmt(f.waitlist, { count: roster.waitlist })}</span>}
     </span>
   );
 }

@@ -84,7 +84,12 @@ export function TournamentCard({ t, nowMs }: { t: HomeCard | CatalogCardRow; now
             ? fmt(m.tournament.fee, { amount: formatEuros(c.feeCents), per: c.feePer === "player" ? m.tournament.perPlayer : m.tournament.perTeam })
             : m.tournament.free}
         </span>
-        {c.prizeText && <span className="text-ink-soft">· {c.prizeText}</span>}
+        {c.prizeText && (
+          <span className="inline-flex items-center gap-1 text-ink-soft">
+            <Icon name="trophy" size={16} className="shrink-0" />
+            {c.prizeText}
+          </span>
+        )}
         <Badge tone={c.eligibility === "licensed" ? "warning" : "neutral"} className="ml-auto">
           {eligibilityLabel(c.eligibility)}
         </Badge>

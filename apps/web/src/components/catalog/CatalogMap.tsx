@@ -47,6 +47,8 @@ function popupContent(p: MapPoint): HTMLElement {
 
 /** Popups in the app's colors, light and dark (Leaflet's own CSS is white). */
 const POPUP_CSS =
+  ".os-catalog-map.leaflet-container{font:inherit}" +
+  ".os-catalog-popup .leaflet-popup-content a{color:var(--os-ink)}" +
   ".os-catalog-popup .leaflet-popup-content-wrapper,.os-catalog-popup .leaflet-popup-tip{background:var(--os-surface);color:var(--os-ink);box-shadow:0 2px 10px var(--os-line)}" +
   ".os-catalog-popup .leaflet-popup-content{margin:14px 18px;font:inherit}" +
   ".os-catalog-popup a.leaflet-popup-close-button{color:var(--os-ink-soft)}";
@@ -100,7 +102,7 @@ export default function CatalogMap({
         role="region"
         aria-label={label}
         // Leaflet uses high z-indexes: keep them inside the map.
-        className={`isolate z-0 w-full overflow-hidden rounded-[var(--radius-lg)] border-2 border-line ${className ?? ""}`}
+        className={`os-catalog-map isolate z-0 w-full overflow-hidden rounded-[var(--radius-lg)] border-2 border-line ${className ?? ""}`}
         style={{ background: "var(--os-surface-2)" }}
       />
     </>

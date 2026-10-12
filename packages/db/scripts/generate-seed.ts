@@ -20,6 +20,7 @@ import {
   type TournamentConfig,
 } from "@orgasport/engine";
 import { entityToRow } from "../src/engine-mapping";
+import { KB_DOCS } from "./kb-content";
 
 // ---------------------------------------------------------------------------
 // Deterministic randomness
@@ -647,6 +648,9 @@ const settings: [string, unknown, string][] = [
   ["ai.monthly_budget_eur", 20, "Plafond de dépense mensuel de l'assistant"],
   ["features.sms", false, "Notifications SMS (option payante, désactivée)"],
   ["features.paypal", false, "PayPal via Stripe"],
+  ["ai.enabled", true, "Assistant activé"],
+  ["ai.usd_to_eur", 0.92, "Taux de conversion dollar → euro pour le suivi des coûts"],
+  ["ai.pricing", {}, "Prix par million de jetons (vide = prix par défaut du modèle)"],
 ];
 insert(
   "public.app_settings",
@@ -656,6 +660,21 @@ insert(
     description,
   })),
 );
+// Assistant knowledge base (chunked automatically by a trigger).
+insert(
+  "public.kb_documents",
+  KB_DOCS.map((d) => ({ id: uuid(), title: d.title, sport_slug: d.sport, source_url: d.source, body: d.body, published: true })),
+);
+// News feed demo: one clearly fictional source (real feeds are added in the admin).
+const demoSource = uuid();
+insert("public.news_sources", [
+  { id: demoSource, name: "Démo OrgaSport", feed_url: "https://example.org/orgasport-demo.xml", site_url: "https://example.org", sport_slug: null, enabled: false },
+]);
+insert("public.news_items", [
+  { id: uuid(), source_id: demoSource, title: "(Démo) Championnat départemental doublettes : les résultats", url: "https://example.org/demo/resultats-doublettes", published_at: ago(60 * 5) },
+  { id: uuid(), source_id: demoSource, title: "(Démo) Nouvelle saison de foot à 7 : ce qui change", url: "https://example.org/demo/foot-a-7", published_at: ago(60 * 26) },
+  { id: uuid(), source_id: demoSource, title: "(Démo) Les clubs de pétanque recrutent des bénévoles", url: "https://example.org/demo/benevoles", published_at: ago(60 * 50) },
+]);
 insert("public.legal_pages", [
   { slug: "mentions-legales", title: "Mentions légales", body: "", published: false },
   { slug: "cgv", title: "Conditions générales de vente", body: "", published: false },

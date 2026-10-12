@@ -9,14 +9,19 @@ import { WeatherIcon } from "./WeatherIcon";
  * Forecast for the place and time of the tournament (MET Norway, cached one
  * hour). Out of range or unreachable: only the link to a weather site.
  */
+/** MET Norway forecasts go about 9 days ahead (see lib/weather.ts). */
+const HORIZON_MS = 9 * 86_400_000;
+
 async function forecastFor(t: TournamentDetail) {
   await connection();
-  return getForecast(t.lat, t.lng, t.starts_at, Date.now());
+  const now = Date.now();
+  const tooEarly = t.starts_at !== null && Date.parse(t.starts_at) - now > HORIZON_MS;
+  return { forecast: tooEarly ? null : await getForecast(t.lat, t.lng, t.starts_at, now), tooEarly };
 }
 
 export async function WeatherTile({ t }: { t: TournamentDetail }) {
   const w = getMessages().detail.weather;
-  const forecast = await forecastFor(t);
+  const { forecast, tooEarly } = await forecastFor(t);
   const link = weatherLink(t.lat, t.lng, t.city);
   return (
     <div className="grid gap-3">
@@ -44,7 +49,8 @@ export async function WeatherTile({ t }: { t: TournamentDetail }) {
           </div>
         </div>
       ) : (
-        <p className="text-sm text-ink-soft">{w.unavailable}</p>
+        // Unreachable service: the link below is enough.
+        tooEarly && <p className="text-sm text-ink-soft">{w.unavailable}</p>
       )}
       <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center font-bold text-accent-ink underline underline-offset-4">
         {w.more}

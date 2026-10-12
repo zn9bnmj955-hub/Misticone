@@ -3,7 +3,7 @@
 
 insert into public.sports (slug, name, config, enabled, sort_order) values
   ('petanque', 'Pétanque', '{"slug":"petanque","name":"Pétanque","icon":"petanque","accentToken":"petanque","enabled":true,"sortOrder":10,"venue":{"kind":"field","noun":{"singular":"terrain","plural":"terrains"},"usage":"parallel"},"teamNoun":{"singular":"équipe","plural":"équipes"},"teamFormats":[{"id":"tete-a-tete","label":"Tête-à-tête","players":1,"substitutes":{"min":0,"max":0},"individualRegistration":false},{"id":"doublette","label":"Doublette","players":2,"substitutes":{"min":0,"max":0},"individualRegistration":false},{"id":"triplette","label":"Triplette","players":3,"substitutes":{"min":0,"max":1},"individualRegistration":false},{"id":"melee-doublette","label":"Mêlée (doublettes tirées)","players":2,"substitutes":{"min":0,"max":0},"individualRegistration":true},{"id":"melee-triplette","label":"Mêlée (triplettes tirées)","players":3,"substitutes":{"min":0,"max":0},"individualRegistration":true}],"competitionFormats":["single_elimination","pools_then_bracket","swiss","round_robin","melee_rotation"],"categories":["all","seniors","veterans","women","mixed","youth"],"scoring":{"mode":"points","target":13,"timeLimitMinutes":null,"allowDraw":false},"typicalMatchMinutes":50,"changeoverMinutes":5,"ranking":{"criteria":["wins","point_diff","points_for","head_to_head","random"],"matchPoints":{"win":1,"draw":0,"loss":0}},"license":{"requiredByDefault":false,"federation":"FFPJP","numberPattern":"^[0-9]{6,10}$","numberHint":"6 à 10 chiffres, sans espace"},"defaults":{"teamFormat":"doublette","competitionFormat":"single_elimination","category":"all","maxTeams":64,"venues":32,"rounds":null,"feeCents":1000,"feePer":"team","consolation":true,"consolationFromRound":1,"avoidSameClubFirstRound":true,"redrawEachRound":true,"poolSystem":"gsl","poolSize":4,"schedule":{"startTime":"14:30","registrationClosesBeforeMinutes":45,"checkInClosesBeforeMinutes":15}},"notifications":{"yourTurn":"À vous ! {venueLabel} {venue} · {time} · contre {opponent}","drawPublished":"Le tirage du tour {round} est publié.","scoreValidated":"Score validé : {score}.","tournamentStarting":"Jet du but à {time}. Bonne partie !","reminderDayBefore":"Demain : {tournament} à {time}, {place}.","notCheckedIn":"Votre équipe n''est pas encore pointée. Passez à la table de marque avant {time}."}}'::jsonb, true, 10),
-  ('football', 'Football', '{"slug":"football","name":"Football","icon":"football","accentToken":"football","enabled":true,"sortOrder":20,"venue":{"kind":"pitch","noun":{"singular":"terrain","plural":"terrains"},"usage":"scheduled"},"teamNoun":{"singular":"équipe","plural":"équipes"},"teamFormats":[{"id":"foot-5","label":"Foot à 5","players":5,"substitutes":{"min":0,"max":3},"individualRegistration":false},{"id":"foot-7","label":"Foot à 7","players":7,"substitutes":{"min":0,"max":5},"individualRegistration":false},{"id":"foot-8","label":"Foot à 8","players":8,"substitutes":{"min":0,"max":5},"individualRegistration":false},{"id":"foot-11","label":"Foot à 11","players":11,"substitutes":{"min":0,"max":7},"individualRegistration":false}],"competitionFormats":["pools_then_bracket","round_robin","single_elimination","swiss"],"categories":["all","seniors","veterans","women","mixed","youth"],"scoring":{"mode":"time","durationMinutes":20,"periods":2,"allowDraw":true,"knockoutTieBreak":"penalties"},"typicalMatchMinutes":20,"changeoverMinutes":5,"ranking":{"criteria":["match_points","point_diff","points_for","head_to_head","random"],"matchPoints":{"win":3,"draw":1,"loss":0}},"license":{"requiredByDefault":false,"federation":"FFF","numberPattern":"^[0-9]{6,12}$","numberHint":"6 à 12 chiffres, sans espace"},"defaults":{"teamFormat":"foot-7","competitionFormat":"pools_then_bracket","category":"all","maxTeams":8,"venues":2,"rounds":null,"feeCents":5000,"feePer":"team","consolation":false,"consolationFromRound":null,"avoidSameClubFirstRound":false,"redrawEachRound":false,"poolSystem":"round_robin","poolSize":4,"schedule":{"startTime":"09:30","registrationClosesBeforeMinutes":60,"checkInClosesBeforeMinutes":30}},"notifications":{"yourTurn":"Match dans {minutes} min, {venue} {venueLabel} · contre {opponent}","drawPublished":"Le calendrier des matchs est publié.","scoreValidated":"Score validé : {score}.","tournamentStarting":"Coup d''envoi à {time}. Bon tournoi !","reminderDayBefore":"Demain : {tournament} à {time}, {place}.","notCheckedIn":"Votre équipe n''est pas encore pointée. Passez à la table de marque avant {time}."}}'::jsonb, true, 20);
+  ('football', 'Football', '{"slug":"football","name":"Football","icon":"football","accentToken":"football","enabled":true,"sortOrder":20,"venue":{"kind":"pitch","noun":{"singular":"terrain","plural":"terrains"},"usage":"scheduled"},"teamNoun":{"singular":"équipe","plural":"équipes"},"teamFormats":[{"id":"foot-5","label":"Foot à 5","players":5,"substitutes":{"min":0,"max":3},"individualRegistration":false},{"id":"foot-7","label":"Foot à 7","players":7,"substitutes":{"min":0,"max":5},"individualRegistration":false},{"id":"foot-8","label":"Foot à 8","players":8,"substitutes":{"min":0,"max":5},"individualRegistration":false},{"id":"foot-11","label":"Foot à 11","players":11,"substitutes":{"min":0,"max":7},"individualRegistration":false}],"competitionFormats":["pools_then_bracket","round_robin","single_elimination","swiss"],"categories":["all","seniors","veterans","women","mixed","youth"],"scoring":{"mode":"time","durationMinutes":20,"periods":2,"allowDraw":true,"knockoutTieBreak":"penalties"},"typicalMatchMinutes":20,"changeoverMinutes":5,"ranking":{"criteria":["match_points","point_diff","points_for","head_to_head","random"],"matchPoints":{"win":3,"draw":1,"loss":0}},"license":{"requiredByDefault":false,"federation":"FFF","numberPattern":"^[0-9]{6,12}$","numberHint":"6 à 12 chiffres, sans espace"},"defaults":{"teamFormat":"foot-7","competitionFormat":"pools_then_bracket","category":"all","maxTeams":8,"venues":2,"rounds":null,"feeCents":5000,"feePer":"team","consolation":false,"consolationFromRound":null,"avoidSameClubFirstRound":false,"redrawEachRound":false,"poolSystem":"round_robin","poolSize":4,"schedule":{"startTime":"09:30","registrationClosesBeforeMinutes":60,"checkInClosesBeforeMinutes":30}},"notifications":{"yourTurn":"Match dans {minutes} min, {venueLabel} {venue} · contre {opponent}","drawPublished":"Le calendrier des matchs est publié.","scoreValidated":"Score validé : {score}.","tournamentStarting":"Coup d''envoi à {time}. Bon tournoi !","reminderDayBefore":"Demain : {tournament} à {time}, {place}.","notCheckedIn":"Votre équipe n''est pas encore pointée. Passez à la table de marque avant {time}."}}'::jsonb, true, 20);
 
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, recovery_token,
@@ -821,7 +821,98 @@ insert into public.app_settings (key, value, description) values
   ('ai.daily_quota', '{"guest":5,"account":20,"paying_club":100}'::jsonb, 'Questions par jour'),
   ('ai.monthly_budget_eur', '20'::jsonb, 'Plafond de dépense mensuel de l''assistant'),
   ('features.sms', 'false'::jsonb, 'Notifications SMS (option payante, désactivée)'),
-  ('features.paypal', 'false'::jsonb, 'PayPal via Stripe');
+  ('features.paypal', 'false'::jsonb, 'PayPal via Stripe'),
+  ('ai.enabled', 'true'::jsonb, 'Assistant activé'),
+  ('ai.usd_to_eur', '0.92'::jsonb, 'Taux de conversion dollar → euro pour le suivi des coûts'),
+  ('ai.pricing', '{}'::jsonb, 'Prix par million de jetons (vide = prix par défaut du modèle)');
+
+insert into public.kb_documents (id, title, sport_slug, source_url, body, published) values
+  ('75802fd5-1e60-45f1-8324-dae530389628', 'Pétanque : déroulement d''une partie', 'petanque', 'https://www.ffpjp.org', 'Une partie de pétanque oppose deux équipes : tête-à-tête (1 joueur contre 1, 3 boules chacun), doublette (2 contre 2, 3 boules par joueur) ou triplette (3 contre 3, 2 boules par joueur).
+
+Une partie se joue en 13 points : la première équipe qui atteint 13 points gagne. C''est ce qu''on appelle souvent « la partie en 13 ». Certains concours fixent un autre score ou une limite de temps : le règlement du concours prime.
+
+Une partie se compose de « mènes ». À chaque mène, une équipe lance le but (le cochonnet), puis les équipes jouent toutes leurs boules. À la fin de la mène, l''équipe dont la boule est la plus proche du but marque un point par boule mieux placée que la meilleure boule adverse.
+
+Au début de la partie, un tirage au sort désigne l''équipe qui trace (ou pose) le cercle de lancer et lance le but. Ensuite, c''est l''équipe qui a gagné la mène précédente qui lance le but.
+
+Le joueur lance depuis le cercle, les deux pieds à l''intérieur et sans le toucher, et ne doit pas quitter le sol avant que sa boule soit retombée. Le cercle mesure de 35 à 50 centimètres de diamètre.
+
+Le but doit se trouver entre 6 et 10 mètres du bord intérieur du cercle pour les adultes, et assez loin de tout obstacle ou d''une zone interdite. Les cas où le lancer du but n''est pas valable sont précisés par le règlement officiel de la fédération.
+
+L''équipe qui a lancé le but joue la première boule. Ensuite, c''est toujours l''équipe qui n''a pas « le point » (dont aucune boule n''est la plus proche) qui rejoue, jusqu''à reprendre le point ou épuiser ses boules.
+
+Chaque joueur dispose d''une minute pour jouer sa boule, à partir du moment où la boule ou le but précédent s''est arrêté.
+
+Pointer, c''est lancer sa boule pour qu''elle s''arrête le plus près possible du but. Tirer, c''est lancer sa boule pour chasser une boule adverse (ou le but). Un « carreau » est un tir où la boule tireuse prend exactement la place de la boule frappée.
+
+Perdre 13 à 0, c''est « être fanny » : une tradition populaire, sans conséquence au classement.', true),
+  ('f35fef5a-43eb-4438-9cfe-299c592abd5d', 'Pétanque : matériel', 'petanque', 'https://www.ffpjp.org', 'En compétition officielle, les boules sont en métal, d''un diamètre de 70,5 à 80 millimètres et d''un poids de 650 à 800 grammes. Elles portent les marques du fabricant et un numéro.
+
+Le but (cochonnet) est en bois ou en matière synthétique, d''environ 30 millimètres de diamètre.
+
+Pour un concours amical, chacun peut jouer avec ses boules de loisir ; pour un concours officiel réservé aux licenciés, les boules doivent être homologuées.', true),
+  ('4c1694f2-e676-4779-93a7-ea0d453b0ac2', 'Pétanque : formats de concours', 'petanque', null, 'Élimination directe : les équipes sont tirées au sort par paires, le vainqueur continue, le perdant est éliminé (ou va au concours complémentaire). Avec un nouveau tirage à chaque tour, les rencontres du tour suivant sont tirées au sort parmi les gagnants ; avec un tableau fixe, le parcours jusqu''à la finale est connu dès le départ.
+
+Concours complémentaire : un second tableau pour les équipes éliminées tôt (par exemple les perdants du premier tour), pour que tout le monde joue plusieurs parties.
+
+Poules puis phase finale : par poules de 4, chaque équipe joue 2 ou 3 parties (gagnants contre gagnants, perdants contre perdants, puis une partie de barrage) ; les 2 premiers de chaque poule vont dans le tableau final.
+
+Système suisse (parties fixes avec classement) : chaque équipe joue le même nombre de parties, contre des adversaires au bilan proche. Le classement final se fait aux victoires, puis à la différence de points.
+
+Mêlée tournante : chacun s''inscrit seul, les équipes sont refaites à chaque partie, et le classement est individuel.
+
+Exempt : quand le nombre d''équipes est impair, une équipe ne joue pas un tour et le gagne automatiquement (score de forfait, par défaut 13 à 0).', true),
+  ('b9b2c6e0-a3ee-4ab7-8660-17b76d94b559', 'Football à 7 : règles courantes en tournoi', 'football', 'https://www.fff.fr', 'Au football à 7, chaque équipe aligne 7 joueurs dont un gardien, sur un terrain plus petit qu''au football à 11. Les remplacements sont en général libres et illimités (« remplacements volants »).
+
+Les matchs de tournoi sont courts : souvent 2 mi-temps de 10 minutes, ou un seul temps de 15 à 20 minutes. La durée exacte est fixée par le règlement du tournoi.
+
+En phase de poules, une victoire rapporte en général 3 points, un match nul 1 point et une défaite 0 point. En cas d''égalité au classement, on regarde la différence de buts, puis les buts marqués, puis la confrontation directe.
+
+En phase à élimination directe, un match nul est souvent départagé par une séance de tirs au but.
+
+Les règles de hors-jeu, de remise en jeu et de contacts varient d''un tournoi à l''autre (catégories jeunes, loisir, entreprise) : le règlement du tournoi prime toujours.', true),
+  ('5fa5af71-fb42-4f7a-aaab-1febfa274fd8', 'Aide OrgaSport : retrouver son match', null, null, 'Chaque concours a un code de 4 caractères (par exemple 7KQ2), écrit sur l''affiche avec un QR code. Sur l''accueil d''OrgaSport, tapez le code dans « Retrouver mon tirage » ou scannez le QR code.
+
+Sur la page du concours, tapez votre numéro d''équipe ou votre nom dans « Trouver mon équipe » : vous voyez votre prochain match, votre terrain, l''heure et votre adversaire, puis l''historique de vos parties. La page fonctionne même sans connexion internet rapide et sur un vieux téléphone.
+
+Touchez « C''est mon équipe » : votre équipe sera mise en avant automatiquement la prochaine fois, sur cet appareil, sans créer de compte.
+
+Avec un compte joueur, le bouton « Mon tirage » ouvre directement votre prochain match quand vous jouez un concours en cours.
+
+Pour être prévenu quand votre match est prêt (« À vous ! Terrain 12 · 15 h 40 »), touchez « Me prévenir quand c''est à moi ». Sur iPhone, il faut d''abord ajouter le site à l''écran d''accueil (bouton Partager, puis « Sur l''écran d''accueil »).', true),
+  ('677835b2-b423-4053-b576-00551e5920a5', 'Aide OrgaSport : s''inscrire à un concours', null, null, 'Ouvrez l''onglet « Concours », choisissez un concours, puis touchez « S''inscrire ». Le formulaire s''adapte au concours : nombre de joueurs, numéro de licence si le concours est réservé aux licenciés, contact du capitaine, acceptation du règlement.
+
+Le numéro de licence sert uniquement à l''organisateur : il n''est jamais affiché publiquement. Le contact du capitaine (téléphone ou email) n''est visible que par l''organisateur.
+
+Après l''inscription, vous recevez votre numéro d''équipe, un fichier pour l''ajouter à votre agenda, et vous pouvez activer les notifications. Si le concours est complet, votre équipe est placée sur liste d''attente.
+
+L''inscription (la mise) se règle sur place, à la table de marque, le jour du concours. Pensez à pointer votre équipe à la table de marque avant l''heure limite indiquée.', true),
+  ('0939af8a-9992-46c8-aecc-2e5d6091ab0f', 'Aide OrgaSport : organiser un concours (lien concours)', null, null, 'Un club achète un « lien concours » pour chaque concours. Depuis l''espace club, touchez « Créer un concours » : un formulaire en étapes propose des réglages par défaut adaptés au sport, et le brouillon est enregistré automatiquement.
+
+Les étapes : qui gère le concours, informations générales (date, heure, adresse), participants, argent (mise, dotation), déroulement et tirage, terrains, communication, puis récapitulatif et paiement. Un club pressé peut passer directement au récapitulatif avec les réglages par défaut.
+
+Le bouton « Aide-moi à choisir » propose un format adapté au nombre d''équipes, aux terrains disponibles et à l''heure de début, avec l''heure de fin estimée.
+
+Le paiement se fait sur la page sécurisée de Stripe (carte bancaire, Apple Pay, Google Pay). Aucune donnée bancaire ne passe par OrgaSport. Le concours est publié automatiquement dès que Stripe confirme le paiement, avec son lien court, son QR code et son affiche A4.
+
+Les codes PIN des bénévoles de la table de marque sont envoyés par email à l''organisateur au moment de la publication.', true),
+  ('14a929cd-7562-4e98-bdff-cd9d3e40fdff', 'Aide OrgaSport : la table de marque', null, null, 'La table de marque s''ouvre depuis la page du concours (/c/CODE/table), avec le compte de l''organisateur ou un code PIN donné aux bénévoles.
+
+Elle permet de pointer les équipes, d''inscrire sur place, de lancer le tirage (ou de le laisser se faire automatiquement à l''heure prévue), d''attribuer les terrains, de saisir les scores et de voir le classement.
+
+Saisie rapide d''un score : tapez le numéro du terrain puis les deux scores, par exemple « 12 13 7 », puis Entrée.
+
+Toute action peut être corrigée : échanger deux équipes, refaire le tirage d''un tour, déplacer un match, déclarer un forfait, corriger un score. L''onglet Historique liste toutes les actions avec un bouton « Annuler ».
+
+Si le réseau coupe, les saisies restent sur l''appareil et partent automatiquement au retour du réseau. Un témoin « En ligne » ou « Hors ligne » reste toujours visible. En secours, l''onglet Impression imprime le tirage, les feuilles de match et le classement.', true);
+
+insert into public.news_sources (id, name, feed_url, site_url, sport_slug, enabled) values
+  ('13daf1fe-29c6-4ab0-aec6-d1c7d71e4471', 'Démo OrgaSport', 'https://example.org/orgasport-demo.xml', 'https://example.org', null, false);
+
+insert into public.news_items (id, source_id, title, url, published_at) values
+  ('48488895-6a62-4291-8bfd-df0601b20159', '13daf1fe-29c6-4ab0-aec6-d1c7d71e4471', '(Démo) Championnat départemental doublettes : les résultats', 'https://example.org/demo/resultats-doublettes', now() - interval '300 minutes'),
+  ('2bcd5584-7cf5-4a0e-8874-07a41624b006', '13daf1fe-29c6-4ab0-aec6-d1c7d71e4471', '(Démo) Nouvelle saison de foot à 7 : ce qui change', 'https://example.org/demo/foot-a-7', now() - interval '1560 minutes'),
+  ('c47b2a1e-45d9-4b5b-b34d-1b019cf9439d', '13daf1fe-29c6-4ab0-aec6-d1c7d71e4471', '(Démo) Les clubs de pétanque recrutent des bénévoles', 'https://example.org/demo/benevoles', now() - interval '3000 minutes');
 
 insert into public.legal_pages (slug, title, body, published) values
   ('mentions-legales', 'Mentions légales', '', false),

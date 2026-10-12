@@ -62,6 +62,7 @@ export const detail = {
     checkInUntil: "jusqu'à {time}",
     noPrize: "Non précisée",
     gauge: "{count} / {max} {noun} · {left}",
+    gaugeCount: "{count} / {max} {noun}",
     left: "{count} places restantes",
     leftOne: "1 place restante",
     gaugeFull: "Complet · liste d'attente",
