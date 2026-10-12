@@ -1,0 +1,33 @@
+{
+  "decouverte": {
+    "title": "OrgaSport en 75 secondes",
+    "duration": 75,
+    "shots": [
+      { "start": 0, "end": 6, "screen": "Le jour du concours…", "voice": "Le jour du concours, tout va très vite." },
+      { "start": 6, "end": 14, "screen": "64 équipes · 32 terrains · 1 tirage", "voice": "Soixante-quatre équipes, trente-deux terrains, et tout le monde veut savoir où il joue." },
+      { "start": 14, "end": 22, "screen": "Votre match en 10 secondes.", "voice": "Avec OrgaSport, un joueur scanne le QR code et trouve son match en dix secondes." },
+      { "start": 22, "end": 32, "screen": "Tirage automatique · terrains attribués · en direct", "voice": "Le tirage, les terrains, les scores : tout est calculé automatiquement, en direct." },
+      { "start": 32, "end": 40, "screen": "Un score saisi, tout le monde est prévenu.", "voice": "Un score saisi à la table de marque, et chaque équipe reçoit son prochain match." },
+      { "start": 40, "end": 47, "screen": "Même sans réseau.", "voice": "Même quand le réseau tombe au fond du terrain." },
+      { "start": 47, "end": 55, "screen": "Pétanque, football… et demain votre sport.", "voice": "Pétanque, football… OrgaSport s'adapte à votre sport." },
+      { "start": 55, "end": 65, "screen": "Créez votre concours en 3 minutes.", "voice": "Pour les clubs, créer et publier un concours prend trois minutes." },
+      { "start": 65, "end": 75, "screen": "OrgaSport · vos concours, de l'inscription aux résultats", "voice": "OrgaSport. Vos concours, de l'inscription aux résultats." }
+    ]
+  },
+  "tutoriel": {
+    "title": "Acheter et utiliser son lien concours",
+    "duration": 150,
+    "shots": [
+      { "start": 0, "end": 8, "screen": "Votre lien concours, pas à pas", "voice": "Voici comment créer, payer et utiliser votre lien concours." },
+      { "start": 8, "end": 22, "screen": "1. Créer le concours", "voice": "Dans votre espace club, touchez « Créer un concours », puis choisissez le sport." },
+      { "start": 22, "end": 40, "screen": "Tout est prérempli. Le brouillon s'enregistre tout seul.", "voice": "Chaque réponse a une valeur par défaut adaptée au sport. Votre brouillon s'enregistre tout seul." },
+      { "start": 40, "end": 55, "screen": "2. Les terrains et l'heure de fin sont calculés", "voice": "OrgaSport calcule les terrains nécessaires et l'heure de fin. Pas sûr du format ? « Aide-moi à choisir »." },
+      { "start": 55, "end": 72, "screen": "3. Paiement sécurisé par Stripe", "voice": "Vérifiez le récapitulatif, puis payez en toute sécurité. Aucune donnée bancaire ne passe par OrgaSport." },
+      { "start": 72, "end": 85, "screen": "4. Lien, QR code et affiche, tout de suite", "voice": "Dès le paiement confirmé, votre concours est publié : lien, QR code et affiche sont prêts." },
+      { "start": 85, "end": 100, "screen": "5. Le jour J : pointage et tirage", "voice": "Le jour du concours, pointez les équipes présentes et lancez le tirage." },
+      { "start": 100, "end": 118, "screen": "Une erreur ? Annulez-la.", "voice": "Saisissez les scores en une ligne. Une erreur ? Tout est dans l'historique, et tout s'annule." },
+      { "start": 118, "end": 135, "screen": "Les joueurs suivent en direct", "voice": "Les joueurs suivent tout en direct sur leur téléphone, et sont prévenus quand c'est à eux." },
+      { "start": 135, "end": 150, "screen": "Créez votre premier concours", "voice": "À vous de jouer ! Créez votre premier concours sur OrgaSport." }
+    ]
+  }
+}

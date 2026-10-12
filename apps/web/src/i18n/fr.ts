@@ -247,7 +247,6 @@ export const fr = {
       create: "Créer un concours",
       empty: "Aucun concours pour l'instant.",
       registered: "{count} inscrites",
-      createSoon: "Le formulaire de création arrive à la phase 3.",
     },
   },
   status: {
@@ -286,7 +285,6 @@ export const fr = {
     licensed: "Licenciés uniquement",
     mixed: "Licenciés et non-licenciés",
     by: "Organisé par {club}",
-    phase2: "La vue complète du concours (tirage en direct, terrains, résultats) arrive à la phase 2.",
   },
   terrain: {
     register: { open: "S'inscrire", waitlist: "S'inscrire (liste d'attente)" },
@@ -573,7 +571,6 @@ export const fr = {
   catalog: {
     title: "Concours",
     empty: "Aucun concours publié pour ce sport.",
-    phase4: "Carte, filtres détaillés et inscription en ligne arrivent à la phase 4.",
   },
   assistant: {
     title: "Assistant",
@@ -606,7 +603,6 @@ export const fr = {
     tournaments: "Concours",
     members: "Membres",
     publicPage: "Page publique",
-    soon: "Tableau de bord complet (statistiques, factures, membres, annonces) à la phase 3.",
     noClub: "Vous ne gérez pas encore de club.",
   },
   legal: {

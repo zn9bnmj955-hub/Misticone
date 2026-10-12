@@ -101,15 +101,15 @@ async function ClubInfo() {
                 <legend className="mb-1.5 text-sm font-bold">{t.sports}</legend>
                 <div className="flex flex-wrap gap-2">
                   {sports.map((s) => (
-                      <label
-                        key={s.slug}
-                        data-sport={s.accentToken}
-                        className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-[var(--radius)] border-2 border-line px-4 font-semibold has-[:checked]:border-accent has-[:focus-visible]:outline-2"
-                      >
-                        <input type="checkbox" name="sports" value={s.slug} defaultChecked={row.sports.includes(s.slug)} className="size-5 accent-[var(--os-accent)]" />
-                        <Icon name={s.icon} size={18} />
-                        {s.name}
-                      </label>
+                    <label
+                      key={s.slug}
+                      data-sport={s.accentToken}
+                      className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-[var(--radius)] border-2 border-line px-4 font-semibold has-[:checked]:border-accent has-[:focus-visible]:outline-2"
+                    >
+                      <input type="checkbox" name="sports" value={s.slug} defaultChecked={row.sports.includes(s.slug)} className="size-5 accent-[var(--os-accent)]" />
+                      <Icon name={s.icon} size={18} />
+                      {s.name}
+                    </label>
                   ))}
                 </div>
               </fieldset>

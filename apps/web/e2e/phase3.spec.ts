@@ -41,7 +41,7 @@ test.describe("club space", () => {
     await page.getByRole("button", { name: /^Payer/ }).click();
 
     await page.waitForURL(/\/club\/concours\/[0-9a-f-]+\/paiement/, { timeout: 30_000 });
-    await expect(page.getByText("C'est en ligne !")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "C'est en ligne !" })).toBeVisible({ timeout: 30_000 });
     expect(Date.now() - started).toBeLessThan(180_000);
 
     // Published: short link, public page and catalog.
@@ -71,7 +71,7 @@ test.describe("club space", () => {
     const free = page.getByRole("button", { name: "Publier gratuitement" });
     await expect(free).toBeEnabled({ timeout: 20_000 });
     await free.click();
-    await expect(page.getByText("C'est en ligne !")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "C'est en ligne !" })).toBeVisible({ timeout: 30_000 });
   });
 
   test("the webhook refuses unsigned events", async ({ request }) => {

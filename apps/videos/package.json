@@ -1,0 +1,31 @@
+{
+  "name": "@orgasport/videos",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vidéos OrgaSport (Remotion + React Three Fiber) : découverte et tutoriel, en 16:9 et 9:16.",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "music": "node scripts/make-music.mjs",
+    "subtitles": "node scripts/make-subtitles.mjs",
+    "render": "node scripts/render.mjs all",
+    "render:decouverte": "node scripts/render.mjs Decouverte169 Decouverte916",
+    "render:tutoriel": "node scripts/render.mjs Tutoriel169 Tutoriel916",
+    "render:169": "node scripts/render.mjs Decouverte169 Tutoriel169",
+    "render:916": "node scripts/render.mjs Decouverte916 Tutoriel916",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-three/fiber": "9.8.1",
+    "@remotion/cli": "4.0.535",
+    "@remotion/three": "4.0.535",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "remotion": "4.0.535",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/three": "^0.186.0",
+    "typescript": "^5.9.3"
+  }
+}

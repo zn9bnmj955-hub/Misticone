@@ -28,11 +28,25 @@ function items(labels: NavLabels, clubMode: boolean): Item[] {
   return list;
 }
 
-const isActive = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
+const isActive = (pathname: string | null, href: string) => pathname !== null && (pathname === href || pathname.startsWith(`${href}/`));
+
+type NavProps = { labels: NavLabels; clubMode: boolean };
+
+/**
+ * The current address is request data: with Cache Components it may only be
+ * read inside <Suspense>. The *View components take it as a prop so the
+ * static shell (Suspense fallback) can render the same bar without it.
+ */
+export function TabBar(props: NavProps) {
+  return <TabBarView {...props} pathname={usePathname()} />;
+}
+
+export function SideNav(props: NavProps) {
+  return <SideNavView {...props} pathname={usePathname()} />;
+}
 
 /** Bottom tab bar (mobile). */
-export function TabBar({ labels, clubMode }: { labels: NavLabels; clubMode: boolean }) {
-  const pathname = usePathname();
+export function TabBarView({ labels, clubMode, pathname }: NavProps & { pathname: string | null }) {
   const list = items(labels, clubMode);
   return (
     <nav
@@ -72,8 +86,7 @@ export function TabBar({ labels, clubMode }: { labels: NavLabels; clubMode: bool
 }
 
 /** Left sidebar (desktop), same structure as the tab bar. */
-export function SideNav({ labels, clubMode }: { labels: NavLabels; clubMode: boolean }) {
-  const pathname = usePathname();
+export function SideNavView({ labels, clubMode, pathname }: NavProps & { pathname: string | null }) {
   return (
     <nav aria-label={labels.mainNav}>
       <ul className="grid gap-1">

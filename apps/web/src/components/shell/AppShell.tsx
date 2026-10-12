@@ -3,7 +3,7 @@ import { Suspense, type ReactNode } from "react";
 import { LogoMark, Wordmark } from "@orgasport/ui";
 import { getMessages } from "@/i18n";
 import { getViewer } from "@/lib/viewer";
-import { SideNav, TabBar, type NavLabels } from "./NavLinks";
+import { SideNav, SideNavView, TabBar, TabBarView, type NavLabels } from "./NavLinks";
 
 async function ViewerNav({ labels, kind }: { labels: NavLabels; kind: "tabs" | "side" }) {
   const viewer = await getViewer();
@@ -25,7 +25,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <LogoMark size={30} />
           <Wordmark className="text-2xl" />
         </Link>
-        <Suspense fallback={<SideNav labels={labels} clubMode={false} />}>
+        <Suspense fallback={<SideNavView labels={labels} clubMode={false} pathname={null} />}>
           <ViewerNav labels={labels} kind="side" />
         </Suspense>
       </aside>
@@ -40,7 +40,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
-      <Suspense fallback={<TabBar labels={labels} clubMode={false} />}>
+      <Suspense fallback={<TabBarView labels={labels} clubMode={false} pathname={null} />}>
         <ViewerNav labels={labels} kind="tabs" />
       </Suspense>
     </div>

@@ -20,6 +20,12 @@ import { setFollowClub } from "@/app/(app)/club/actions";
 
 type Params = Promise<{ slug: string }>;
 
+/**
+ * The app navigation reads the pathname, unknown before the request for a
+ * club slug: no static shell (the club facts are cached, so it stays fast).
+ */
+export const instant = false;
+
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const t = getMessages().clubSpace;
   const found = await getPublicClub((await params).slug);
