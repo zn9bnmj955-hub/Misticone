@@ -1,7 +1,7 @@
-# OrgaSport — Plan d'architecture (à valider)
+# OrgaSport — Plan d'architecture
 
-> Version 1 · 12 oct. 2026 · statut : **en attente de validation**
-> Rien n'est codé tant que ce plan n'est pas validé.
+> Version 1 · 12 oct. 2026 · statut : **validé** (direction visuelle C « Direct »)
+> Phase 1 terminée. Suivi détaillé et décisions : `CLAUDE.md`.
 
 ---
 

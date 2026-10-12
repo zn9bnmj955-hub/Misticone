@@ -1,0 +1,125 @@
+/* ==========================================================================
+   OrgaSport — design tokens (direction C « Direct »)
+   --------------------------------------------------------------------------
+   TOUTES les couleurs du site sont ici. Pour changer une couleur, modifie
+   uniquement ce fichier : le reste du site utilise ces variables.
+   - Bloc 1 : mode clair (par défaut)
+   - Bloc 2 : mode sombre (réglage système, ou choix explicite)
+   - Bloc 3 : couleur d'accent de chaque sport, en clair puis en sombre
+   ========================================================================== */
+
+:root {
+  /* Fonds et textes — mode clair */
+  --os-bg: #eef0f7;          /* « Studio » : fond général */
+  --os-surface: #ffffff;     /* cartes, champs */
+  --os-surface-2: #e2e6f2;   /* zones secondaires, survol */
+  --os-ink: #0b1640;         /* « Cobalt » : texte principal */
+  --os-ink-soft: #4a5480;    /* « Ardoise » : texte secondaire */
+  --os-line: #cfd5e8;        /* bordures, séparateurs */
+  --os-inverse: #0b1640;     /* bandeaux inversés (ex. « Retrouver mon tirage ») */
+  --os-on-inverse: #ffffff;
+  --os-stage: #070c24;          /* fond des vidéos et scènes 3D (identique en clair et en sombre) */
+  --os-on-stage: #eef1ff;
+
+  /* Accent par défaut (sélecteur sur « Tous ») */
+  --os-accent: #2f54ff;
+  --os-accent-ink: #2443d6;  /* accent utilisé comme texte sur le fond */
+  --os-on-accent: #ffffff;
+  --os-accent-soft: rgba(47, 84, 255, 0.14);
+
+  /* États (indépendants du sport) */
+  --os-live: #e5261d;
+  --os-success: #0f8a4f;
+  --os-warning: #b86e00;
+  --os-danger: #c4221a;
+  --os-focus: #2f54ff;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --os-bg: #070c24;
+    --os-surface: #0f1736;
+    --os-surface-2: #17214a;
+    --os-ink: #eef1ff;
+    --os-ink-soft: #9aa3cf;
+    --os-line: #26305e;
+    --os-inverse: #eef1ff;
+    --os-on-inverse: #070c24;
+    --os-accent: #6f8bff;
+    --os-accent-ink: #8ea4ff;
+    --os-on-accent: #070c24;
+    --os-accent-soft: rgba(111, 139, 255, 0.2);
+    --os-live: #ff4d42;
+    --os-success: #3ddc8a;
+    --os-warning: #ffb547;
+    --os-danger: #ff6b61;
+    --os-focus: #8ea4ff;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --os-bg: #070c24;
+  --os-surface: #0f1736;
+  --os-surface-2: #17214a;
+  --os-ink: #eef1ff;
+  --os-ink-soft: #9aa3cf;
+  --os-line: #26305e;
+  --os-inverse: #eef1ff;
+  --os-on-inverse: #070c24;
+  --os-accent: #6f8bff;
+  --os-accent-ink: #8ea4ff;
+  --os-on-accent: #070c24;
+  --os-accent-soft: rgba(111, 139, 255, 0.2);
+  --os-live: #ff4d42;
+  --os-success: #3ddc8a;
+  --os-warning: #ffb547;
+  --os-danger: #ff6b61;
+  --os-focus: #8ea4ff;
+  color-scheme: dark;
+}
+
+/* --------------------------------------------------------------------------
+   Accent par sport. Le nom après data-sport= est le « accentToken » défini
+   dans packages/sports. Nouveau sport = un nouveau bloc ici (clair + sombre).
+   S'applique à toute la page (<html data-sport>) ou à un seul élément
+   (ex. la carte d'un concours de football dans une liste « Tous »).
+   -------------------------------------------------------------------------- */
+
+/* Pétanque : « Or » */
+[data-sport="petanque"] {
+  --os-accent: #ffb020;
+  --os-accent-ink: #8f5a00;
+  --os-on-accent: #0b1640;
+  --os-accent-soft: rgba(255, 176, 32, 0.22);
+}
+/* Football : « Menthe » */
+[data-sport="football"] {
+  --os-accent: #00d68f;
+  --os-accent-ink: #00754d;
+  --os-on-accent: #04121f;
+  --os-accent-soft: rgba(0, 214, 143, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-sport="petanque"], :root:not([data-theme="light"]) [data-sport="petanque"] { --os-accent-ink: #ffc24d; }
+  :root:not([data-theme="light"])[data-sport="football"], :root:not([data-theme="light"]) [data-sport="football"] { --os-accent-ink: #2bf0a6; }
+}
+:root[data-theme="dark"][data-sport="petanque"], :root[data-theme="dark"] [data-sport="petanque"] { --os-accent-ink: #ffc24d; }
+:root[data-theme="dark"][data-sport="football"], :root[data-theme="dark"] [data-sport="football"] { --os-accent-ink: #2bf0a6; }
+
+/* --------------------------------------------------------------------------
+   Formes, espacements, typographie (hors couleurs)
+   -------------------------------------------------------------------------- */
+:root {
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+  --tap: 48px;                  /* hauteur minimale d'une zone tactile */
+  --font-display: var(--font-saira, "Saira"), "Arial Narrow", system-ui, sans-serif;
+  --font-body: var(--font-saira, "Saira"), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --shadow-pop: 0 8px 24px -8px rgba(11, 22, 64, 0.35);
+}

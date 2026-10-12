@@ -1,0 +1,135 @@
+import Link from "next/link";
+import { Suspense } from "react";
+import { Icon, LogoMark, Wordmark } from "@orgasport/ui";
+import { getMessages } from "@/i18n";
+import { FindDrawForm } from "@/components/draw/FindDrawForm";
+import { SiteFooter } from "@/components/vitrine/SiteFooter";
+import { ButtonLink } from "@/components/ui/Button";
+import { getLiveStats } from "@/lib/data/tournaments";
+import { formatCount } from "@/lib/format";
+
+async function LiveNumbers() {
+  const m = getMessages().landing;
+  const stats = await getLiveStats();
+  const items = [
+    { value: stats.liveTournaments, label: m.liveTournaments, live: true },
+    { value: stats.players, label: m.players },
+    { value: stats.upcoming, label: m.upcoming },
+  ];
+  return (
+    <dl className="grid grid-cols-3 gap-2">
+      {items.map((i) => (
+        <div key={i.label} className="rounded-[var(--radius)] border border-line bg-surface p-3">
+          <dd className="display text-4xl tabular sm:text-5xl">{formatCount(i.value)}</dd>
+          <dt className="mt-1 flex items-center gap-1.5 text-xs font-bold text-ink-soft sm:text-sm">
+            {i.live && <span className="live-dot" aria-hidden="true" />}
+            {i.label}
+          </dt>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function NumbersFallback() {
+  return <div className="h-[92px] rounded-[var(--radius)] bg-surface-2" aria-hidden="true" />;
+}
+
+export default function LandingPage() {
+  const m = getMessages();
+  const l = m.landing;
+  const doors = [
+    { href: "/inscription/joueur", icon: "petanque", ...l.doors.play, primary: true },
+    { href: "/inscription/club", icon: "club", ...l.doors.organize, primary: false },
+    { href: "/inscription/invite", icon: "arrowRight", ...l.doors.guest, primary: false },
+  ];
+  return (
+    <>
+      <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+        <Link href="/" className="flex items-center gap-2 text-ink" aria-label={m.meta.title}>
+          <LogoMark size={30} />
+          <Wordmark className="text-2xl" />
+        </Link>
+        <Link href="/connexion" className="rounded-full px-4 py-2 text-sm font-bold hover:bg-surface-2">
+          {l.login}
+        </Link>
+      </header>
+
+      <main id="contenu" className="mx-auto grid max-w-5xl gap-14 px-4 pb-16">
+        {/* 1. The find-my-draw field comes first, before anything else. */}
+        <section className="grid gap-8 pt-2 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start lg:pt-10">
+          <div className="grid gap-6 lg:order-2">
+            <FindDrawForm headingLevel="h2" />
+            <Suspense fallback={<NumbersFallback />}>
+              <LiveNumbers />
+            </Suspense>
+          </div>
+          <div className="grid gap-6 lg:order-1">
+            <div className="grid gap-3">
+              <h1 className="display text-[3.25rem] sm:text-7xl">{l.heroTitle}</h1>
+              <p className="max-w-[46ch] text-lg text-ink-soft">{l.heroText}</p>
+            </div>
+            <ul className="grid gap-3">
+              {doors.map((d) => (
+                <li key={d.href}>
+                  <Link
+                    href={d.href}
+                    className={
+                      d.primary
+                        ? "flex min-h-20 items-center gap-4 rounded-[var(--radius-lg)] bg-accent px-5 text-on-accent transition hover:brightness-105"
+                        : "flex min-h-20 items-center gap-4 rounded-[var(--radius-lg)] border-2 border-line bg-surface px-5 transition hover:border-ink"
+                    }
+                  >
+                    <span className="grid min-w-0 flex-1">
+                      <span className="display text-3xl">{d.title}</span>
+                      <span className={d.primary ? "text-sm font-semibold opacity-80" : "text-sm text-ink-soft"}>{d.text}</span>
+                    </span>
+                    <Icon name="arrowRight" size={26} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section aria-labelledby="how" className="grid gap-6">
+          <h2 id="how" className="display text-4xl">{l.howTitle}</h2>
+          <ol className="grid gap-4 md:grid-cols-3">
+            {l.how.map((step, i) => (
+              <li key={step.title} className="grid content-start gap-2 rounded-[var(--radius-lg)] border border-line bg-surface p-5">
+                <span className="display text-5xl text-accent-ink tabular">{i + 1}</span>
+                <h3 className="text-lg font-bold">{step.title}</h3>
+                <p className="text-ink-soft">{step.text}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section aria-labelledby="video" className="grid gap-4">
+          <h2 id="video" className="display text-4xl">{l.videoTitle}</h2>
+          <div className="grid aspect-video w-full max-w-3xl place-items-center rounded-[var(--radius-lg)] bg-stage p-6 text-center text-on-stage">
+            <div className="grid justify-items-center gap-3">
+              <span className="grid size-16 place-items-center rounded-full bg-accent text-on-accent">
+                <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 5v14l11-7z" fill="currentColor" />
+                </svg>
+              </span>
+              <p className="font-semibold opacity-80">{l.videoSoon}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-4 rounded-[var(--radius-lg)] border-2 border-ink p-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+          <div className="grid gap-1">
+            <h2 className="display text-3xl">{l.clubCta}</h2>
+            <p className="text-ink-soft">{l.clubCtaText}</p>
+          </div>
+          <ButtonLink href="/inscription/club" size="lg" variant="inverse">
+            {l.clubCtaButton}
+          </ButtonLink>
+        </section>
+      </main>
+      <SiteFooter />
+    </>
+  );
+}

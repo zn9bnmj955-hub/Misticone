@@ -1,0 +1,104 @@
+@import "tailwindcss";
+@import "@orgasport/ui/tokens.css";
+
+@source "../../../../packages/ui/src";
+
+/* Tailwind utilities mapped to the design tokens (packages/ui/src/tokens.css). */
+@theme inline {
+  --color-bg: var(--os-bg);
+  --color-surface: var(--os-surface);
+  --color-surface-2: var(--os-surface-2);
+  --color-ink: var(--os-ink);
+  --color-ink-soft: var(--os-ink-soft);
+  --color-line: var(--os-line);
+  --color-inverse: var(--os-inverse);
+  --color-on-inverse: var(--os-on-inverse);
+  --color-stage: var(--os-stage);
+  --color-on-stage: var(--os-on-stage);
+  --color-accent: var(--os-accent);
+  --color-accent-ink: var(--os-accent-ink);
+  --color-on-accent: var(--os-on-accent);
+  --color-accent-soft: var(--os-accent-soft);
+  --color-live: var(--os-live);
+  --color-success: var(--os-success);
+  --color-warning: var(--os-warning);
+  --color-danger: var(--os-danger);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --radius-sm: var(--radius-sm);
+  --radius: var(--radius);
+  --radius-lg: var(--radius-lg);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    background: var(--os-bg);
+  }
+  body {
+    background: var(--os-bg);
+    color: var(--os-ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 3px solid var(--os-focus);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--os-accent-soft);
+  }
+}
+
+@layer components {
+  /* Display type: Saira, italic and narrow — the « Direct » signature. */
+  .display {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-stretch: 75%;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    line-height: 0.95;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .eyebrow {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--os-ink-soft);
+  }
+  .live-dot {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--os-live);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .live-dot {
+    animation: live-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+

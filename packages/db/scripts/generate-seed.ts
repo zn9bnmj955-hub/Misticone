@@ -1,0 +1,652 @@
+/**
+ * Generates supabase/seed.sql: sports, a demo club, demo accounts and four
+ * tournaments (3 pétanque, 1 football). Run with `pnpm --filter @orgasport/db seed:gen`.
+ *
+ * Dates are SQL expressions relative to now(), so the "live" tournament is
+ * always live whenever the database is reset.
+ *
+ * LOCAL DEMO ONLY: the demo accounts have a known password.
+ */
+import { SPORTS } from "@orgasport/sports";
+
+// ---------------------------------------------------------------------------
+// Deterministic randomness
+// ---------------------------------------------------------------------------
+function mulberry32(seed: number) {
+  let a = seed;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rand = mulberry32(20261012);
+const pick = <T>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)]!;
+const int = (min: number, max: number) => min + Math.floor(rand() * (max - min + 1));
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j]!, a[i]!];
+  }
+  return a;
+}
+function uuid(): string {
+  const h = () => Math.floor(rand() * 16).toString(16);
+  const s = Array.from({ length: 32 }, h);
+  s[12] = "4";
+  s[16] = ((parseInt(s[16]!, 16) & 0x3) | 0x8).toString(16);
+  const j = s.join("");
+  return `${j.slice(0, 8)}-${j.slice(8, 12)}-${j.slice(12, 16)}-${j.slice(16, 20)}-${j.slice(20)}`;
+}
+
+// ---------------------------------------------------------------------------
+// SQL helpers
+// ---------------------------------------------------------------------------
+type Val = string | number | boolean | null | { sql: string };
+const raw = (sql: string) => ({ sql });
+function lit(v: Val): string {
+  if (v === null) return "null";
+  if (typeof v === "number") return String(v);
+  if (typeof v === "boolean") return v ? "true" : "false";
+  if (typeof v === "object") return v.sql;
+  return `'${v.replace(/'/g, "''")}'`;
+}
+const out: string[] = [];
+function insert(table: string, rows: Record<string, Val>[]) {
+  if (rows.length === 0) return;
+  const cols = Object.keys(rows[0]!);
+  out.push(
+    `insert into ${table} (${cols.join(", ")}) values\n` +
+      rows.map((r) => `  (${cols.map((c) => lit(r[c] ?? null)).join(", ")})`).join(",\n") +
+      ";\n",
+  );
+}
+const ago = (minutes: number) => raw(`now() - interval '${minutes} minutes'`);
+const inDays = (days: number, hour: number) =>
+  raw(`(date_trunc('day', now() at time zone 'Europe/Paris') + interval '${days} days ${hour} hours') at time zone 'Europe/Paris'`);
+
+// ---------------------------------------------------------------------------
+// Reference data
+// ---------------------------------------------------------------------------
+const FIRST = [
+  "Lucas", "Hugo", "Louis", "Gabriel", "Jules", "Arthur", "Nathan", "Léo", "Raphaël", "Adam",
+  "Karim", "Mehdi", "Yanis", "Antoine", "Thomas", "Julien", "Nicolas", "Pierre", "Marc", "Didier",
+  "Patrick", "Gérard", "Michel", "Alain", "Bernard", "Jean-Luc", "Christian", "Serge", "Robert", "René",
+  "Emma", "Jade", "Louise", "Alice", "Chloé", "Léa", "Manon", "Inès", "Camille", "Sarah",
+  "Nathalie", "Isabelle", "Sylvie", "Sandrine", "Martine", "Christine", "Monique", "Fatima", "Laura", "Julie",
+];
+const LAST = [
+  "Martin", "Bernard", "Dubois", "Thomas", "Robert", "Richard", "Petit", "Durand", "Leroy", "Moreau",
+  "Simon", "Laurent", "Lefèvre", "Michel", "Garcia", "David", "Bertrand", "Roux", "Vincent", "Fournier",
+  "Morel", "Girard", "André", "Mercier", "Dupont", "Lambert", "Bonnet", "François", "Martinez", "Legrand",
+  "Garnier", "Faure", "Rousseau", "Blanc", "Guerin", "Muller", "Henry", "Roussel", "Nicolas", "Perrin",
+  "Morin", "Mathieu", "Clément", "Gauthier", "Dumont", "Lopez", "Fontaine", "Chevalier", "Robin", "Masson",
+  "Benali", "Haddad", "Ferrari", "Rossi", "Marchetti", "Santoni", "Giordano", "Pellegrin", "Olivier", "Barbier",
+];
+const PETANQUE_CLUBS = [
+  "AS Les Platanes",
+  "La Boule Aubagnaise",
+  "Pétanque Gémenosienne",
+  "Les Cigales de Cassis",
+  "Boule Joyeuse de Roquevaire",
+  "Amicale Bouliste de Cuges",
+  "La Ciotat Pétanque Club",
+  null,
+] as const;
+
+let phoneCounter = 0;
+const fictionalPhone = () => {
+  // ARCEP range reserved for fiction: 06 39 98 xx xx
+  const n = String(phoneCounter++ % 10000).padStart(4, "0");
+  return `06 39 98 ${n.slice(0, 2)} ${n.slice(2)}`;
+};
+const slugify = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "");
+
+// ---------------------------------------------------------------------------
+// Build
+// ---------------------------------------------------------------------------
+out.push("-- GENERATED by packages/db/scripts/generate-seed.ts. Do not edit by hand.");
+out.push("-- Local demo data only. Demo password for every account: orgasport-demo\n");
+
+// Sports ---------------------------------------------------------------------
+insert(
+  "public.sports",
+  SPORTS.map((s) => ({
+    slug: s.slug,
+    name: s.name,
+    config: raw(`'${JSON.stringify(s).replace(/'/g, "''")}'::jsonb`),
+    enabled: s.enabled,
+    sort_order: s.sortOrder,
+  })),
+);
+
+// Accounts ---------------------------------------------------------------------
+const users = {
+  club: { id: uuid(), email: "club@demo.orgasport.fr", name: "Sandrine Roux" },
+  player: { id: uuid(), email: "joueur@demo.orgasport.fr", name: "Karim Benali" },
+  admin: { id: uuid(), email: "admin@demo.orgasport.fr", name: "Admin OrgaSport" },
+  volunteer: { id: uuid(), email: "benevole@demo.orgasport.fr", name: "Gérard Faure" },
+};
+for (const u of Object.values(users)) {
+  out.push(`insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, recovery_token,
+  email_change_token_new, email_change, email_change_token_current, phone_change, phone_change_token, reauthentication_token)
+values ('00000000-0000-0000-0000-000000000000', ${lit(u.id)}, 'authenticated', 'authenticated', ${lit(u.email)},
+  extensions.crypt('orgasport-demo', extensions.gen_salt('bf')), now(),
+  '{"provider":"email","providers":["email"]}', ${lit(JSON.stringify({ full_name: u.name }))}, now(), now(), '', '', '', '', '', '', '', '');
+insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+values (${lit(uuid())}, ${lit(u.id)}, ${lit(u.id)}, ${lit(JSON.stringify({ sub: u.id, email: u.email, email_verified: true }))}::jsonb, 'email', now(), now(), now());
+`);
+}
+insert("public.platform_admins", [{ user_id: users.admin.id }]);
+
+// Club ------------------------------------------------------------------------
+const AUBAGNE = { lat: 43.2927, lng: 5.5708 };
+const club = { id: uuid(), slug: "as-les-platanes", name: "AS Les Platanes" };
+insert("public.clubs", [
+  {
+    id: club.id,
+    slug: club.slug,
+    name: club.name,
+    kind: "association",
+    sports: raw("array['petanque','football']"),
+    federation: "FFPJP",
+    affiliation_number: "13-0421",
+    address: "Boulodrome des Platanes, 12 allée des Joueurs",
+    postcode: "13400",
+    city: "Aubagne",
+    lat: AUBAGNE.lat,
+    lng: AUBAGNE.lng,
+    default_venue_count: 24,
+    contact_name: users.club.name,
+    contact_email: "contact@as-les-platanes.example",
+    contact_phone: fictionalPhone(),
+    description:
+      "Association fictive de démonstration : pétanque toute l'année sous les platanes, tournoi de foot à 7 pendant les fêtes.",
+    created_by: users.club.id,
+  },
+]);
+insert("public.club_members", [{ club_id: club.id, user_id: users.volunteer.id, role: "member" }]);
+
+out.push(`update public.profiles set display_name = ${lit(users.club.name)}, sports = array['petanque','football'],
+  city = 'Aubagne', postcode = '13400', lat = ${AUBAGNE.lat}, lng = ${AUBAGNE.lng}, active_club_id = ${lit(club.id)},
+  onboarded_at = now() where id = ${lit(users.club.id)};
+update public.profiles set display_name = ${lit(users.player.name)}, sports = array['petanque'], level = 'leisure',
+  is_licensed = true, city = 'Aubagne', postcode = '13400', lat = ${AUBAGNE.lat}, lng = ${AUBAGNE.lng},
+  search_radius_km = 30, notifications_opt_in = true, onboarded_at = now() where id = ${lit(users.player.id)};
+update public.profiles_private set license_number = '13084512' where user_id = ${lit(users.player.id)};
+update public.profiles set display_name = ${lit(users.admin.name)}, onboarded_at = now() where id = ${lit(users.admin.id)};
+update public.profiles set display_name = ${lit(users.volunteer.name)}, sports = array['petanque'], onboarded_at = now() where id = ${lit(users.volunteer.id)};
+`);
+
+// Tournaments ------------------------------------------------------------------
+type TeamRow = { id: string; number: number; clubName: string | null };
+const teamsRows: Record<string, Val>[] = [];
+const playersRows: Record<string, Val>[] = [];
+const privateRows: Record<string, Val>[] = [];
+const registrationRows: Record<string, Val>[] = [];
+const venueRows: Record<string, Val>[] = [];
+const roundRows: Record<string, Val>[] = [];
+const matchRows: Record<string, Val>[] = [];
+
+function makeTeams(
+  tournamentId: string,
+  count: number,
+  size: number,
+  opts: { clubNames?: readonly (string | null)[]; teamNames?: string[]; status?: string; demoPlayerAt?: number } = {},
+): TeamRow[] {
+  const teams: TeamRow[] = [];
+  for (let n = 1; n <= count; n++) {
+    const id = uuid();
+    const clubName = opts.teamNames ? opts.teamNames[n - 1]! : pick(opts.clubNames ?? PETANQUE_CLUBS);
+    teams.push({ id, number: n, clubName });
+    teamsRows.push({
+      id,
+      tournament_id: tournamentId,
+      number: n,
+      name: opts.teamNames ? opts.teamNames[n - 1]! : null,
+      club_name: clubName,
+      status: opts.status ?? "registered",
+      checked_in_at: opts.status === "checked_in" ? ago(int(170, 200)) : null,
+    });
+    let captain = "";
+    let captainEmail = "";
+    for (let p = 1; p <= size; p++) {
+      const isDemo = opts.demoPlayerAt === n && p === 1;
+      const first = isDemo ? "Karim" : pick(FIRST);
+      const last = isDemo ? "Benali" : pick(LAST);
+      const pid = uuid();
+      if (p === 1) {
+        captain = `${first} ${last}`;
+        captainEmail = `${slugify(first)}.${slugify(last)}@example.com`;
+      }
+      playersRows.push({
+        id: pid,
+        team_id: id,
+        user_id: isDemo ? users.player.id : null,
+        first_name: first,
+        last_name: last,
+        position: p,
+        is_substitute: false,
+      });
+      if (isDemo) privateRows.push({ player_id: pid, license_number: "13084512" });
+      else if (rand() < 0.6) privateRows.push({ player_id: pid, license_number: String(int(10000000, 99999999)) });
+    }
+    registrationRows.push({
+      id: uuid(),
+      team_id: id,
+      tournament_id: tournamentId,
+      source: rand() < 0.7 ? "online" : "onsite",
+      user_id: opts.demoPlayerAt === n ? users.player.id : null,
+      captain_name: captain,
+      captain_phone: fictionalPhone(),
+      captain_email: captainEmail,
+      accepted_rules_at: ago(int(1440, 20000)),
+    });
+  }
+  return teams;
+}
+
+function makeVenues(tournamentId: string, count: number, reservedLast = 0, labels?: string[]) {
+  const ids: string[] = [];
+  for (let i = 1; i <= count; i++) {
+    const id = uuid();
+    ids.push(id);
+    venueRows.push({
+      id,
+      tournament_id: tournamentId,
+      label: labels?.[i - 1] ?? String(i),
+      position: i,
+      reserved_for_finals: i > count - reservedLast,
+      available: true,
+    });
+  }
+  return ids;
+}
+
+const loserScore = () => int(0, 12);
+
+/** A finished single-elimination round; returns winners in bracket order. */
+function playRound(
+  tournamentId: string,
+  roundId: string,
+  pairs: [TeamRow, TeamRow][],
+  venues: string[],
+  startMinutesAgo: number,
+): TeamRow[] {
+  const winners: TeamRow[] = [];
+  pairs.forEach(([a, b], i) => {
+    const aWins = rand() < 0.5;
+    const winner = aWins ? a : b;
+    winners.push(winner);
+    const duration = int(35, 70);
+    matchRows.push({
+      id: uuid(),
+      tournament_id: tournamentId,
+      round_id: roundId,
+      position: i + 1,
+      team_a_id: a.id,
+      team_b_id: b.id,
+      venue_id: venues[i % venues.length]!,
+      scheduled_at: ago(startMinutesAgo),
+      started_at: ago(startMinutesAgo - 2),
+      ended_at: ago(startMinutesAgo - duration),
+      score_a: aWins ? 13 : loserScore(),
+      score_b: aWins ? loserScore() : 13,
+      winner_team_id: winner.id,
+      status: "done",
+    });
+  });
+  return winners;
+}
+const pairUp = (teams: TeamRow[]): [TeamRow, TeamRow][] => {
+  const pairs: [TeamRow, TeamRow][] = [];
+  for (let i = 0; i + 1 < teams.length; i += 2) pairs.push([teams[i]!, teams[i + 1]!]);
+  return pairs;
+};
+
+const petanqueSport = SPORTS.find((s) => s.slug === "petanque")!;
+const footballSport = SPORTS.find((s) => s.slug === "football")!;
+const baseConfig = (sport: typeof petanqueSport, extra: Record<string, unknown> = {}) => ({
+  competitionFormat: sport.defaults.competitionFormat,
+  rounds: sport.defaults.rounds,
+  redrawEachRound: sport.defaults.redrawEachRound,
+  consolation: sport.defaults.consolation,
+  consolationFromRound: sport.defaults.consolationFromRound,
+  drawRules: { mode: "random", avoidSameClubFirstRound: sport.defaults.avoidSameClubFirstRound, seeding: false },
+  scoring: sport.scoring,
+  ranking: sport.ranking.criteria,
+  scoreEntry: "table",
+  notifications: { offerToPlayers: true, reminderDayBefore: true },
+  ...extra,
+});
+
+const tournaments: Record<string, Val>[] = [];
+const common = {
+  club_id: club.id,
+  address: "Boulodrome des Platanes, 12 allée des Joueurs",
+  postcode: "13400",
+  city: "Aubagne",
+  lat: AUBAGNE.lat,
+  lng: AUBAGNE.lng,
+  parking: "Parking gratuit de 80 places derrière le boulodrome.",
+  food: "Buvette et sandwichs sur place, grillades le soir.",
+  contact_name: users.club.name,
+  contact_phone: fictionalPhone(),
+  created_by: users.club.id,
+  registration_mode: "both",
+  waitlist_enabled: true,
+};
+
+// 1. Upcoming pétanque (published, registrations open) ----------------------
+const t1 = uuid();
+tournaments.push({
+  id: t1,
+  ...common,
+  sport_slug: "petanque",
+  short_code: "GP3M",
+  name: "Grand Prix des Platanes",
+  status: "published",
+  starts_at: inDays(12, 14),
+  registration_closes_at: inDays(11, 20),
+  checkin_closes_at: inDays(12, 13.5),
+  team_format: "doublette",
+  category: "all",
+  eligibility: "open",
+  max_teams: 64,
+  name_display: "initials",
+  fee_cents: 1000,
+  fee_per: "team",
+  prize_text: "Mises + 300 €",
+  welcome_message: "Bienvenue au Grand Prix ! Pointage à la table de marque jusqu'à 13 h 30.",
+  rules_text: "Règlement FFPJP. Parties en 13 points. Tenue correcte exigée.",
+  config: raw(`'${JSON.stringify(baseConfig(petanqueSport))}'::jsonb`),
+  draw_seed: null,
+  published_at: ago(60 * 24 * 5),
+});
+makeVenues(t1, 32, 2);
+makeTeams(t1, 23, 2);
+
+// 2. Live pétanque: 32 doublettes, round 2 in progress (code 7KQ2) ----------
+const t2 = uuid();
+tournaments.push({
+  id: t2,
+  ...common,
+  sport_slug: "petanque",
+  short_code: "7KQ2",
+  name: "Concours de la Saint-Michel",
+  status: "live",
+  starts_at: ago(150),
+  registration_closes_at: ago(60 * 20),
+  checkin_closes_at: ago(165),
+  team_format: "doublette",
+  category: "all",
+  eligibility: "open",
+  max_teams: 32,
+  name_display: "full",
+  fee_cents: 1000,
+  fee_per: "team",
+  prize_text: "Mises + 200 €",
+  welcome_message: "Bon concours à tous ! Les résultats sont à rendre à la table de marque.",
+  rules_text: "Règlement FFPJP. Parties en 13 points. Complémentaire pour les perdants du 1er tour.",
+  config: raw(
+    `'${JSON.stringify(baseConfig(petanqueSport, { consolation: true, consolationFromRound: 1 }))}'::jsonb`,
+  ),
+  draw_seed: "saint-michel-2026",
+  published_at: ago(60 * 24 * 14),
+});
+const t2Venues = makeVenues(t2, 20, 1);
+const t2Teams = makeTeams(t2, 32, 2, { status: "checked_in", demoPlayerAt: 14 });
+// Round 1: all 16 matches played.
+const r1 = uuid();
+roundRows.push({ id: r1, tournament_id: t2, bracket: "main", number: 1, phase: "main", status: "finished", seed: "r1", drawn_at: ago(150) });
+// Make sure the demo team (14) wins round 1 so it has a match in round 2.
+const shuffled = shuffle(t2Teams);
+const r1Pairs = pairUp(shuffled);
+const r1Winners = playRound(t2, r1, r1Pairs, t2Venues.slice(0, 19), 145);
+const demoTeam = t2Teams[13]!;
+const demoIdx = r1Pairs.findIndex(([a, b]) => a.id === demoTeam.id || b.id === demoTeam.id);
+if (r1Winners[demoIdx]!.id !== demoTeam.id) {
+  // Flip the result of the demo team's first-round match.
+  const m = matchRows[matchRows.length - 16 + demoIdx]!;
+  const [sa, sb] = [m.score_a, m.score_b];
+  m.score_a = sb;
+  m.score_b = sa;
+  m.winner_team_id = demoTeam.id;
+  r1Winners[demoIdx] = demoTeam;
+}
+const r1Losers = r1Pairs.map(([a, b], i) => (r1Winners[i]!.id === a.id ? b : a));
+for (const l of r1Losers) {
+  const row = teamsRows.find((t) => t.id === l.id)!;
+  row.bracket = "consolation";
+}
+// Round 2 (main): 8 matches in various states, redrawn.
+const r2 = uuid();
+roundRows.push({ id: r2, tournament_id: t2, bracket: "main", number: 2, phase: "main", status: "live", seed: "r2", drawn_at: ago(70) });
+const r2Order = shuffle(r1Winners);
+// Put the demo team in the "ready" slot (position 8) on venue 12.
+const di = r2Order.findIndex((t) => t.id === demoTeam.id);
+[r2Order[di], r2Order[14]] = [r2Order[14]!, r2Order[di]!];
+const r2Pairs = pairUp(r2Order);
+const r2States = ["done", "done", "done", "playing", "playing", "playing", "playing", "ready"] as const;
+const r2VenueIdx = [2, 6, 8, 0, 3, 4, 9, 11];
+r2Pairs.forEach(([a, b], i) => {
+  const state = r2States[i]!;
+  const aWins = rand() < 0.5;
+  matchRows.push({
+    id: uuid(),
+    tournament_id: t2,
+    round_id: r2,
+    position: i + 1,
+    team_a_id: a.id,
+    team_b_id: b.id,
+    venue_id: t2Venues[r2VenueIdx[i]!]!,
+    scheduled_at: state === "ready" ? raw("now() + interval '10 minutes'") : ago(65 - i * 3),
+    started_at: state === "ready" ? null : ago(63 - i * 3),
+    ended_at: state === "done" ? ago(int(5, 20)) : null,
+    score_a: state === "done" ? (aWins ? 13 : loserScore()) : null,
+    score_b: state === "done" ? (aWins ? loserScore() : 13) : null,
+    winner_team_id: state === "done" ? (aWins ? a.id : b.id) : null,
+    status: state,
+  });
+});
+// Consolation round 1: 16 losers, 8 matches, mostly playing.
+const c1 = uuid();
+roundRows.push({ id: c1, tournament_id: t2, bracket: "consolation", number: 1, phase: "main", status: "live", seed: "c1", drawn_at: ago(75) });
+pairUp(shuffle(r1Losers)).forEach(([a, b], i) => {
+  const done = i < 2;
+  const aWins = rand() < 0.5;
+  const waiting = i === 7;
+  matchRows.push({
+    id: uuid(),
+    tournament_id: t2,
+    round_id: c1,
+    position: i + 1,
+    team_a_id: a.id,
+    team_b_id: b.id,
+    venue_id: waiting ? null : t2Venues[[1, 5, 7, 10, 12, 13, 14][i]!]!,
+    scheduled_at: waiting ? null : ago(70 - i * 2),
+    started_at: waiting ? null : ago(68 - i * 2),
+    ended_at: done ? ago(int(3, 15)) : null,
+    score_a: done ? (aWins ? 13 : loserScore()) : null,
+    score_b: done ? (aWins ? loserScore() : 13) : null,
+    winner_team_id: done ? (aWins ? a.id : b.id) : null,
+    status: waiting ? "waiting_venue" : done ? "done" : "playing",
+  });
+});
+
+// 3. Finished pétanque: 16 triplettes, full bracket -------------------------
+const t3 = uuid();
+tournaments.push({
+  id: t3,
+  ...common,
+  sport_slug: "petanque",
+  short_code: "TR8E",
+  name: "Trophée d'été des Platanes",
+  status: "finished",
+  starts_at: raw("now() - interval '30 days'"),
+  registration_closes_at: raw("now() - interval '31 days'"),
+  checkin_closes_at: raw("now() - interval '30 days 30 minutes'"),
+  team_format: "triplette",
+  category: "veterans",
+  eligibility: "licensed",
+  max_teams: 16,
+  name_display: "initials",
+  fee_cents: 500,
+  fee_per: "player",
+  prize_text: "Mises + 150 €",
+  rules_text: "Réservé aux licenciés vétérans. Parties en 13 points.",
+  config: raw(
+    `'${JSON.stringify(baseConfig(petanqueSport, { consolation: false, consolationFromRound: null }))}'::jsonb`,
+  ),
+  draw_seed: "ete-2026",
+  published_at: raw("now() - interval '50 days'"),
+});
+const t3Venues = makeVenues(t3, 10);
+let t3Round = makeTeams(t3, 16, 3, { status: "checked_in" });
+for (let r = 1; t3Round.length > 1; r++) {
+  const rid = uuid();
+  const minutesAgo = 60 * 24 * 30 - (r - 1) * 60;
+  roundRows.push({ id: rid, tournament_id: t3, bracket: "main", number: r, phase: "main", status: "finished", seed: `r${r}`, drawn_at: ago(minutesAgo) });
+  t3Round = playRound(t3, rid, pairUp(r === 1 ? shuffle(t3Round) : t3Round), t3Venues, minutesAgo);
+}
+out.push(`-- Winner of the Trophée d'été: team ${t3Round[0]!.number}`);
+
+// 4. Football: 8 teams, foot à 7, upcoming ----------------------------------
+const t4 = uuid();
+tournaments.push({
+  id: t4,
+  ...common,
+  address: "Stade municipal des Platanes, chemin du Stade",
+  parking: "Parking du stade.",
+  sport_slug: "football",
+  short_code: "FT8S",
+  name: "Tournoi des fêtes des Platanes",
+  status: "published",
+  starts_at: inDays(20, 9),
+  registration_closes_at: inDays(18, 20),
+  checkin_closes_at: inDays(20, 8.5),
+  team_format: "foot-7",
+  category: "seniors",
+  eligibility: "open",
+  max_teams: 8,
+  name_display: "full",
+  fee_cents: 5000,
+  fee_per: "team",
+  prize_text: "Coupe et médailles, repas offert aux finalistes",
+  rules_text: "Foot à 7, matchs de 2 × 10 minutes. Protège-tibias obligatoires.",
+  config: raw(`'${JSON.stringify(baseConfig(footballSport, { pools: 2 }))}'::jsonb`),
+  draw_seed: null,
+  published_at: ago(60 * 24 * 3),
+});
+makeVenues(t4, 2, 0, ["A", "B"]);
+makeTeams(t4, 8, 9, {
+  teamNames: [
+    "AS Les Platanes",
+    "FC Gémenos Vétérans",
+    "US Roquevaire",
+    "Cassis FC",
+    "SC La Ciotat",
+    "Entente Cuges",
+    "Auriol Sports",
+    "Carnoux FC",
+  ],
+});
+
+insert("public.tournaments", tournaments);
+insert("public.venues", venueRows);
+insert("public.teams", teamsRows);
+insert("public.players", playersRows);
+insert("public.players_private", privateRows);
+insert("public.registrations", registrationRows);
+insert("public.rounds", roundRows);
+insert("public.matches", matchRows);
+
+// Staff: the club owner organizes everything; a volunteer has a PIN on 7KQ2.
+insert(
+  "public.tournament_staff",
+  [t1, t2, t3, t4].map((tid) => ({
+    id: uuid(),
+    tournament_id: tid,
+    user_id: users.club.id,
+    role: "organizer",
+    label: users.club.name,
+    email: users.club.email,
+    pin_hash: null,
+  })),
+);
+insert("public.tournament_staff", [
+  {
+    id: uuid(),
+    tournament_id: t2,
+    user_id: null,
+    role: "co_organizer",
+    label: "Table de marque (PIN)",
+    email: null,
+    pin_hash: raw("extensions.crypt('4821', extensions.gen_salt('bf'))"),
+  },
+]);
+
+insert("public.follows", [{ id: uuid(), user_id: users.player.id, club_id: club.id, tournament_id: null }]);
+
+insert("public.announcements", [
+  {
+    id: uuid(),
+    club_id: club.id,
+    sport_slug: "petanque",
+    title: "Nouveaux terrains éclairés au boulodrome",
+    body: "Les 8 terrains du fond sont désormais éclairés : concours en nocturne tous les vendredis de juillet.",
+    published_at: ago(60 * 24 * 2),
+    created_by: users.club.id,
+  },
+  {
+    id: uuid(),
+    club_id: club.id,
+    sport_slug: "football",
+    title: "Inscriptions ouvertes pour le tournoi des fêtes",
+    body: "8 équipes maximum, foot à 7. Premier arrivé, premier servi !",
+    published_at: ago(60 * 24 * 3),
+    created_by: users.club.id,
+  },
+]);
+
+// Pricing, settings and legal placeholders --------------------------------------
+insert("public.pricing_plans", [
+  {
+    id: uuid(),
+    code: "lien-concours",
+    label: "Lien concours",
+    description: "Prix de démonstration, à fixer dans l'administration.",
+    price_cents: 2900,
+    currency: "eur",
+    active: true,
+    sort_order: 10,
+  },
+]);
+const settings: [string, unknown, string][] = [
+  ["ai.model", "claude-haiku-5-5", "Modèle de l'assistant"],
+  ["ai.daily_quota", { guest: 5, account: 20, paying_club: 100 }, "Questions par jour"],
+  ["ai.monthly_budget_eur", 20, "Plafond de dépense mensuel de l'assistant"],
+  ["features.sms", false, "Notifications SMS (option payante, désactivée)"],
+  ["features.paypal", false, "PayPal via Stripe"],
+];
+insert(
+  "public.app_settings",
+  settings.map(([key, value, description]) => ({
+    key,
+    value: raw(`'${JSON.stringify(value)}'::jsonb`),
+    description,
+  })),
+);
+insert("public.legal_pages", [
+  { slug: "mentions-legales", title: "Mentions légales", body: "", published: false },
+  { slug: "cgv", title: "Conditions générales de vente", body: "", published: false },
+  { slug: "confidentialite", title: "Politique de confidentialité", body: "", published: false },
+  { slug: "cookies", title: "Cookies", body: "", published: false },
+]);
+
+process.stdout.write(out.join("\n"));

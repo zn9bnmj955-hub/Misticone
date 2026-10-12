@@ -1,0 +1,51 @@
+import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
+import { InlineScript } from "@/components/ui/InlineScript";
+import { getMessages } from "@/i18n";
+import { env } from "@/lib/env";
+import { SPORT_COOKIE } from "@/lib/prefs";
+import "./globals.css";
+
+const saira = localFont({
+  src: [
+    { path: "../fonts/saira-latin-wdth-normal.woff2", style: "normal", weight: "100 900" },
+    { path: "../fonts/saira-latin-wdth-italic.woff2", style: "italic", weight: "100 900" },
+  ],
+  variable: "--font-saira",
+  display: "swap",
+  declarations: [{ prop: "font-stretch", value: "50% 125%" }],
+});
+
+const m = getMessages();
+
+export const metadata: Metadata = {
+  metadataBase: new URL(env.siteUrl),
+  title: { default: `${m.meta.title} · ${m.meta.tagline}`, template: `%s · ${m.meta.title}` },
+  description: m.meta.description,
+  applicationName: m.meta.title,
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#eef0f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#070c24" },
+  ],
+};
+
+// Applies the remembered theme and sport accent before the first paint.
+const BOOT = `(function(){try{var d=document.documentElement;var t=localStorage.getItem("os_theme");if(t==="light"||t==="dark")d.setAttribute("data-theme",t);var m=document.cookie.match(/(?:^|; )${SPORT_COOKIE}=([^;]+)/);if(m&&/^[a-z0-9-]+$/.test(m[1])&&m[1]!=="all")d.setAttribute("data-sport",m[1]);}catch(e){}})();`;
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="fr" className={saira.variable} suppressHydrationWarning>
+      <head>
+        <InlineScript html={BOOT} />
+      </head>
+      <body className="min-h-dvh">{children}</body>
+    </html>
+  );
+}
