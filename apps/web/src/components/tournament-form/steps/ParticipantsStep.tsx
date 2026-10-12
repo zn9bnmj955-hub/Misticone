@@ -2,6 +2,7 @@
 import { fmt, getMessages } from "@/i18n";
 import { ChoiceCard } from "@/components/ui/ChoiceCard";
 import type { TournamentForm } from "@/lib/tournament-form";
+import { categoryLabel } from "../display";
 import { Choice, Group, Help, Stepper, Toggle } from "../fields";
 import { fid, type StepProps } from "./types";
 
@@ -46,7 +47,7 @@ export function ParticipantsStep({ form, sport, update, error }: StepProps) {
         <Choice
           label={p.category}
           value={form.category}
-          options={sport.categories.map((c) => ({ value: c, label: w.categories[c] ?? c }))}
+          options={sport.categories.map((c) => ({ value: c, label: categoryLabel(c) }))}
           onChange={(category) => update({ category })}
           error={error("category")}
         />

@@ -48,9 +48,10 @@ const links = (t: PublishedTournament) => {
 
 const place = (t: PublishedTournament) => [t.address, [t.postcode, t.city].filter(Boolean).join(" ")].filter(Boolean).join(", ");
 
-function footer(): string[] {
+/** Organizer emails come from a no-reply address; co-organizer emails are answered by the organizer. */
+function footer(replyTo?: string): string[] {
   const m = getMessages().payment.email;
-  return [m.footer, m.automatic];
+  return [m.footer, replyTo ? fmt(m.replyToOrganizer, { person: replyTo }) : m.automatic];
 }
 
 export function organizerEmail(t: PublishedTournament): EmailMessage {
@@ -142,6 +143,6 @@ export function coOrganizerEmail(t: PublishedTournament, email: string): EmailMe
     { kind: "note", text: e.noAccount },
     { kind: "links", items: [{ label: e.createAccount, url: signup }, { label: e.publicPage, url: l.page }] },
   ];
-  const { html, text } = renderEmail({ brand: m.meta.title, title: e.title, preheader: e.preheader, blocks, footer: footer() });
+  const { html, text } = renderEmail({ brand: m.meta.title, title: e.title, preheader: e.preheader, blocks, footer: footer(t.organizer.name) });
   return { to: email, subject: fmt(e.subject, { name: t.name }), text, html, replyTo: t.organizer.email };
 }

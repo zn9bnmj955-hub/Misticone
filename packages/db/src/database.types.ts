@@ -801,7 +801,13 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "apply_tournament_changes":
+            "ai_month_cost_micro":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
+"ai_usage_add":
+{ Args: { "p_cost": number,"p_device": string,"p_input": number,"p_output": number,"p_user": string }; Returns: undefined
+                           },
+"apply_tournament_changes":
 { Args: { "p_action": Json,"p_changes": Json,"p_expected_version": number,"p_tournament": string }; Returns: Json
                            },
 "can_manage_tournament":
@@ -838,6 +844,11 @@ isOneToOne: false
                            },
 "is_tournament_public":
 { Args: { "p_tournament": string }; Returns: boolean
+                           },
+"kb_search":
+{ Args: { "p_limit"?: number,"p_query": string,"p_sport"?: string }; Returns: {
+              "content": string,"rank": number,"source_url": string,"sport_slug": string,"title": string
+            }[]
                            },
 "publish_tournament":
 { Args: { "p_fields": Json,"p_payment": string,"p_staff": Json,"p_venues": Json }; Returns: string

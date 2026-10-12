@@ -78,5 +78,8 @@ describe("coOrganizerEmail", () => {
     expect(email.text).toContain("paul@example.fr");
     expect(email.text).toContain(`/connexion?mode=signup&next=${encodeURIComponent("/c/7KQ2/table")}`);
     expect(email.text).not.toContain("504312");
+    // Replies go to the organizer: the footer must not say "do not reply".
+    expect(email.text).not.toContain("ne pas y répondre");
+    expect(email.text).toContain(tournament.organizer.name);
   });
 });

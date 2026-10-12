@@ -6,7 +6,7 @@ import { ChoiceCard } from "@/components/ui/ChoiceCard";
 import { defaultRounds, type TournamentForm } from "@/lib/tournament-form";
 import { Choice, Group, Help, Stepper, Toggle } from "../fields";
 import { FormatAdvisor } from "../FormatAdvisor";
-import { hm } from "../display";
+import { formatLabel, hm } from "../display";
 import { fid, type StepProps } from "./types";
 
 type Criterion = TournamentForm["ranking"][number];
@@ -34,7 +34,7 @@ export function DrawStep({ form, sport, update, error }: StepProps) {
           {sport.competitionFormats.map((f) => (
             <ChoiceCard
               key={f}
-              title={w.formats[f] ?? f}
+              title={formatLabel(f)}
               text={w.formatTexts[f]}
               selected={form.format === f}
               onSelect={() => update({ format: f, rounds: defaultRounds(f, form.maxTeams) })}

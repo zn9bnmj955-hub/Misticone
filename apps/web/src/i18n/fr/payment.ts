@@ -78,7 +78,7 @@ export const payment = {
     receipt: "Reçu",
     invoice: "Facture",
     pendingTitle: "Paiement en cours de confirmation…",
-    pendingText: "Nous attendons la confirmation de Stripe. Cette page se met à jour toute seule.",
+    pendingText: "Nous attendons la confirmation du paiement. Cette page se met à jour toute seule.",
     pendingSlow:
       "La confirmation prend plus de temps que d'habitude. Vous pouvez quitter cette page : vous recevrez un email dès que le concours est publié.",
     refresh: "Actualiser",
@@ -95,6 +95,8 @@ export const payment = {
   email: {
     footer: "OrgaSport — vos concours sportifs, de l'inscription aux résultats.",
     automatic: "Cet email a été envoyé automatiquement, merci de ne pas y répondre.",
+    /** Co-organizer emails are answered by the organizer (reply-to). */
+    replyToOrganizer: "Une question ? Répondez à cet email : votre réponse arrivera à {person}.",
     organizer: {
       subject: "Votre concours est en ligne : {name}",
       preheader: "Lien, QR code, affiche et codes de la table de marque.",

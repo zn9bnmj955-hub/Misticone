@@ -1,14 +1,14 @@
 "use client";
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { Icon } from "@orgasport/ui";
 import { fmt, getMessages } from "@/i18n";
 import { formatEuros } from "@/lib/format";
-import { isoToParis, venueLabelsOf, type FormIssue, type Step } from "@/lib/tournament-form";
+import { isoToParis, venueLabelsOf, type FormIssue, type Step, type TournamentForm } from "@/lib/tournament-form";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { cn } from "@/components/ui/cn";
 import { checkDraft, payDraft, previewPrice, type PricePreview } from "@/app/(app)/club/concours/actions";
-import { hm, longDate } from "../display";
+import { categoryLabel, formatLabel, hm, longDate } from "../display";
 import { issueMessage, orderedIssues, stepOfIssue } from "../issues";
 import { safePlan } from "../plan";
 import { fid, type StepProps } from "./types";
@@ -59,7 +59,13 @@ export function SummaryStep({
 }: StepProps & { issues: FormIssue[]; flush: () => Promise<boolean>; cancelled: boolean }) {
   const w = getMessages().wizard;
   const s = w.summary;
-  const [serverIssues, setServerIssues] = useState<FormIssue[]>([]);
+  // Server issues hold for the form they were computed for: any edit on this
+  // screen (the name, typically) makes them stale, the client check takes over.
+  const [server, setServer] = useState<{ form: TournamentForm; issues: FormIssue[] } | null>(null);
+  const formRef = useRef(form);
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
   const [checked, setChecked] = useState(false);
   const [price, setPrice] = useState<PricePreview | null>(null);
   const [priceError, setPriceError] = useState<string | null>(null);
@@ -73,10 +79,11 @@ export function SummaryStep({
   // The server checks and prices the saved draft: save first.
   useEffect(() => {
     let alive = true;
+    const checkedForm = formRef.current;
     flush()
       .then(() => checkDraft(tournamentId))
       .then((res) => {
-        if (alive && res.ok) setServerIssues(res.issues);
+        if (alive && res.ok) setServer({ form: checkedForm, issues: res.issues });
         if (alive) setChecked(true);
         return previewPrice(tournamentId, null);
       })
@@ -116,12 +123,14 @@ export function SummaryStep({
   }
 
   // Client and server run the same validation; the server's word wins when they differ.
+  const serverIssues = server && server.form === form ? server.issues : [];
   const shown = orderedIssues(issues.length > 0 ? issues : serverIssues);
   const blocked = shown.length > 0;
 
   function pay() {
     setPayError(null);
     startPay(async () => {
+      const sentForm = formRef.current;
       const saved = await flush();
       if (!saved) {
         setPayError(w.price.errors.save!);
@@ -131,7 +140,7 @@ export function SummaryStep({
       // On success the action redirects (payment page or confirmation).
       if (res && !res.ok) {
         setPayError(w.price.errors[res.error] ?? getMessages().common.error);
-        if (res.issues) setServerIssues(res.issues);
+        if (res.issues) setServer({ form: sentForm, issues: res.issues });
         if (res.error === "promo_invalid") setPromo(null);
       }
     });
@@ -194,7 +203,7 @@ export function SummaryStep({
           label: s.teamFormat,
           value: [teamFormat?.label ?? form.teamFormat, form.substitutes > 0 ? fmt(s.substitutes, { count: form.substitutes }) : null].filter(Boolean).join(", "),
         },
-        { label: s.category, value: w.categories[form.category] ?? form.category },
+        { label: s.category, value: categoryLabel(form.category) },
         { label: s.eligibility, value: w.eligibility[form.eligibility] },
         {
           label: s.maxTeams,
@@ -217,7 +226,7 @@ export function SummaryStep({
     {
       step: "draw",
       rows: [
-        { label: s.format, value: [w.formats[form.format] ?? form.format, ...formatExtras].join(" · ") },
+        { label: s.format, value: [formatLabel(form.format), ...formatExtras].join(" · ") },
         { label: s.drawRules, value: drawRules.length ? drawRules.join(" · ") : s.random },
         { label: s.gameEnd, value: gameEnd },
         { label: s.scoreEntry, value: form.scoreEntry === "captains" ? w.draw.scoreEntryCaptains : w.draw.scoreEntryTable },

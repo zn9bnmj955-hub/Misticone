@@ -3,6 +3,8 @@ import { catalogPage } from "./fr/catalogPage";
 import { detail } from "./fr/detail";
 import { registration } from "./fr/registration";
 import { notifications } from "./fr/notifications";
+import { feed } from "./fr/feed";
+import { assistantUi } from "./fr/assistantUi";
 import { clubSpace } from "./fr/clubSpace";
 import { payment } from "./fr/payment";
 import { wizard } from "./fr/wizard";
@@ -629,6 +631,8 @@ export const fr = {
   detail,
   registration,
   notifications,
+  feed,
+  assistantUi,
 };
 
 export type Messages = typeof fr;

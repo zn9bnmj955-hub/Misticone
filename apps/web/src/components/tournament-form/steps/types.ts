@@ -14,7 +14,7 @@ export type StepProps = {
   replace: (form: TournamentForm) => void;
   /** Inline error of a field ("name", "organizer.email"…), once the step has been checked. */
   error: (field: string) => string | undefined;
-  /** {venue}, {venues}, {Venues}: the sport's venue noun for messages. */
+  /** {venue}, {venues}, {Venues}, {teamNoun}: the sport's nouns for messages. */
   vars: Record<string, string>;
   goTo: (step: Step) => void;
 };

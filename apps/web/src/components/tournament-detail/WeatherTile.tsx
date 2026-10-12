@@ -1,0 +1,56 @@
+import { connection } from "next/server";
+import { fmt, getMessages } from "@/i18n";
+import { formatTime } from "@/lib/format";
+import { getForecast, weatherLink } from "@/lib/weather";
+import type { TournamentDetail } from "@/app/(app)/concours/[code]/data";
+import { WeatherIcon } from "./WeatherIcon";
+
+/**
+ * Forecast for the place and time of the tournament (MET Norway, cached one
+ * hour). Out of range or unreachable: only the link to a weather site.
+ */
+async function forecastFor(t: TournamentDetail) {
+  await connection();
+  return getForecast(t.lat, t.lng, t.starts_at, Date.now());
+}
+
+export async function WeatherTile({ t }: { t: TournamentDetail }) {
+  const w = getMessages().detail.weather;
+  const forecast = await forecastFor(t);
+  const link = weatherLink(t.lat, t.lng, t.city);
+  return (
+    <div className="grid gap-3">
+      {forecast ? (
+        <div className="flex items-center gap-3">
+          <span className="text-accent-ink">
+            <WeatherIcon kind={forecast.kind} />
+          </span>
+          <div className="grid">
+            <span className="text-lg font-bold">
+              {w.kinds[forecast.kind]}
+              {forecast.temperatureC !== null && <span className="tabular"> · {fmt(w.temperature, { value: forecast.temperatureC })}</span>}
+            </span>
+            <span className="text-sm text-ink-soft tabular">
+              {[
+                fmt(w.at, { time: formatTime(forecast.at) }),
+                forecast.precipitationMm !== null && forecast.precipitationMm > 0
+                  ? fmt(w.rain, { value: forecast.precipitationMm.toLocaleString("fr-FR") })
+                  : null,
+                forecast.windKmh !== null ? fmt(w.wind, { value: forecast.windKmh }) : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-ink-soft">{w.unavailable}</p>
+      )}
+      <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center font-bold text-accent-ink underline underline-offset-4">
+        {w.more}
+        <span className="sr-only"> {getMessages().detail.more.newTab}</span>
+      </a>
+      {forecast && <p className="text-xs text-ink-soft">{w.attribution}</p>}
+    </div>
+  );
+}

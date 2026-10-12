@@ -19,10 +19,10 @@ export function stepOfIssue(issue: FormIssue): Step {
   return FIELD_STEP[head] ?? "summary";
 }
 
-/** Placeholders used by the messages: the sport's venue noun. */
+/** Placeholders used by the messages: the sport's venue and team nouns. */
 export function venueVars(sport: SportConfig): Record<string, string> {
   const { singular, plural } = sport.venue.noun;
-  return { venue: singular, venues: plural, Venues: plural.charAt(0).toUpperCase() + plural.slice(1) };
+  return { venue: singular, venues: plural, Venues: plural.charAt(0).toUpperCase() + plural.slice(1), teamNoun: sport.teamNoun.plural };
 }
 
 export function issueMessage(issue: FormIssue, vars: Record<string, string | number> = {}): string {

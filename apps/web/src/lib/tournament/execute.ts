@@ -12,8 +12,10 @@ import {
   type EngineState,
 } from "@orgasport/engine";
 import { toDbChanges } from "@orgasport/db";
+import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { env } from "@/lib/env";
+import { notifyFromChanges } from "@/lib/notifications/server";
 import { loadTournament, type LoadedTournament } from "./load";
 import type { StaffActor } from "./staff";
 
@@ -78,6 +80,17 @@ async function persist(
   return { ok: true, version: res.version, actionId: res.action_id, duplicate: res.duplicate };
 }
 
+/** "À vous de jouer" & co. are sent after the response: never slow down or break an action. */
+function scheduleNotifications(code: string, changes: Change[], state: EngineState): void {
+  const job = () => notifyFromChanges(code, changes, state);
+  try {
+    after(job);
+  } catch {
+    // Outside a request (scripts, tests): run it in the background.
+    void job();
+  }
+}
+
 /**
  * Runs an organizer command: load the latest state, compute with the engine,
  * save atomically. If someone else saved in between, start again from the
@@ -121,7 +134,10 @@ export async function executeCommand(args: {
       ...actorFields(args.actor, source),
     });
     if (saved.ok) {
-      if (!saved.duplicate) await broadcastUpdate(args.code, saved.version);
+      if (!saved.duplicate) {
+        await broadcastUpdate(args.code, saved.version);
+        scheduleNotifications(args.code, result.changes, result.state);
+      }
       return { ok: true, version: saved.version, actionId: saved.actionId, changes: saved.duplicate ? [] : result.changes, duplicate: saved.duplicate };
     }
     if (!saved.conflict) throw new Error(saved.message);

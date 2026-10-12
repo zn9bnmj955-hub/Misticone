@@ -209,13 +209,14 @@ export type PayDraftResult = Fail<CheckoutError | "auth" | "invalid"> & { issues
  */
 export async function payDraft(id: string, promoCode?: string | null): Promise<PayDraftResult> {
   const promo = promoSchema.safeParse(promoCode);
-  if (!idSchema.safeParse(id).success || !promo.success) return fail("invalid");
-  const { user } = await currentUser();
-  if (!user) return fail("auth");
+  if (!promo.success) return fail("invalid");
+  // Club membership and draft status are checked here too, not only by the checkout.
+  const a = await access(id);
+  if (a.error) return fail(a.error);
 
   let result: CheckoutResult;
   try {
-    result = await startCheckout({ tournamentId: id, userId: user.id, promoCode: normalizePromoCode(promo.data) || null });
+    result = await startCheckout({ tournamentId: id, userId: a.userId, promoCode: normalizePromoCode(promo.data) || null });
   } catch (e) {
     console.error("payDraft: startCheckout failed", e);
     return fail("provider_error");

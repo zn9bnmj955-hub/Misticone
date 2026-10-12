@@ -45,12 +45,15 @@ export async function processCheckoutAction(action: SessionAction): Promise<stri
     }
     case "fail":
     case "expire": {
-      const { error } = await admin
+      // Only a pending payment changes: a late "expired" never undoes a confirmed payment.
+      const { data, error } = await admin
         .from("payments")
         .update({ status: action.kind === "fail" ? "failed" : "expired" })
         .eq("id", payment.id)
-        .eq("status", "pending");
+        .eq("status", "pending")
+        .select("id");
       if (error) throw error;
+      if (!data || data.length === 0) return `unchanged_${payment.status}`;
       return action.kind === "fail" ? "failed" : "expired";
     }
   }

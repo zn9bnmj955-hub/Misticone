@@ -5,7 +5,7 @@ import { Icon } from "@orgasport/ui";
 import { fmt, getMessages } from "@/i18n";
 import { Button } from "@/components/ui/Button";
 import { DATE_RE, TIME_RE, suggestFormat, type FormatAdvice, type TournamentForm } from "@/lib/tournament-form";
-import { hm } from "./display";
+import { formatLabel, hm } from "./display";
 import { Stepper } from "./fields";
 
 function safeAdvice(form: TournamentForm, sport: SportConfig, teams: number): FormatAdvice | null {
@@ -42,6 +42,8 @@ export function FormatAdvisor({
   const [applied, setApplied] = useState(false);
   const advice = useMemo(() => (open ? safeAdvice(form, sport, teams) : null), [open, form, sport, teams]);
   const venues = sport.venue.noun.plural;
+  // The reasons speak of the sport's own teams and venues (« doublettes », « tables »…).
+  const nouns = { teamNoun: sport.teamNoun.plural, teamNounOne: sport.teamNoun.singular, venueNoun: venues };
 
   if (!open) {
     return (
@@ -94,7 +96,7 @@ export function FormatAdvisor({
         <div className="grid gap-3" aria-live="polite">
           <div className="grid gap-1">
             <p className="eyebrow">{t.proposal}</p>
-            <p className="display text-3xl">{w.formats[format] ?? format}</p>
+            <p className="display text-3xl">{formatLabel(format)}</p>
             <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-bold text-ink-soft">
               {details.map((d) => (
                 <li key={d}>{d}</li>
@@ -105,7 +107,7 @@ export function FormatAdvisor({
             {advice.reasons.map((r) => (
               <li key={r.key} className="flex items-start gap-2">
                 <Icon name="check" size={16} className="mt-0.5 shrink-0 text-accent-ink" />
-                {fmt(w.advice[r.key] ?? r.key, r.values)}
+                {fmt(w.advice[r.key] ?? r.key, { ...nouns, ...r.values })}
               </li>
             ))}
           </ul>

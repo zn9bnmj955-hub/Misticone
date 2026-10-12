@@ -12,6 +12,13 @@ import { getViewer, type Viewer } from "@/lib/viewer";
 
 export const metadata: Metadata = { title: getMessages().wizard.editTitle, robots: { index: false } };
 
+/**
+ * A private, per-draft page: there is no static shell worth prerendering (the
+ * app shell's active tab reads the pathname, unknown until the request for a
+ * draft id), so the segment is allowed to wait for the request.
+ */
+export const instant = false;
+
 type Params = Promise<{ id: string }>;
 type Search = Promise<{ etape?: string; annule?: string }>;
 type WizardProps = ComponentProps<typeof TournamentWizard>;

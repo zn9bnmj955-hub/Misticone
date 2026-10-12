@@ -4,7 +4,7 @@ import { Icon } from "@orgasport/ui";
 import { fmt, getMessages } from "@/i18n";
 import { formatTime } from "@/lib/format";
 import type { TournamentForm } from "@/lib/tournament-form";
-import { hm, longDate } from "./display";
+import { formatLabel, hm, longDate } from "./display";
 import { safePlan, summarizePlan } from "./plan";
 
 /**
@@ -21,7 +21,7 @@ export function VenuePlan({ form, sport, advisor }: { form: TournamentForm; spor
   const vars = {
     teams: form.maxTeams,
     teamNoun: sport.teamNoun.plural,
-    format: (w.formats[form.format] ?? form.format).toLowerCase(),
+    format: formatLabel(form.format).toLowerCase(),
     venues: sport.venue.noun.plural,
     needed: s.needed,
     free: s.free,

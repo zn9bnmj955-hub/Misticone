@@ -1,4 +1,16 @@
+import { getMessages } from "@/i18n";
+
 /** Small display helpers for the creation form (dates typed as "YYYY-MM-DD", times as "HH:MM"). */
+
+/** Competition format name, shared with the catalog and the tournament pages. */
+export function formatLabel(format: string): string {
+  return (getMessages().formatLabels as Record<string, string>)[format] ?? format;
+}
+
+/** Category name, shared with the catalog and the tournament pages. */
+export function categoryLabel(category: string): string {
+  return (getMessages().categoryLabels as Record<string, string>)[category] ?? category;
+}
 
 /** "2026-10-24" → "samedi 24 octobre 2026". */
 export function longDate(date: string): string {
