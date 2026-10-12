@@ -17,7 +17,7 @@ import { env } from "@/lib/env";
 import { loadTournament, type LoadedTournament } from "./load";
 import type { StaffActor } from "./staff";
 
-export type ActionSource = "table" | "captain" | "system";
+export type ActionSource = "table" | "captain" | "system" | "online";
 
 export type ExecuteResult =
   | { ok: true; version: number; actionId: number; changes: Change[]; duplicate: boolean }
@@ -38,7 +38,7 @@ function actorFields(actor: StaffActor | null, source: ActionSource) {
   return {
     actor_user_id: actor?.kind === "account" ? actor.userId : null,
     actor_staff_id: actor?.staffId ?? null,
-    actor_label: actor?.label ?? (source === "captain" ? "Capitaine" : "Automatique"),
+    actor_label: actor?.label ?? (source === "captain" ? "Capitaine" : source === "online" ? "Inscription en ligne" : "Automatique"),
     source,
   };
 }

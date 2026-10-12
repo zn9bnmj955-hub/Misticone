@@ -58,7 +58,7 @@ export const football: SportConfigInput = {
     schedule: { startTime: "09:30", registrationClosesBeforeMinutes: 60, checkInClosesBeforeMinutes: 30 },
   },
   notifications: {
-    yourTurn: "Match dans {minutes} min, {venue} {venueLabel} · contre {opponent}",
+    yourTurn: "Match dans {minutes} min, {venueLabel} {venue} · contre {opponent}",
     drawPublished: "Le calendrier des matchs est publié.",
     scoreValidated: "Score validé : {score}.",
     tournamentStarting: "Coup d'envoi à {time}. Bon tournoi !",

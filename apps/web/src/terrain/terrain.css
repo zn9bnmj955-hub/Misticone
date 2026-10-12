@@ -74,6 +74,29 @@ html.is-offline .offline{display:block}
 .score-form label{display:block;font-weight:800;font-size:14px;margin-right:8px}
 .score-form input{width:72px;height:50px;font:900 22px system-ui;text-align:center;border:2px solid var(--os-line);border-radius:10px;background:var(--os-bg);color:var(--os-ink);display:block}
 .score-form .btn{margin-left:8px}
+/* Registration form (plain HTML, no JS needed) */
+.reg-title{margin-top:8px}
+.reg h2{margin-top:26px}
+.pl{border:2px solid var(--os-line);border-radius:14px;padding:6px 14px 12px;margin:12px 0}
+.pl legend{font-weight:900;font-size:18px;padding:0 6px}
+.fld{margin:10px 0}
+.fld label{display:block;font-weight:800;margin-bottom:4px}
+.fld input,.fld select{display:block;width:100%;height:52px;border:2px solid var(--os-line);border-radius:10px;padding:0 12px;font:700 18px system-ui,sans-serif;color:var(--os-ink);background:var(--os-bg)}
+.fld small{display:block;margin-top:4px;color:var(--os-ink-soft);font-weight:600}
+.fld.bad input,.fld.bad select{border-color:var(--os-danger)}
+.ferr{display:block;color:var(--os-danger)!important;font-weight:800!important}
+.chk{display:block;font-weight:800;margin:14px 0 6px;padding:10px 12px;border:2px solid var(--os-line);border-radius:10px}
+.chk input{width:24px;height:24px;vertical-align:-5px;margin-right:8px}
+.chk.bad{border-color:var(--os-danger)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.btn.wide{display:block;width:100%;text-align:center;height:60px;line-height:60px;font-size:20px}
+.actions .btn{margin:0 8px 8px 0}
+details.rules{margin:12px 0;border:2px solid var(--os-line);border-radius:10px;padding:10px 12px}
+details.rules summary{font-weight:900;cursor:pointer}
+details.rules p{white-space:pre-line}
+.reg-sum dd.muted{margin-top:10px}
+.notify .note{margin:0}
+.cta{display:block;margin:8px 0 4px}
 @media (max-width:420px){.v{font-size:46px}h1{font-size:26px}}
 @media print{
   body{background:#fff;color:#000;font-size:12pt}

@@ -1,4 +1,8 @@
 import { admin } from "./fr/admin";
+import { catalogPage } from "./fr/catalogPage";
+import { detail } from "./fr/detail";
+import { registration } from "./fr/registration";
+import { notifications } from "./fr/notifications";
 import { clubSpace } from "./fr/clubSpace";
 import { payment } from "./fr/payment";
 import { wizard } from "./fr/wizard";
@@ -253,6 +257,22 @@ export const fr = {
     finished: "Terminé",
     archived: "Archivé",
   },
+  /** Generic labels shared by every area (categories and competition formats are not sport-specific). */
+  categoryLabels: {
+    all: "Toutes catégories",
+    seniors: "Seniors",
+    veterans: "Vétérans",
+    women: "Féminines",
+    mixed: "Mixte",
+    youth: "Jeunes",
+  },
+  formatLabels: {
+    single_elimination: "Élimination directe",
+    pools_then_bracket: "Poules puis phase finale",
+    swiss: "Parties fixes avec classement (système suisse)",
+    round_robin: "Championnat (chacun contre chacun)",
+    melee_rotation: "Mêlée tournante",
+  },
   tournament: {
     teamsCount: "{count} / {max} équipes",
     teamsCountNoMax: "{count} équipes",
@@ -267,6 +287,7 @@ export const fr = {
     phase2: "La vue complète du concours (tirage en direct, terrains, résultats) arrive à la phase 2.",
   },
   terrain: {
+    register: { open: "S'inscrire", waitlist: "S'inscrire (liste d'attente)" },
     findLabel: "Trouver mon équipe",
     findPlaceholder: "Numéro ou nom",
     findButton: "OK",
@@ -604,6 +625,10 @@ export const fr = {
   payment,
   clubSpace,
   admin,
+  catalogPage,
+  detail,
+  registration,
+  notifications,
 };
 
 export type Messages = typeof fr;

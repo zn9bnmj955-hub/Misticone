@@ -23,7 +23,7 @@ import { autoAssignVenues } from "./venues";
 export type PlayerInput = { firstName: string; lastName: string };
 
 export type Command =
-  | { type: "team.create"; name?: string | null; club?: string | null; players: PlayerInput[]; checkIn?: boolean; source?: "onsite" | "organizer" }
+  | { type: "team.create"; name?: string | null; club?: string | null; players: PlayerInput[]; checkIn?: boolean; source?: "onsite" | "organizer" | "online" }
   | { type: "team.update"; teamId: string; name?: string | null; club?: string | null; seed?: number | null; players?: PlayerInput[] }
   | { type: "team.setStatus"; teamId: string; status: TeamStatus }
   | { type: "team.lateEntry"; teamId: string }

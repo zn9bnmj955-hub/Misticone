@@ -143,5 +143,78 @@ do $$ begin
 end $$;
 select pg_temp.reset();
 
+-- 6. Phase 3: promo codes, invitations, payments and publication are server-only.
+select pg_temp.as_anon();
+do $$ begin
+  if (select count(*) from public.promo_codes) <> 0 then raise exception 'anon must not read promo codes'; end if;
+  if (select count(*) from public.payments) <> 0 then raise exception 'anon must not read payments'; end if;
+  if exists (select 1 from public.tournaments where status = 'draft') then raise exception 'anon must not see drafts'; end if;
+end $$;
+select pg_temp.reset();
+
+select pg_temp.as_user('club@demo.orgasport.fr');
+do $$ begin
+  if (select count(*) from public.promo_codes) <> 0 then raise exception 'clubs must not list promo codes'; end if;
+  if not exists (select 1 from public.tournaments where status = 'draft') then raise exception 'club should see its draft'; end if;
+  begin
+    perform token_hash from public.club_invitations;
+    raise exception 'invitation tokens readable';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.payments (tournament_id, club_id, amount_cents, status)
+      select id, club_id, 0, 'paid' from public.tournaments where status = 'draft' limit 1;
+    raise exception 'a club created its own payment';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.publish_tournament(gen_random_uuid(), '{}'::jsonb, '[]'::jsonb, '[]'::jsonb);
+    raise exception 'publish_tournament callable by a club';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into storage.objects (bucket_id, name, owner) values ('tournament-media', 'x/poster.png', auth.uid());
+    raise exception 'direct uploads to tournament media allowed';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+select pg_temp.reset();
+
+select pg_temp.as_user('admin@demo.orgasport.fr');
+do $$ begin
+  if (select count(*) from public.promo_codes) < 2 then raise exception 'admins should list promo codes'; end if;
+end $$;
+select pg_temp.reset();
+
+-- Publication by the service role: atomic, idempotent, PINs hashed, promo counted.
+do $$
+declare
+  t uuid := (select id from public.tournaments where status = 'draft' limit 1);
+  c uuid := (select club_id from public.tournaments where status = 'draft' limit 1);
+  promo uuid := (select id from public.promo_codes where code = 'BIENVENUE');
+  pay uuid;
+  r text;
+begin
+  insert into public.payments (tournament_id, club_id, amount_cents, status, provider, promo_code_id)
+    values (t, c, 0, 'pending', 'free', promo) returning id into pay;
+  perform set_config('role', 'service_role', true);
+  perform set_config('request.jwt.claims', '{"role":"service_role"}', true);
+  r := public.publish_tournament(pay,
+    jsonb_build_object('name', 'Concours publié', 'starts_at', now() + interval '7 days', 'city', 'Aubagne', 'max_teams', 32),
+    '[{"label":"1","position":1},{"label":"Honneur","position":2,"reserved":true}]'::jsonb,
+    '[{"role":"co_organizer","label":"Bénévole 1","pin":"123456"},{"role":"co_organizer","label":"co","email":"benevole@demo.orgasport.fr"}]'::jsonb);
+  if r <> 'published' then raise exception 'expected published, got %', r; end if;
+  if public.publish_tournament(pay, '{}'::jsonb, '[]'::jsonb, '[]'::jsonb) <> 'already_published' then raise exception 'not idempotent'; end if;
+  perform set_config('role', 'postgres', true);
+  perform set_config('request.jwt.claims', '', true);
+  if (select status from public.tournaments where id = t) <> 'published' then raise exception 'tournament not published'; end if;
+  if (select count(*) from public.venues where tournament_id = t) <> 2 then raise exception 'venues not created'; end if;
+  if (select pin_hash from public.tournament_staff where tournament_id = t and label = 'Bénévole 1') in (null, '123456') then raise exception 'PIN not hashed'; end if;
+  if (select user_id from public.tournament_staff where tournament_id = t and label = 'co') is null then raise exception 'co-organizer with a confirmed account not linked'; end if;
+  if (select redemptions from public.promo_codes where id = promo) <> 1 then raise exception 'promo redemption not counted once'; end if;
+  if (select status from public.payments where id = pay) <> 'paid' then raise exception 'payment not marked paid'; end if;
+end $$;
+select pg_temp.reset();
+
 \echo 'RLS checks passed'
 rollback;

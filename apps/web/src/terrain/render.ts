@@ -4,6 +4,7 @@ import { fmt, getMessages, type Messages } from "@/i18n";
 import { env } from "@/lib/env";
 import { formatDay, formatEuros, formatTime } from "@/lib/format";
 import type { TournamentMeta } from "@/lib/tournament/load";
+import { registrationWindow } from "@/lib/tournament/registration-rules";
 import { html, jsonForScript, raw, type SafeHtml } from "./html";
 import { TERRAIN_CSS } from "./styles.generated";
 import { LIVE_SCRIPT } from "./live-script";
@@ -348,6 +349,15 @@ function liveContent(ctx: Ctx, found: TeamView[] | null): SafeHtml {
   </div>`;
 }
 
+/** « S'inscrire » while online registrations are open (or on the waiting list). */
+function registerLink(t: RenderInput): SafeHtml {
+  const active = Object.values(t.state.teams).filter((x) => x.status !== "waitlist" && x.status !== "withdrawn").length;
+  const window = registrationWindow(t.meta, active, t.now.getTime());
+  if (window !== "open" && window !== "waitlist") return html``;
+  const r = getMessages().terrain.register;
+  return html`<p class="cta no-print"><a class="btn" href="/c/${t.meta.short_code}/inscription">${window === "waitlist" ? r.waitlist : r.open}</a></p>`;
+}
+
 export function renderTerrainPage(t: RenderInput, opts: { fragment: boolean }): string {
   const m = getMessages();
   const teams = buildTeamViews(t.state, t.meta.name_display);
@@ -396,6 +406,7 @@ export function renderTerrainPage(t: RenderInput, opts: { fragment: boolean }): 
     <a class="brand" href="/">Orga<b>Sport</b></a><span class="code">${code}</span>
     <h1>${t.meta.name}</h1>
     <p class="meta">${[t.sport.name, format, t.meta.city].filter(Boolean).join(" · ")} · ${formatDay(t.meta.starts_at)}</p>
+    ${registerLink(t)}
   </header>
   <p class="offline" role="status">${tm.offline}</p>
   <form class="find" method="get" action="/c/${code}" role="search">
