@@ -1,3 +1,8 @@
+import { admin } from "./fr/admin";
+import { clubSpace } from "./fr/clubSpace";
+import { payment } from "./fr/payment";
+import { wizard } from "./fr/wizard";
+
 /**
  * French interface texts. Every visible string goes through this file so a
  * second language only needs a sibling file with the same shape.
@@ -594,6 +599,11 @@ export const fr = {
   footer: {
     rights: "OrgaSport",
   },
+  // Areas split into their own files (src/i18n/fr/*.ts).
+  wizard,
+  payment,
+  clubSpace,
+  admin,
 };
 
 export type Messages = typeof fr;

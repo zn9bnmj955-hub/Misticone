@@ -7,12 +7,40 @@ import type { CompetitionFormat, ScoringRules, SportRules, TournamentConfig } fr
  * reads. This is the only bridge between sports and the engine: the engine
  * itself never looks at a sport slug.
  */
-export function rulesFromSport(sport: SportConfig, teamFormatId?: string | null): SportRules {
+const scoringOverrideSchema = z
+  .object({
+    timeLimitMinutes: z.number().int().min(1).max(600).nullable(),
+    durationMinutes: z.number().int().min(1).max(600),
+  })
+  .partial();
+
+/**
+ * Optional per-tournament overrides of the sport's game length, stored in
+ * tournaments.config.scoring: a time limit for score-based games, a duration
+ * for timed games. Anything invalid is ignored.
+ */
+function applyScoringOverride(scoring: ScoringRules, typical: number, stored: unknown): { scoring: ScoringRules; typical: number } {
+  const raw = (stored as { scoring?: unknown } | null | undefined)?.scoring;
+  const parsed = scoringOverrideSchema.safeParse(raw ?? {});
+  if (!parsed.success) return { scoring, typical };
+  const o = parsed.data;
+  if (scoring.mode === "points" && o.timeLimitMinutes !== undefined) {
+    const limit = o.timeLimitMinutes;
+    return { scoring: { ...scoring, timeLimitMinutes: limit }, typical: limit ? Math.min(typical, limit) : typical };
+  }
+  if (scoring.mode === "time" && o.durationMinutes !== undefined) {
+    return { scoring: { ...scoring, durationMinutes: o.durationMinutes }, typical: o.durationMinutes };
+  }
+  return { scoring, typical };
+}
+
+export function rulesFromSport(sport: SportConfig, teamFormatId?: string | null, storedConfig?: unknown): SportRules {
   const format = sport.teamFormats.find((f) => f.id === teamFormatId) ?? sport.teamFormats.find((f) => f.id === sport.defaults.teamFormat);
+  const { scoring, typical } = applyScoringOverride(sport.scoring as ScoringRules, sport.typicalMatchMinutes, storedConfig);
   return {
-    scoring: sport.scoring as ScoringRules,
+    scoring,
     venueUsage: sport.venue.usage,
-    typicalMatchMinutes: sport.typicalMatchMinutes,
+    typicalMatchMinutes: typical,
     changeoverMinutes: sport.changeoverMinutes,
     ranking: sport.ranking.criteria,
     matchPoints: sport.ranking.matchPoints,

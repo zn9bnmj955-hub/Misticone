@@ -609,6 +609,37 @@ insert("public.pricing_plans", [
     active: true,
     sort_order: 10,
   },
+  {
+    id: uuid(),
+    code: "petit-concours",
+    label: "Petit concours (16 équipes max.)",
+    description: "Prix de démonstration pour les petits concours.",
+    price_cents: 1900,
+    currency: "eur",
+    max_teams: 16,
+    active: true,
+    sort_order: 20,
+  },
+]);
+// Demo promo codes (local only).
+insert("public.promo_codes", [
+  { id: uuid(), code: "BIENVENUE", description: "Premier concours offert (démo)", percent_off: 100, active: true },
+  { id: uuid(), code: "CLUB50", description: "-50 % (démo)", percent_off: 50, active: true },
+]);
+// A draft left half-way by the club: the dashboard shows "Continuer".
+insert("public.tournaments", [
+  {
+    id: uuid(),
+    club_id: club.id,
+    sport_slug: "petanque",
+    name: "Concours de la Toussaint",
+    status: "draft",
+    created_by: users.club.id,
+    draft_step: "participants",
+    draft_form: raw(
+      `'${JSON.stringify({ sportSlug: "petanque", name: "Concours de la Toussaint", teamFormat: "triplette" }).replace(/'/g, "''")}'::jsonb`,
+    ),
+  },
 ]);
 const settings: [string, unknown, string][] = [
   ["ai.model", "claude-haiku-5-5", "Modèle de l'assistant"],

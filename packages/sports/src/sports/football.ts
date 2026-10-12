@@ -55,6 +55,7 @@ export const football: SportConfigInput = {
     redrawEachRound: false,
     poolSystem: "round_robin",
     poolSize: 4,
+    schedule: { startTime: "09:30", registrationClosesBeforeMinutes: 60, checkInClosesBeforeMinutes: 30 },
   },
   notifications: {
     yourTurn: "Match dans {minutes} min, {venue} {venueLabel} · contre {opponent}",

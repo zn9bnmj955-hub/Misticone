@@ -92,7 +92,7 @@ export async function loadTournament(code: string, opts: { secrets?: boolean } =
       teamSecrets: (secrets.data ?? []) as Record<string, unknown>[],
       registrations: registrations.data ?? [],
     },
-    rulesFromSport(sport, row.team_format),
+    rulesFromSport(sport, row.team_format, row.config),
     resolveConfig(row.config, sport),
   );
   return { meta, sport, state, version: row.state_version };

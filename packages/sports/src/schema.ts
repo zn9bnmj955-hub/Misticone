@@ -134,6 +134,12 @@ export const sportConfigSchema = z.object({
     /** Pools: "gsl" = pétanque 4-team pool in 3 games, "round_robin" = everyone plays everyone. */
     poolSystem: z.enum(["gsl", "round_robin"]),
     poolSize: z.number().int().min(3).max(8),
+    /** Usual schedule of the day, local time (Europe/Paris). */
+    schedule: z.object({
+      startTime: z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/),
+      registrationClosesBeforeMinutes: z.number().int().min(0),
+      checkInClosesBeforeMinutes: z.number().int().min(0),
+    }),
   }),
   notifications: notificationTemplatesSchema,
 });

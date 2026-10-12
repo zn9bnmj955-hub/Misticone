@@ -68,6 +68,7 @@ export const petanque: SportConfigInput = {
     redrawEachRound: true,
     poolSystem: "gsl",
     poolSize: 4,
+    schedule: { startTime: "14:30", registrationClosesBeforeMinutes: 45, checkInClosesBeforeMinutes: 15 },
   },
   notifications: {
     yourTurn: "À vous ! {venueLabel} {venue} · {time} · contre {opponent}",
