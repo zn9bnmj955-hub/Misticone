@@ -102,3 +102,16 @@
   }
 }
 
+
+/* Backup printing from the scoring table (rendered on this device). */
+#print-root {
+  display: none;
+}
+@media print {
+  html.printing body > *:not(#print-root) {
+    display: none !important;
+  }
+  html.printing #print-root {
+    display: block;
+  }
+}

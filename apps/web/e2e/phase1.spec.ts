@@ -80,8 +80,8 @@ test("a player in a live tournament reaches the next match in one tap", async ({
   const start = Date.now();
   await page.getByRole("link", { name: "Mon tirage" }).click();
   await page.waitForURL(/\/c\/7KQ2\?equipe=14/);
-  await expect(page.getByText("contre l'équipe").filter({ visible: true })).toBeVisible();
-  await expect(page.locator(".display", { hasText: /^12$/ }).filter({ visible: true })).toBeVisible();
+  await expect(page.locator("#mon-equipe")).toContainText("À vous ! contre l'équipe");
+  await expect(page.locator("#mon-equipe .v").first()).toHaveText("12");
   expect(Date.now() - start).toBeLessThan(10_000);
 });
 

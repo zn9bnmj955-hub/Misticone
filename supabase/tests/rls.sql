@@ -110,5 +110,38 @@ do $$ begin
 end $$;
 select pg_temp.reset();
 
+-- 5. Phase 2: team score codes and the write function are server-only.
+select pg_temp.as_anon();
+do $$ begin
+  if (select count(*) from public.team_secrets) <> 0 then raise exception 'anon must not read team codes'; end if;
+  if (select count(*) from public.tournament_actions) <> 0 then raise exception 'anon must not read history'; end if;
+  begin
+    perform public.apply_tournament_changes(gen_random_uuid(), 0, '[]'::jsonb, '{}'::jsonb);
+    raise exception 'anon called apply_tournament_changes';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.verify_staff_pin(gen_random_uuid(), '4821');
+    raise exception 'anon called verify_staff_pin';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+select pg_temp.reset();
+select pg_temp.as_user('joueur@demo.orgasport.fr');
+do $$ begin
+  if (select count(*) from public.team_secrets) <> 0 then raise exception 'player must not read team codes'; end if;
+  begin
+    perform public.apply_tournament_changes(gen_random_uuid(), 0, '[]'::jsonb, '{}'::jsonb);
+    raise exception 'player called apply_tournament_changes';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+select pg_temp.reset();
+select pg_temp.as_user('club@demo.orgasport.fr');
+do $$ begin
+  if (select count(*) from public.team_secrets) = 0 then raise exception 'organizer should read team codes'; end if;
+end $$;
+select pg_temp.reset();
+
 \echo 'RLS checks passed'
 rollback;

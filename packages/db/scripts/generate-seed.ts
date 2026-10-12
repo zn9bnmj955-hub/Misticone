@@ -7,7 +7,19 @@
  *
  * LOCAL DEMO ONLY: the demo accounts have a known password.
  */
-import { SPORTS } from "@orgasport/sports";
+import { SPORTS, requireSport, type SportConfig } from "@orgasport/sports";
+import {
+  applyCommand,
+  createIdGenerator,
+  defaultTournamentConfig,
+  rulesFromSport,
+  teamScoreCode,
+  type Command,
+  type EngineState,
+  type Match,
+  type TournamentConfig,
+} from "@orgasport/engine";
+import { entityToRow } from "../src/engine-mapping";
 
 // ---------------------------------------------------------------------------
 // Deterministic randomness
@@ -184,35 +196,53 @@ update public.profiles set display_name = ${lit(users.volunteer.name)}, sports =
 `);
 
 // Tournaments ------------------------------------------------------------------
-type TeamRow = { id: string; number: number; clubName: string | null };
-const teamsRows: Record<string, Val>[] = [];
-const playersRows: Record<string, Val>[] = [];
-const privateRows: Record<string, Val>[] = [];
-const registrationRows: Record<string, Val>[] = [];
-const venueRows: Record<string, Val>[] = [];
-const roundRows: Record<string, Val>[] = [];
-const matchRows: Record<string, Val>[] = [];
+// Played by the draw engine itself, so the demo data is exactly what a real
+// tournament produces. Times are computed against a virtual "now" and written
+// as offsets from now() in SQL.
 
-function makeTeams(
-  tournamentId: string,
+const VIRTUAL_NOW = Date.UTC(2026, 9, 12, 14, 0);
+const at = (minutes: number) => new Date(VIRTUAL_NOW + minutes * 60_000).toISOString();
+const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+const relative = (iso: string) => raw(`now() + interval '${Math.round((Date.parse(iso) - VIRTUAL_NOW) / 60_000)} minutes'`);
+
+/** Engine row → SQL values (timestamps become offsets from now()). */
+function sqlRow(row: Record<string, unknown>): Record<string, Val> {
+  const out: Record<string, Val> = {};
+  for (const [k, v] of Object.entries(row)) {
+    if (typeof v === "string" && ISO.test(v)) out[k] = relative(v);
+    else if (Array.isArray(v)) out[k] = raw(`array[${v.map((x) => lit(String(x))).join(",")}]::uuid[]`);
+    else out[k] = v as Val;
+  }
+  return out;
+}
+
+type Extra = { captainName: string; captainEmail: string; userId: string | null };
+const registrationExtras = new Map<string, Extra>();
+const playerUserIds = new Map<string, string>();
+const licenseRows: Record<string, Val>[] = [];
+const engineStates: EngineState[] = [];
+
+function makeEngineTeams(
   count: number,
   size: number,
-  opts: { clubNames?: readonly (string | null)[]; teamNames?: string[]; status?: string; demoPlayerAt?: number } = {},
-): TeamRow[] {
-  const teams: TeamRow[] = [];
+  opts: { clubNames?: readonly (string | null)[]; teamNames?: string[]; status: "registered" | "checked_in"; demoPlayerAt?: number; checkedInAt?: string },
+): Pick<EngineState, "teams" | "players" | "teamSecrets" | "registrations"> {
+  const teams: EngineState["teams"] = {};
+  const players: EngineState["players"] = {};
+  const teamSecrets: EngineState["teamSecrets"] = {};
+  const registrations: EngineState["registrations"] = {};
   for (let n = 1; n <= count; n++) {
     const id = uuid();
-    const clubName = opts.teamNames ? opts.teamNames[n - 1]! : pick(opts.clubNames ?? PETANQUE_CLUBS);
-    teams.push({ id, number: n, clubName });
-    teamsRows.push({
+    teams[id] = {
       id,
-      tournament_id: tournamentId,
       number: n,
       name: opts.teamNames ? opts.teamNames[n - 1]! : null,
-      club_name: clubName,
-      status: opts.status ?? "registered",
-      checked_in_at: opts.status === "checked_in" ? ago(int(170, 200)) : null,
-    });
+      club: opts.teamNames ? opts.teamNames[n - 1]! : pick(opts.clubNames ?? PETANQUE_CLUBS),
+      status: opts.status,
+      seed: null,
+      bracket: "main",
+      checkedInAt: opts.status === "checked_in" ? (opts.checkedInAt ?? at(-180)) : null,
+    };
     let captain = "";
     let captainEmail = "";
     for (let p = 1; p <= size; p++) {
@@ -224,106 +254,37 @@ function makeTeams(
         captain = `${first} ${last}`;
         captainEmail = `${slugify(first)}.${slugify(last)}@example.com`;
       }
-      playersRows.push({
-        id: pid,
-        team_id: id,
-        user_id: isDemo ? users.player.id : null,
-        first_name: first,
-        last_name: last,
-        position: p,
-        is_substitute: false,
-      });
-      if (isDemo) privateRows.push({ player_id: pid, license_number: "13084512" });
-      else if (rand() < 0.6) privateRows.push({ player_id: pid, license_number: String(int(10000000, 99999999)) });
+      players[pid] = { id: pid, teamId: id, firstName: first, lastName: last, position: p };
+      if (isDemo) {
+        playerUserIds.set(pid, users.player.id);
+        licenseRows.push({ player_id: pid, license_number: "13084512" });
+      } else if (rand() < 0.6) licenseRows.push({ player_id: pid, license_number: String(int(10000000, 99999999)) });
     }
-    registrationRows.push({
-      id: uuid(),
-      team_id: id,
-      tournament_id: tournamentId,
-      source: rand() < 0.7 ? "online" : "onsite",
-      user_id: opts.demoPlayerAt === n ? users.player.id : null,
-      captain_name: captain,
-      captain_phone: fictionalPhone(),
-      captain_email: captainEmail,
-      accepted_rules_at: ago(int(1440, 20000)),
-    });
+    teamSecrets[id] = { id, code: teamScoreCode(id) };
+    const regId = uuid();
+    registrations[regId] = { id: regId, teamId: id, source: rand() < 0.7 ? "online" : "onsite" };
+    registrationExtras.set(regId, { captainName: captain, captainEmail, userId: opts.demoPlayerAt === n ? users.player.id : null });
   }
-  return teams;
+  return { teams, players, teamSecrets, registrations };
 }
 
-function makeVenues(tournamentId: string, count: number, reservedLast = 0, labels?: string[]) {
-  const ids: string[] = [];
+function makeVenuesState(count: number, reservedLast = 0, labels?: string[]): EngineState["venues"] {
+  const venues: EngineState["venues"] = {};
   for (let i = 1; i <= count; i++) {
     const id = uuid();
-    ids.push(id);
-    venueRows.push({
-      id,
-      tournament_id: tournamentId,
-      label: labels?.[i - 1] ?? String(i),
-      position: i,
-      reserved_for_finals: i > count - reservedLast,
-      available: true,
-    });
+    venues[id] = { id, label: labels?.[i - 1] ?? String(i), position: i, reservedForFinals: i > count - reservedLast, available: true };
   }
-  return ids;
+  return venues;
 }
 
-const loserScore = () => int(0, 12);
-
-/** A finished single-elimination round; returns winners in bracket order. */
-function playRound(
-  tournamentId: string,
-  roundId: string,
-  pairs: [TeamRow, TeamRow][],
-  venues: string[],
-  startMinutesAgo: number,
-): TeamRow[] {
-  const winners: TeamRow[] = [];
-  pairs.forEach(([a, b], i) => {
-    const aWins = rand() < 0.5;
-    const winner = aWins ? a : b;
-    winners.push(winner);
-    const duration = int(35, 70);
-    matchRows.push({
-      id: uuid(),
-      tournament_id: tournamentId,
-      round_id: roundId,
-      position: i + 1,
-      team_a_id: a.id,
-      team_b_id: b.id,
-      venue_id: venues[i % venues.length]!,
-      scheduled_at: ago(startMinutesAgo),
-      started_at: ago(startMinutesAgo - 2),
-      ended_at: ago(startMinutesAgo - duration),
-      score_a: aWins ? 13 : loserScore(),
-      score_b: aWins ? loserScore() : 13,
-      winner_team_id: winner.id,
-      status: "done",
-    });
-  });
-  return winners;
+let opCounter = 0;
+function run(state: EngineState, cmd: Command, minutes: number): EngineState {
+  const op = `seed-${state.tournament.id}-${++opCounter}`;
+  return applyCommand(state, cmd, { now: at(minutes), newId: createIdGenerator(op), seed: op }).state;
 }
-const pairUp = (teams: TeamRow[]): [TeamRow, TeamRow][] => {
-  const pairs: [TeamRow, TeamRow][] = [];
-  for (let i = 0; i + 1 < teams.length; i += 2) pairs.push([teams[i]!, teams[i + 1]!]);
-  return pairs;
-};
 
-const petanqueSport = SPORTS.find((s) => s.slug === "petanque")!;
-const footballSport = SPORTS.find((s) => s.slug === "football")!;
-const baseConfig = (sport: typeof petanqueSport, extra: Record<string, unknown> = {}) => ({
-  competitionFormat: sport.defaults.competitionFormat,
-  rounds: sport.defaults.rounds,
-  redrawEachRound: sport.defaults.redrawEachRound,
-  consolation: sport.defaults.consolation,
-  consolationFromRound: sport.defaults.consolationFromRound,
-  drawRules: { mode: "random", avoidSameClubFirstRound: sport.defaults.avoidSameClubFirstRound, seeding: false },
-  scoring: sport.scoring,
-  ranking: sport.ranking.criteria,
-  scoreEntry: "table",
-  notifications: { offerToPlayers: true, reminderDayBefore: true },
-  ...extra,
-});
+const petanqueSport = requireSport("petanque");
+const footballSport = requireSport("football");
 
 const tournaments: Record<string, Val>[] = [];
 const common = {
@@ -342,8 +303,29 @@ const common = {
   waitlist_enabled: true,
 };
 
+function engineState(
+  id: string,
+  status: EngineState["tournament"]["status"],
+  startsAt: string | null,
+  maxTeams: number | null,
+  sport: SportConfig,
+  teamFormat: string,
+  config: TournamentConfig,
+  parts: Pick<EngineState, "teams" | "players" | "teamSecrets" | "registrations">,
+  venues: EngineState["venues"],
+): EngineState {
+  return { tournament: { id, status, startsAt, maxTeams, config }, rules: rulesFromSport(sport, teamFormat), venues, rounds: {}, matches: {}, ...parts };
+}
+
+const scoreFor = (s: EngineState, winnerSide: "A" | "B") => {
+  const target = s.rules.scoring.mode === "points" ? s.rules.scoring.target : 3;
+  const loser = int(0, target - 1);
+  return winnerSide === "A" ? { scoreA: target, scoreB: loser } : { scoreA: loser, scoreB: target };
+};
+
 // 1. Upcoming pétanque (published, registrations open) ----------------------
 const t1 = uuid();
+const t1Config = defaultTournamentConfig(petanqueSport);
 tournaments.push({
   id: t1,
   ...common,
@@ -364,22 +346,24 @@ tournaments.push({
   prize_text: "Mises + 300 €",
   welcome_message: "Bienvenue au Grand Prix ! Pointage à la table de marque jusqu'à 13 h 30.",
   rules_text: "Règlement FFPJP. Parties en 13 points. Tenue correcte exigée.",
-  config: raw(`'${JSON.stringify(baseConfig(petanqueSport))}'::jsonb`),
+  config: raw(`'${JSON.stringify(t1Config)}'::jsonb`),
   draw_seed: null,
   published_at: ago(60 * 24 * 5),
 });
-makeVenues(t1, 32, 2);
-makeTeams(t1, 23, 2);
+engineStates.push(
+  engineState(t1, "published", null, 64, petanqueSport, "doublette", t1Config, makeEngineTeams(23, 2, { status: "registered" }), makeVenuesState(32, 2)),
+);
 
 // 2. Live pétanque: 32 doublettes, round 2 in progress (code 7KQ2) ----------
 const t2 = uuid();
+const t2Config: TournamentConfig = { ...defaultTournamentConfig(petanqueSport), bracketMode: "redraw", consolation: { enabled: true, losersOfRound: 1 } };
 tournaments.push({
   id: t2,
   ...common,
   sport_slug: "petanque",
   short_code: "7KQ2",
   name: "Concours de la Saint-Michel",
-  status: "live",
+  status: "check_in",
   starts_at: ago(150),
   registration_closes_at: ago(60 * 20),
   checkin_closes_at: ago(165),
@@ -393,101 +377,65 @@ tournaments.push({
   prize_text: "Mises + 200 €",
   welcome_message: "Bon concours à tous ! Les résultats sont à rendre à la table de marque.",
   rules_text: "Règlement FFPJP. Parties en 13 points. Complémentaire pour les perdants du 1er tour.",
-  config: raw(
-    `'${JSON.stringify(baseConfig(petanqueSport, { consolation: true, consolationFromRound: 1 }))}'::jsonb`,
-  ),
+  config: raw(`'${JSON.stringify(t2Config)}'::jsonb`),
   draw_seed: "saint-michel-2026",
   published_at: ago(60 * 24 * 14),
 });
-const t2Venues = makeVenues(t2, 20, 1);
-const t2Teams = makeTeams(t2, 32, 2, { status: "checked_in", demoPlayerAt: 14 });
-// Round 1: all 16 matches played.
-const r1 = uuid();
-roundRows.push({ id: r1, tournament_id: t2, bracket: "main", number: 1, phase: "main", status: "finished", seed: "r1", drawn_at: ago(150) });
-// Make sure the demo team (14) wins round 1 so it has a match in round 2.
-const shuffled = shuffle(t2Teams);
-const r1Pairs = pairUp(shuffled);
-const r1Winners = playRound(t2, r1, r1Pairs, t2Venues.slice(0, 19), 145);
-const demoTeam = t2Teams[13]!;
-const demoIdx = r1Pairs.findIndex(([a, b]) => a.id === demoTeam.id || b.id === demoTeam.id);
-if (r1Winners[demoIdx]!.id !== demoTeam.id) {
-  // Flip the result of the demo team's first-round match.
-  const m = matchRows[matchRows.length - 16 + demoIdx]!;
-  const [sa, sb] = [m.score_a, m.score_b];
-  m.score_a = sb;
-  m.score_b = sa;
-  m.winner_team_id = demoTeam.id;
-  r1Winners[demoIdx] = demoTeam;
+{
+  const venues = makeVenuesState(14, 1, [...Array.from({ length: 13 }, (_, i) => String(i + 1)), "Honneur"]);
+  const parts = makeEngineTeams(32, 2, { status: "checked_in", demoPlayerAt: 14, checkedInAt: at(-175) });
+  const demoTeam = Object.values(parts.teams).find((t) => t.number === 14)!.id;
+  let s = engineState(t2, "check_in", at(-150), 32, petanqueSport, "doublette", t2Config, parts, venues);
+  s = run(s, { type: "round.draw", bracket: "main", seed: "saint-michel-2026" }, -150);
+  // Round 1: every match played, the demo team wins.
+  let clock = -150;
+  const roundOf = (m: Match) => s.rounds[m.roundId]!;
+  for (let guard = 0; guard < 100; guard++) {
+    const r1 = Object.values(s.matches).filter((m) => roundOf(m).bracket === "main" && roundOf(m).number === 1 && m.status === "ready");
+    if (r1.length === 0) break;
+    const m = r1.sort((a, b) => (a.scheduledAt ?? "").localeCompare(b.scheduledAt ?? ""))[0]!;
+    clock = Math.max(clock + 2, Math.round((Date.parse(m.scheduledAt!) - VIRTUAL_NOW) / 60_000) + int(35, 55));
+    const side = m.sideA.includes(demoTeam) ? "A" : m.sideB.includes(demoTeam) ? "B" : rand() < 0.5 ? "A" : "B";
+    s = run(s, { type: "match.score", matchId: m.id, ...scoreFor(s, side) }, clock);
+  }
+  // Round 2 and consolation round 1 were drawn automatically.
+  const inRound = (bracket: "main" | "consolation", n: number) =>
+    Object.values(s.matches)
+      .filter((m) => roundOf(m).bracket === bracket && roundOf(m).number === n)
+      .sort((a, b) => a.position - b.position);
+  const demoMatch = () => inRound("main", 2).find((m) => [...m.sideA, ...m.sideB].includes(demoTeam))!;
+  let played = 0;
+  for (const m of inRound("main", 2)) {
+    if (m.id === demoMatch().id || s.matches[m.id]!.status !== "ready") continue;
+    clock += 3;
+    if (played++ < 3) s = run(s, { type: "match.score", matchId: m.id, ...scoreFor(s, rand() < 0.5 ? "A" : "B") }, clock);
+    else s = run(s, { type: "match.start", matchId: m.id }, clock);
+  }
+  let consPlayed = 0;
+  for (const m of inRound("consolation", 1)) {
+    if (s.matches[m.id]!.status !== "ready") continue;
+    clock += 2;
+    if (consPlayed++ < 2) s = run(s, { type: "match.score", matchId: m.id, ...scoreFor(s, rand() < 0.5 ? "A" : "B") }, clock);
+    else s = run(s, { type: "match.start", matchId: m.id }, clock);
+  }
+  // The demo team plays next on venue 12 ("À vous de jouer").
+  const venue12 = Object.values(s.venues).find((v) => v.label === "12")!;
+  if (demoMatch().status === "ready" || demoMatch().status === "waiting_venue") {
+    s = run(s, { type: "match.setVenue", matchId: demoMatch().id, venueId: venue12.id }, -4);
+  }
+  engineStates.push(s);
 }
-const r1Losers = r1Pairs.map(([a, b], i) => (r1Winners[i]!.id === a.id ? b : a));
-for (const l of r1Losers) {
-  const row = teamsRows.find((t) => t.id === l.id)!;
-  row.bracket = "consolation";
-}
-// Round 2 (main): 8 matches in various states, redrawn.
-const r2 = uuid();
-roundRows.push({ id: r2, tournament_id: t2, bracket: "main", number: 2, phase: "main", status: "live", seed: "r2", drawn_at: ago(70) });
-const r2Order = shuffle(r1Winners);
-// Put the demo team in the "ready" slot (position 8) on venue 12.
-const di = r2Order.findIndex((t) => t.id === demoTeam.id);
-[r2Order[di], r2Order[14]] = [r2Order[14]!, r2Order[di]!];
-const r2Pairs = pairUp(r2Order);
-const r2States = ["done", "done", "done", "playing", "playing", "playing", "playing", "ready"] as const;
-const r2VenueIdx = [2, 6, 8, 0, 3, 4, 9, 11];
-r2Pairs.forEach(([a, b], i) => {
-  const state = r2States[i]!;
-  const aWins = rand() < 0.5;
-  matchRows.push({
-    id: uuid(),
-    tournament_id: t2,
-    round_id: r2,
-    position: i + 1,
-    team_a_id: a.id,
-    team_b_id: b.id,
-    venue_id: t2Venues[r2VenueIdx[i]!]!,
-    scheduled_at: state === "ready" ? raw("now() + interval '10 minutes'") : ago(65 - i * 3),
-    started_at: state === "ready" ? null : ago(63 - i * 3),
-    ended_at: state === "done" ? ago(int(5, 20)) : null,
-    score_a: state === "done" ? (aWins ? 13 : loserScore()) : null,
-    score_b: state === "done" ? (aWins ? loserScore() : 13) : null,
-    winner_team_id: state === "done" ? (aWins ? a.id : b.id) : null,
-    status: state,
-  });
-});
-// Consolation round 1: 16 losers, 8 matches, mostly playing.
-const c1 = uuid();
-roundRows.push({ id: c1, tournament_id: t2, bracket: "consolation", number: 1, phase: "main", status: "live", seed: "c1", drawn_at: ago(75) });
-pairUp(shuffle(r1Losers)).forEach(([a, b], i) => {
-  const done = i < 2;
-  const aWins = rand() < 0.5;
-  const waiting = i === 7;
-  matchRows.push({
-    id: uuid(),
-    tournament_id: t2,
-    round_id: c1,
-    position: i + 1,
-    team_a_id: a.id,
-    team_b_id: b.id,
-    venue_id: waiting ? null : t2Venues[[1, 5, 7, 10, 12, 13, 14][i]!]!,
-    scheduled_at: waiting ? null : ago(70 - i * 2),
-    started_at: waiting ? null : ago(68 - i * 2),
-    ended_at: done ? ago(int(3, 15)) : null,
-    score_a: done ? (aWins ? 13 : loserScore()) : null,
-    score_b: done ? (aWins ? loserScore() : 13) : null,
-    winner_team_id: done ? (aWins ? a.id : b.id) : null,
-    status: waiting ? "waiting_venue" : done ? "done" : "playing",
-  });
-});
 
-// 3. Finished pétanque: 16 triplettes, full bracket -------------------------
+// 3. Finished pétanque: 16 triplettes, fixed bracket --------------------------
 const t3 = uuid();
+const t3Config: TournamentConfig = { ...defaultTournamentConfig(petanqueSport), bracketMode: "fixed", consolation: { enabled: false, losersOfRound: 1 } };
 tournaments.push({
   id: t3,
   ...common,
   sport_slug: "petanque",
   short_code: "TR8E",
   name: "Trophée d'été des Platanes",
-  status: "finished",
+  status: "check_in",
   starts_at: raw("now() - interval '30 days'"),
   registration_closes_at: raw("now() - interval '31 days'"),
   checkin_closes_at: raw("now() - interval '30 days 30 minutes'"),
@@ -500,24 +448,29 @@ tournaments.push({
   fee_per: "player",
   prize_text: "Mises + 150 €",
   rules_text: "Réservé aux licenciés vétérans. Parties en 13 points.",
-  config: raw(
-    `'${JSON.stringify(baseConfig(petanqueSport, { consolation: false, consolationFromRound: null }))}'::jsonb`,
-  ),
+  config: raw(`'${JSON.stringify(t3Config)}'::jsonb`),
   draw_seed: "ete-2026",
   published_at: raw("now() - interval '50 days'"),
 });
-const t3Venues = makeVenues(t3, 10);
-let t3Round = makeTeams(t3, 16, 3, { status: "checked_in" });
-for (let r = 1; t3Round.length > 1; r++) {
-  const rid = uuid();
-  const minutesAgo = 60 * 24 * 30 - (r - 1) * 60;
-  roundRows.push({ id: rid, tournament_id: t3, bracket: "main", number: r, phase: "main", status: "finished", seed: `r${r}`, drawn_at: ago(minutesAgo) });
-  t3Round = playRound(t3, rid, pairUp(r === 1 ? shuffle(t3Round) : t3Round), t3Venues, minutesAgo);
+{
+  const start = -60 * 24 * 30;
+  let s = engineState(t3, "check_in", at(start), 16, petanqueSport, "triplette", t3Config, makeEngineTeams(16, 3, { status: "checked_in", checkedInAt: at(start - 20) }), makeVenuesState(10));
+  s = run(s, { type: "round.draw", bracket: "main", seed: "ete-2026" }, start);
+  let clock = start;
+  for (let guard = 0; guard < 200 && s.tournament.status !== "finished"; guard++) {
+    const m = Object.values(s.matches)
+      .filter((x) => x.status === "ready")
+      .sort((a, b) => (a.scheduledAt ?? "").localeCompare(b.scheduledAt ?? ""))[0];
+    if (!m) break;
+    clock = Math.max(clock + 2, Math.round((Date.parse(m.scheduledAt!) - VIRTUAL_NOW) / 60_000) + int(35, 60));
+    s = run(s, { type: "match.score", matchId: m.id, ...scoreFor(s, rand() < 0.5 ? "A" : "B") }, clock);
+  }
+  engineStates.push(s);
 }
-out.push(`-- Winner of the Trophée d'été: team ${t3Round[0]!.number}`);
 
 // 4. Football: 8 teams, foot à 7, upcoming ----------------------------------
 const t4 = uuid();
+const t4Config = defaultTournamentConfig(footballSport);
 tournaments.push({
   id: t4,
   ...common,
@@ -539,32 +492,62 @@ tournaments.push({
   fee_per: "team",
   prize_text: "Coupe et médailles, repas offert aux finalistes",
   rules_text: "Foot à 7, matchs de 2 × 10 minutes. Protège-tibias obligatoires.",
-  config: raw(`'${JSON.stringify(baseConfig(footballSport, { pools: 2 }))}'::jsonb`),
+  config: raw(`'${JSON.stringify(t4Config)}'::jsonb`),
   draw_seed: null,
   published_at: ago(60 * 24 * 3),
 });
-makeVenues(t4, 2, 0, ["A", "B"]);
-makeTeams(t4, 8, 9, {
-  teamNames: [
-    "AS Les Platanes",
-    "FC Gémenos Vétérans",
-    "US Roquevaire",
-    "Cassis FC",
-    "SC La Ciotat",
-    "Entente Cuges",
-    "Auriol Sports",
-    "Carnoux FC",
-  ],
-});
+engineStates.push(
+  engineState(
+    t4,
+    "published",
+    null,
+    8,
+    footballSport,
+    "foot-7",
+    t4Config,
+    makeEngineTeams(8, 9, {
+      status: "registered",
+      teamNames: ["AS Les Platanes", "FC Gémenos Vétérans", "US Roquevaire", "Cassis FC", "SC La Ciotat", "Entente Cuges", "Auriol Sports", "Carnoux FC"],
+    }),
+    makeVenuesState(2, 0, ["A", "B"]),
+  ),
+);
 
+// Final status of each tournament comes from the engine (live / finished).
+for (const s of engineStates) {
+  const row = tournaments.find((t) => t.id === s.tournament.id)!;
+  row.status = s.tournament.status;
+  row.state_version = 0;
+}
 insert("public.tournaments", tournaments);
-insert("public.venues", venueRows);
-insert("public.teams", teamsRows);
-insert("public.players", playersRows);
-insert("public.players_private", privateRows);
-insert("public.registrations", registrationRows);
-insert("public.rounds", roundRows);
-insert("public.matches", matchRows);
+
+const rowsOf = <K extends keyof EngineState>(key: K, entity: Parameters<typeof entityToRow>[0]) =>
+  engineStates.flatMap((s) => Object.values(s[key] as unknown as Record<string, Record<string, unknown>>).map((e) => entityToRow(entity, e, s.tournament.id)));
+
+insert("public.venues", rowsOf("venues", "venue").map(sqlRow));
+insert("public.teams", rowsOf("teams", "team").map(sqlRow));
+insert(
+  "public.players",
+  rowsOf("players", "player").map((r) => sqlRow({ ...r, user_id: playerUserIds.get(r.id as string) ?? null })),
+);
+insert("public.players_private", licenseRows);
+insert("public.team_secrets", rowsOf("teamSecrets", "teamSecret").map(sqlRow));
+insert(
+  "public.registrations",
+  rowsOf("registrations", "registration").map((r) => {
+    const extra = registrationExtras.get(r.id as string)!;
+    return sqlRow({
+      ...r,
+      user_id: extra.userId,
+      captain_name: extra.captainName,
+      captain_phone: fictionalPhone(),
+      captain_email: extra.captainEmail,
+      accepted_rules_at: at(-int(1440, 20000)),
+    });
+  }),
+);
+insert("public.rounds", rowsOf("rounds", "round").map(sqlRow));
+insert("public.matches", rowsOf("matches", "match").map(sqlRow));
 
 // Staff: the club owner organizes everything; a volunteer has a PIN on 7KQ2.
 insert(

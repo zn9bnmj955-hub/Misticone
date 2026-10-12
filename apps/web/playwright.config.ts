@@ -1,4 +1,8 @@
+import { loadEnvConfig } from "@next/env";
 import { defineConfig, devices } from "@playwright/test";
+
+// Same environment as the app (apps/web/.env.local): keys are never written in tests.
+loadEnvConfig(__dirname);
 
 /**
  * End-to-end tests. Requires the local Supabase stack (`pnpm db:start`) with
@@ -6,6 +10,7 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./e2e",
+  globalSetup: "./e2e/global-setup.ts",
   timeout: 60_000,
   fullyParallel: false,
   workers: 1,

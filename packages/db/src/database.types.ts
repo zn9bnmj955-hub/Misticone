@@ -193,14 +193,14 @@ isOneToOne: false
                   ]
                 },"matches": {
                   Row: {
-                    "ended_at": string | null,"id": string,"position": number,"round_id": string,"scheduled_at": string | null,"score_a": number | null,"score_b": number | null,"started_at": string | null,"status": Database["public"]['Enums']["match_status"],"team_a_id": string | null,"team_b_id": string | null,"tournament_id": string,"updated_at": string,"venue_id": string | null,"version": number,"winner_team_id": string | null
+                    "ended_at": string | null,"id": string,"pool": string | null,"position": number,"queued_at": string | null,"round_id": string,"scheduled_at": string | null,"score_a": number | null,"score_b": number | null,"side_a": (string)[] | null,"side_b": (string)[] | null,"started_at": string | null,"status": Database["public"]['Enums']["match_status"],"team_a_id": string | null,"team_b_id": string | null,"tiebreak_a": number | null,"tiebreak_b": number | null,"tournament_id": string,"updated_at": string,"venue_id": string | null,"version": number,"winner_side": string | null,"winner_team_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "ended_at"?: string | null,"id"?: string,"position": number,"round_id": string,"scheduled_at"?: string | null,"score_a"?: number | null,"score_b"?: number | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["match_status"],"team_a_id"?: string | null,"team_b_id"?: string | null,"tournament_id": string,"updated_at"?: string,"venue_id"?: string | null,"version"?: number,"winner_team_id"?: string | null
+                    "ended_at"?: string | null,"id"?: string,"pool"?: string | null,"position": number,"queued_at"?: string | null,"round_id": string,"scheduled_at"?: string | null,"score_a"?: number | null,"score_b"?: number | null,"side_a"?: (string)[] | null,"side_b"?: (string)[] | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["match_status"],"team_a_id"?: string | null,"team_b_id"?: string | null,"tiebreak_a"?: number | null,"tiebreak_b"?: number | null,"tournament_id": string,"updated_at"?: string,"venue_id"?: string | null,"version"?: number,"winner_side"?: string | null,"winner_team_id"?: string | null
                   }
                   Update: {
-                    "ended_at"?: string | null,"id"?: string,"position"?: number,"round_id"?: string,"scheduled_at"?: string | null,"score_a"?: number | null,"score_b"?: number | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["match_status"],"team_a_id"?: string | null,"team_b_id"?: string | null,"tournament_id"?: string,"updated_at"?: string,"venue_id"?: string | null,"version"?: number,"winner_team_id"?: string | null
+                    "ended_at"?: string | null,"id"?: string,"pool"?: string | null,"position"?: number,"queued_at"?: string | null,"round_id"?: string,"scheduled_at"?: string | null,"score_a"?: number | null,"score_b"?: number | null,"side_a"?: (string)[] | null,"side_b"?: (string)[] | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["match_status"],"team_a_id"?: string | null,"team_b_id"?: string | null,"tiebreak_a"?: number | null,"tiebreak_b"?: number | null,"tournament_id"?: string,"updated_at"?: string,"venue_id"?: string | null,"version"?: number,"winner_side"?: string | null,"winner_team_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -473,6 +473,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"rate_limits": {
+                  Row: {
+                    "count": number,"key": string,"window_start": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "count": number,"key": string,"window_start": string
+                  }
+                  Update: {
+                    "count"?: number,"key"?: string,"window_start"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"registrations": {
                   Row: {
                     "accepted_rules_at": string | null,"captain_email": string | null,"captain_name": string | null,"captain_phone": string | null,"created_at": string,"device_token_hash": string | null,"id": string,"source": Database["public"]['Enums']["registration_source"],"team_id": string,"tournament_id": string,"user_id": string | null
@@ -521,14 +535,14 @@ isOneToOne: false
                   ]
                 },"score_submissions": {
                   Row: {
-                    "confirmed_at": string | null,"created_at": string,"id": string,"match_id": string,"score_a": number,"score_b": number,"status": Database["public"]['Enums']["score_submission_status"],"submitted_by_team": string | null,"submitted_by_user": string | null
+                    "confirmed_at": string | null,"created_at": string,"id": string,"match_id": string,"score_a": number,"score_b": number,"side": string | null,"status": Database["public"]['Enums']["score_submission_status"],"submitted_by_team": string | null,"submitted_by_user": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "confirmed_at"?: string | null,"created_at"?: string,"id"?: string,"match_id": string,"score_a": number,"score_b": number,"status"?: Database["public"]['Enums']["score_submission_status"],"submitted_by_team"?: string | null,"submitted_by_user"?: string | null
+                    "confirmed_at"?: string | null,"created_at"?: string,"id"?: string,"match_id": string,"score_a": number,"score_b": number,"side"?: string | null,"status"?: Database["public"]['Enums']["score_submission_status"],"submitted_by_team"?: string | null,"submitted_by_user"?: string | null
                   }
                   Update: {
-                    "confirmed_at"?: string | null,"created_at"?: string,"id"?: string,"match_id"?: string,"score_a"?: number,"score_b"?: number,"status"?: Database["public"]['Enums']["score_submission_status"],"submitted_by_team"?: string | null,"submitted_by_user"?: string | null
+                    "confirmed_at"?: string | null,"created_at"?: string,"id"?: string,"match_id"?: string,"score_a"?: number,"score_b"?: number,"side"?: string | null,"status"?: Database["public"]['Enums']["score_submission_status"],"submitted_by_team"?: string | null,"submitted_by_user"?: string | null
                   }
                   Relationships: [
                     {
@@ -559,6 +573,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"team_secrets": {
+                  Row: {
+                    "code": string,"team_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "code": string,"team_id": string
+                  }
+                  Update: {
+                    "code"?: string,"team_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "team_secrets_team_id_fkey"
+      columns: ["team_id"]
+isOneToOne: true
+      referencedRelation: "teams"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"teams": {
                   Row: {
                     "bracket": Database["public"]['Enums']["bracket_kind"],"checked_in_at": string | null,"club_name": string | null,"created_at": string,"id": string,"name": string | null,"number": number,"seed": number | null,"status": Database["public"]['Enums']["team_status"],"tournament_id": string
@@ -581,14 +615,14 @@ isOneToOne: false
                   ]
                 },"tournament_actions": {
                   Row: {
-                    "actor_staff_id": string | null,"actor_user_id": string | null,"client_op_id": string | null,"created_at": string,"id": number,"inverse": Json | null,"payload": NonNullable<Json>,"tournament_id": string,"type": string,"undone_at": string | null,"undone_by_action": number | null
+                    "actor_label": string | null,"actor_staff_id": string | null,"actor_user_id": string | null,"changes": Json | null,"client_op_id": string | null,"created_at": string,"id": number,"inverse": Json | null,"payload": NonNullable<Json>,"source": string,"state_version": number | null,"tournament_id": string,"type": string,"undone_at": string | null,"undone_by_action": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "actor_staff_id"?: string | null,"actor_user_id"?: string | null,"client_op_id"?: string | null,"created_at"?: string,"id"?: never,"inverse"?: Json | null,"payload"?: NonNullable<Json>,"tournament_id": string,"type": string,"undone_at"?: string | null,"undone_by_action"?: number | null
+                    "actor_label"?: string | null,"actor_staff_id"?: string | null,"actor_user_id"?: string | null,"changes"?: Json | null,"client_op_id"?: string | null,"created_at"?: string,"id"?: never,"inverse"?: Json | null,"payload"?: NonNullable<Json>,"source"?: string,"state_version"?: number | null,"tournament_id": string,"type": string,"undone_at"?: string | null,"undone_by_action"?: number | null
                   }
                   Update: {
-                    "actor_staff_id"?: string | null,"actor_user_id"?: string | null,"client_op_id"?: string | null,"created_at"?: string,"id"?: never,"inverse"?: Json | null,"payload"?: NonNullable<Json>,"tournament_id"?: string,"type"?: string,"undone_at"?: string | null,"undone_by_action"?: number | null
+                    "actor_label"?: string | null,"actor_staff_id"?: string | null,"actor_user_id"?: string | null,"changes"?: Json | null,"client_op_id"?: string | null,"created_at"?: string,"id"?: never,"inverse"?: Json | null,"payload"?: NonNullable<Json>,"source"?: string,"state_version"?: number | null,"tournament_id"?: string,"type"?: string,"undone_at"?: string | null,"undone_by_action"?: number | null
                   }
                   Relationships: [
                     {
@@ -633,14 +667,14 @@ isOneToOne: false
                   ]
                 },"tournaments": {
                   Row: {
-                    "address": string | null,"category": string,"checkin_closes_at": string | null,"city": string | null,"club_id": string,"config": NonNullable<Json>,"contact_name": string | null,"contact_phone": string | null,"created_at": string,"created_by": string | null,"draw_seed": string | null,"eligibility": Database["public"]['Enums']["eligibility"],"estimated_end_at": string | null,"fee_cents": number,"fee_per": string,"food": string | null,"id": string,"lat": number | null,"lng": number | null,"max_teams": number | null,"name": string,"name_display": Database["public"]['Enums']["name_display"],"parking": string | null,"postcode": string | null,"poster_path": string | null,"prize_text": string | null,"published_at": string | null,"registration_closes_at": string | null,"registration_mode": Database["public"]['Enums']["registration_mode"],"rules_pdf_path": string | null,"rules_text": string | null,"short_code": string | null,"sport_slug": string,"starts_at": string | null,"status": Database["public"]['Enums']["tournament_status"],"team_format": string | null,"updated_at": string,"waitlist_enabled": boolean,"welcome_message": string | null
+                    "address": string | null,"category": string,"checkin_closes_at": string | null,"city": string | null,"club_id": string,"config": NonNullable<Json>,"contact_name": string | null,"contact_phone": string | null,"created_at": string,"created_by": string | null,"draw_seed": string | null,"eligibility": Database["public"]['Enums']["eligibility"],"estimated_end_at": string | null,"fee_cents": number,"fee_per": string,"food": string | null,"id": string,"lat": number | null,"lng": number | null,"max_teams": number | null,"name": string,"name_display": Database["public"]['Enums']["name_display"],"parking": string | null,"postcode": string | null,"poster_path": string | null,"prize_text": string | null,"published_at": string | null,"registration_closes_at": string | null,"registration_mode": Database["public"]['Enums']["registration_mode"],"rules_pdf_path": string | null,"rules_text": string | null,"short_code": string | null,"sport_slug": string,"starts_at": string | null,"state_version": number,"status": Database["public"]['Enums']["tournament_status"],"team_format": string | null,"updated_at": string,"waitlist_enabled": boolean,"welcome_message": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "address"?: string | null,"category"?: string,"checkin_closes_at"?: string | null,"city"?: string | null,"club_id": string,"config"?: NonNullable<Json>,"contact_name"?: string | null,"contact_phone"?: string | null,"created_at"?: string,"created_by"?: string | null,"draw_seed"?: string | null,"eligibility"?: Database["public"]['Enums']["eligibility"],"estimated_end_at"?: string | null,"fee_cents"?: number,"fee_per"?: string,"food"?: string | null,"id"?: string,"lat"?: number | null,"lng"?: number | null,"max_teams"?: number | null,"name": string,"name_display"?: Database["public"]['Enums']["name_display"],"parking"?: string | null,"postcode"?: string | null,"poster_path"?: string | null,"prize_text"?: string | null,"published_at"?: string | null,"registration_closes_at"?: string | null,"registration_mode"?: Database["public"]['Enums']["registration_mode"],"rules_pdf_path"?: string | null,"rules_text"?: string | null,"short_code"?: string | null,"sport_slug": string,"starts_at"?: string | null,"status"?: Database["public"]['Enums']["tournament_status"],"team_format"?: string | null,"updated_at"?: string,"waitlist_enabled"?: boolean,"welcome_message"?: string | null
+                    "address"?: string | null,"category"?: string,"checkin_closes_at"?: string | null,"city"?: string | null,"club_id": string,"config"?: NonNullable<Json>,"contact_name"?: string | null,"contact_phone"?: string | null,"created_at"?: string,"created_by"?: string | null,"draw_seed"?: string | null,"eligibility"?: Database["public"]['Enums']["eligibility"],"estimated_end_at"?: string | null,"fee_cents"?: number,"fee_per"?: string,"food"?: string | null,"id"?: string,"lat"?: number | null,"lng"?: number | null,"max_teams"?: number | null,"name": string,"name_display"?: Database["public"]['Enums']["name_display"],"parking"?: string | null,"postcode"?: string | null,"poster_path"?: string | null,"prize_text"?: string | null,"published_at"?: string | null,"registration_closes_at"?: string | null,"registration_mode"?: Database["public"]['Enums']["registration_mode"],"rules_pdf_path"?: string | null,"rules_text"?: string | null,"short_code"?: string | null,"sport_slug": string,"starts_at"?: string | null,"state_version"?: number,"status"?: Database["public"]['Enums']["tournament_status"],"team_format"?: string | null,"updated_at"?: string,"waitlist_enabled"?: boolean,"welcome_message"?: string | null
                   }
                   Update: {
-                    "address"?: string | null,"category"?: string,"checkin_closes_at"?: string | null,"city"?: string | null,"club_id"?: string,"config"?: NonNullable<Json>,"contact_name"?: string | null,"contact_phone"?: string | null,"created_at"?: string,"created_by"?: string | null,"draw_seed"?: string | null,"eligibility"?: Database["public"]['Enums']["eligibility"],"estimated_end_at"?: string | null,"fee_cents"?: number,"fee_per"?: string,"food"?: string | null,"id"?: string,"lat"?: number | null,"lng"?: number | null,"max_teams"?: number | null,"name"?: string,"name_display"?: Database["public"]['Enums']["name_display"],"parking"?: string | null,"postcode"?: string | null,"poster_path"?: string | null,"prize_text"?: string | null,"published_at"?: string | null,"registration_closes_at"?: string | null,"registration_mode"?: Database["public"]['Enums']["registration_mode"],"rules_pdf_path"?: string | null,"rules_text"?: string | null,"short_code"?: string | null,"sport_slug"?: string,"starts_at"?: string | null,"status"?: Database["public"]['Enums']["tournament_status"],"team_format"?: string | null,"updated_at"?: string,"waitlist_enabled"?: boolean,"welcome_message"?: string | null
+                    "address"?: string | null,"category"?: string,"checkin_closes_at"?: string | null,"city"?: string | null,"club_id"?: string,"config"?: NonNullable<Json>,"contact_name"?: string | null,"contact_phone"?: string | null,"created_at"?: string,"created_by"?: string | null,"draw_seed"?: string | null,"eligibility"?: Database["public"]['Enums']["eligibility"],"estimated_end_at"?: string | null,"fee_cents"?: number,"fee_per"?: string,"food"?: string | null,"id"?: string,"lat"?: number | null,"lng"?: number | null,"max_teams"?: number | null,"name"?: string,"name_display"?: Database["public"]['Enums']["name_display"],"parking"?: string | null,"postcode"?: string | null,"poster_path"?: string | null,"prize_text"?: string | null,"published_at"?: string | null,"registration_closes_at"?: string | null,"registration_mode"?: Database["public"]['Enums']["registration_mode"],"rules_pdf_path"?: string | null,"rules_text"?: string | null,"short_code"?: string | null,"sport_slug"?: string,"starts_at"?: string | null,"state_version"?: number,"status"?: Database["public"]['Enums']["tournament_status"],"team_format"?: string | null,"updated_at"?: string,"waitlist_enabled"?: boolean,"welcome_message"?: string | null
                   }
                   Relationships: [
                     {
@@ -683,7 +717,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "can_manage_tournament":
+            "apply_tournament_changes":
+{ Args: { "p_action": Json,"p_changes": Json,"p_expected_version": number,"p_tournament": string }; Returns: Json
+                           },
+"can_manage_tournament":
 { Args: { "p_tournament": string }; Returns: boolean
                            },
 "club_role_of":
@@ -694,6 +731,12 @@ isOneToOne: false
                            },
 "generate_short_code":
 { Args: { "len"?: number }; Returns: string
+                           },
+"hash_pin":
+{ Args: { "p_pin": string }; Returns: string
+                           },
+"hit_rate_limit":
+{ Args: { "p_key": string,"p_max": number,"p_window_seconds": number }; Returns: boolean
                            },
 "is_club_admin":
 { Args: { "p_club": string }; Returns: boolean
@@ -706,10 +749,19 @@ isOneToOne: false
                            },
 "is_tournament_public":
 { Args: { "p_tournament": string }; Returns: boolean
+                           },
+"rate_limit_exceeded":
+{ Args: { "p_key": string,"p_max": number,"p_window_seconds": number }; Returns: boolean
+                           },
+"row_in_tournament":
+{ Args: { "p_id": string,"p_key": string,"p_table": string,"p_tournament": string }; Returns: boolean
+                           },
+"verify_staff_pin":
+{ Args: { "p_pin": string,"p_tournament": string }; Returns: string
                            }
           }
           Enums: {
-            "bracket_kind": "main"|"consolation","club_kind": "federated_club"|"association"|"festival_committee"|"town_hall"|"company"|"other","club_role": "owner"|"admin"|"member","eligibility": "open"|"licensed"|"mixed","match_status": "waiting_venue"|"ready"|"playing"|"score_submitted"|"disputed"|"done"|"forfeit"|"bye","name_display": "full"|"initials","notification_channel": "push"|"email"|"sms","notification_status": "queued"|"sent"|"failed"|"skipped","payment_status": "pending"|"paid"|"failed"|"refunded"|"expired","player_level": "leisure"|"competition","registration_mode": "online"|"onsite"|"both","registration_source": "online"|"onsite"|"organizer","round_status": "pending"|"drawn"|"live"|"finished","score_submission_status": "pending"|"confirmed"|"disputed"|"superseded","staff_role": "organizer"|"co_organizer"|"referee","team_status": "registered"|"waitlist"|"checked_in"|"forfeit"|"withdrawn","tournament_status": "draft"|"published"|"registration_closed"|"check_in"|"live"|"finished"|"archived"
+            "bracket_kind": "main"|"consolation","club_kind": "federated_club"|"association"|"festival_committee"|"town_hall"|"company"|"other","club_role": "owner"|"admin"|"member","eligibility": "open"|"licensed"|"mixed","match_status": "pending"|"waiting_venue"|"ready"|"playing"|"score_submitted"|"disputed"|"done"|"forfeit"|"bye","name_display": "full"|"initials","notification_channel": "push"|"email"|"sms","notification_status": "queued"|"sent"|"failed"|"skipped","payment_status": "pending"|"paid"|"failed"|"refunded"|"expired","player_level": "leisure"|"competition","registration_mode": "online"|"onsite"|"both","registration_source": "online"|"onsite"|"organizer","round_status": "pending"|"drawn"|"live"|"finished","score_submission_status": "pending"|"confirmed"|"disputed"|"superseded","staff_role": "organizer"|"co_organizer"|"referee","team_status": "registered"|"waitlist"|"checked_in"|"forfeit"|"withdrawn","tournament_status": "draft"|"published"|"registration_closed"|"check_in"|"live"|"finished"|"archived"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -829,7 +881,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "bracket_kind": ["main", "consolation"],"club_kind": ["federated_club", "association", "festival_committee", "town_hall", "company", "other"],"club_role": ["owner", "admin", "member"],"eligibility": ["open", "licensed", "mixed"],"match_status": ["waiting_venue", "ready", "playing", "score_submitted", "disputed", "done", "forfeit", "bye"],"name_display": ["full", "initials"],"notification_channel": ["push", "email", "sms"],"notification_status": ["queued", "sent", "failed", "skipped"],"payment_status": ["pending", "paid", "failed", "refunded", "expired"],"player_level": ["leisure", "competition"],"registration_mode": ["online", "onsite", "both"],"registration_source": ["online", "onsite", "organizer"],"round_status": ["pending", "drawn", "live", "finished"],"score_submission_status": ["pending", "confirmed", "disputed", "superseded"],"staff_role": ["organizer", "co_organizer", "referee"],"team_status": ["registered", "waitlist", "checked_in", "forfeit", "withdrawn"],"tournament_status": ["draft", "published", "registration_closed", "check_in", "live", "finished", "archived"]
+            "bracket_kind": ["main", "consolation"],"club_kind": ["federated_club", "association", "festival_committee", "town_hall", "company", "other"],"club_role": ["owner", "admin", "member"],"eligibility": ["open", "licensed", "mixed"],"match_status": ["pending", "waiting_venue", "ready", "playing", "score_submitted", "disputed", "done", "forfeit", "bye"],"name_display": ["full", "initials"],"notification_channel": ["push", "email", "sms"],"notification_status": ["queued", "sent", "failed", "skipped"],"payment_status": ["pending", "paid", "failed", "refunded", "expired"],"player_level": ["leisure", "competition"],"registration_mode": ["online", "onsite", "both"],"registration_source": ["online", "onsite", "organizer"],"round_status": ["pending", "drawn", "live", "finished"],"score_submission_status": ["pending", "confirmed", "disputed", "superseded"],"staff_role": ["organizer", "co_organizer", "referee"],"team_status": ["registered", "waitlist", "checked_in", "forfeit", "withdrawn"],"tournament_status": ["draft", "published", "registration_closed", "check_in", "live", "finished", "archived"]
           }
         }
 } as const
