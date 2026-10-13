@@ -90,7 +90,7 @@ export function issueField(issue: RegistrationIssue): string {
   return map[issue.path] ?? issue.path;
 }
 
-export function terrainDocument(opts: { title: string; sportToken: string; body: SafeHtml; head?: SafeHtml }): string {
+export function terrainDocument(opts: { title: string; sportToken: string; top?: SafeHtml; body: SafeHtml; head?: SafeHtml }): string {
   return html`<!doctype html>
 <html lang="fr" data-sport="${opts.sportToken}">
 <head>
@@ -103,7 +103,7 @@ export function terrainDocument(opts: { title: string; sportToken: string; body:
 ${opts.head ?? ""}
 </head>
 <body>
-<div class="wrap">${opts.body}</div>
+<div class="wrap">${opts.top ?? ""}<main>${opts.body}</main></div>
 </body>
 </html>`.value;
 }
@@ -276,8 +276,7 @@ export function renderRegistrationPage(o: FormOpts): string {
     <p><button class="btn wide" type="submit">${o.shape.individual ? r.form.submitIndividual : r.form.submit}</button></p>
   </form>`;
 
-  const body = html`${header(o.meta, o.sport)}
-    <p><a href="/c/${code}">← ${r.back}</a></p>
+  const body = html`<p><a href="/c/${code}">← ${r.back}</a></p>
     <h2 class="reg-title">${r.title}</h2>
     ${summary(o.meta)}
     ${o.notice ? html`<p class="msg err" role="alert">${o.notice}</p>` : ""}
@@ -287,6 +286,7 @@ export function renderRegistrationPage(o: FormOpts): string {
   return terrainDocument({
     title: fmt(r.pageTitle, { name: o.meta.name }),
     sportToken: o.sport.accentToken,
+    top: header(o.meta, o.sport),
     body,
     head: o.turnstileSiteKey && canRegister ? raw('<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>') : undefined,
   });
@@ -302,7 +302,7 @@ export function renderConfirmationPage(o: {
   const r = m.registration.ok;
   const code = o.meta.short_code!;
   const body = o.team
-    ? html`${header(o.meta, o.sport)}
+    ? html`
       <div class="card">
         <div class="head">${r.title}<small>${o.team.label}</small></div>
         <div class="big"><div><div class="k">${m.common.teams}</div><div class="v">${o.team.number}</div></div></div>
@@ -323,6 +323,6 @@ export function renderConfirmationPage(o: {
         ${notifyBlock(code, o.team.number)}
       </section>
       ${notifyScriptTag()}`
-    : html`${header(o.meta, o.sport)}<p class="msg err">${r.unknown}</p><p><a class="btn" href="/c/${code}">${m.registration.back}</a></p>`;
-  return terrainDocument({ title: fmt(m.registration.pageTitle, { name: o.meta.name }), sportToken: o.sport.accentToken, body, head: raw(TERRAIN_HEAD_LINKS) });
+    : html`<p class="msg err">${r.unknown}</p><p><a class="btn" href="/c/${code}">${m.registration.back}</a></p>`;
+  return terrainDocument({ title: fmt(m.registration.pageTitle, { name: o.meta.name }), sportToken: o.sport.accentToken, top: header(o.meta, o.sport), body, head: raw(TERRAIN_HEAD_LINKS) });
 }
