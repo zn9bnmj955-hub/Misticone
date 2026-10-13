@@ -10,11 +10,13 @@ const LINKS = [
   { href: "/admin/codes-promo", key: "promos" },
   { href: "/admin/paiements", key: "payments" },
   { href: "/admin/concours", key: "tournaments" },
+  { href: "/admin/actualites", key: "news" },
 ] as const;
 
 /** Tab row of the admin area: every section is one tap away. */
 export function AdminNav() {
   const t = getMessages().admin;
+  const labels = { ...t.nav, news: getMessages().feed.admin.nav };
   const pathname = usePathname();
   return (
     <nav aria-label={t.navLabel}>
@@ -31,7 +33,7 @@ export function AdminNav() {
                   current ? "border-ink bg-inverse text-on-inverse" : "border-line text-ink hover:border-ink-soft",
                 )}
               >
-                {t.nav[l.key]}
+                {labels[l.key]}
               </Link>
             </li>
           );

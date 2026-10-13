@@ -5,6 +5,7 @@ import { getSport } from "@orgasport/sports";
 import { Icon } from "@orgasport/ui";
 import { fmt, getMessages } from "@/i18n";
 import { ButtonLink } from "@/components/ui/Button";
+import { NotificationsSection } from "@/components/notifications/NotificationsSection";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Section";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
@@ -123,6 +124,9 @@ export default function ProfilePage() {
       <h1 className="display text-5xl">{p.title}</h1>
       <Suspense fallback={<Skeleton className="h-64" />}>
         <ProfileContent />
+      </Suspense>
+      <Suspense fallback={<Skeleton className="h-40" />}>
+        <NotificationsSection />
       </Suspense>
       <ThemeSwitcher labels={{ title: p.appearance, system: p.themeSystem, light: p.themeLight, dark: p.themeDark }} />
       <nav aria-label={p.legal} className="grid gap-1 text-sm">

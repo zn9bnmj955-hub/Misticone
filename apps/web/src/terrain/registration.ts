@@ -5,6 +5,7 @@ import type { TournamentMeta } from "@/lib/tournament/load";
 import type { RegistrationInput, RegistrationIssue, RegistrationWindow, TeamShape } from "@/lib/tournament/registration-rules";
 import { html, raw, type SafeHtml } from "./html";
 import { TERRAIN_CSS } from "./styles.generated";
+import { notifyBlock, notifyScriptTag, TERRAIN_HEAD_LINKS } from "./notify-script";
 
 /**
  * Online registration pages, in the "terrain" regime: plain HTML forms that
@@ -319,7 +320,9 @@ export function renderConfirmationPage(o: {
         <div class="head">${r.notifyTitle}</div>
         <p class="note">${r.notifyText}</p>
         <p class="note muted">${r.notifySoon}</p>
-      </section>`
+        ${notifyBlock(code, o.team.number)}
+      </section>
+      ${notifyScriptTag()}`
     : html`${header(o.meta, o.sport)}<p class="msg err">${r.unknown}</p><p><a class="btn" href="/c/${code}">${m.registration.back}</a></p>`;
-  return terrainDocument({ title: fmt(m.registration.pageTitle, { name: o.meta.name }), sportToken: o.sport.accentToken, body });
+  return terrainDocument({ title: fmt(m.registration.pageTitle, { name: o.meta.name }), sportToken: o.sport.accentToken, body, head: raw(TERRAIN_HEAD_LINKS) });
 }

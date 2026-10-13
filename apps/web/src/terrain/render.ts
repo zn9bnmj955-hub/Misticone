@@ -8,6 +8,7 @@ import { registrationWindow } from "@/lib/tournament/registration-rules";
 import { html, jsonForScript, raw, type SafeHtml } from "./html";
 import { TERRAIN_CSS } from "./styles.generated";
 import { LIVE_SCRIPT } from "./live-script";
+import { notifyBlock, notifyScriptTag, TERRAIN_HEAD_LINKS } from "./notify-script";
 import {
   buildTeamViews,
   currentMatch,
@@ -163,6 +164,7 @@ function myTeamCard(ctx: Ctx, team: TeamView): SafeHtml {
     <div class="head" id="team-title">${fmt(tm.team, { number: team.number })} · ${team.label}${team.club ? html`<small>${team.club}</small>` : ""}</div>
     ${body}
     ${history}
+    ${["finished", "archived"].includes(t.meta.status) ? "" : notifyBlock(t.meta.short_code!, team.number)}
     <div class="note no-print">${
       isMine
         ? html`<a href="${link(ctx, { moi: 0 })}">${tm.notMine}</a>`
@@ -399,6 +401,7 @@ export function renderTerrainPage(t: RenderInput, opts: { fragment: boolean }): 
 <noscript><meta http-equiv="refresh" content="30"></noscript>
 <script>${raw('try{var th=localStorage.getItem("os_theme");if(th==="light"||th==="dark")document.documentElement.setAttribute("data-theme",th)}catch(e){}')}</script>
 <style>${raw(TERRAIN_CSS)}</style>
+${raw(TERRAIN_HEAD_LINKS)}
 </head>
 <body data-code="${code}" data-ws="${wsUrl}">
 <div class="wrap">
@@ -420,6 +423,7 @@ export function renderTerrainPage(t: RenderInput, opts: { fragment: boolean }): 
     <a href="/">${tm.poweredBy}</a>
   </footer>
 </div>
+${found?.length === 1 && !["finished", "archived"].includes(t.meta.status) ? notifyScriptTag() : ""}
 <script>var OS_V=${jsonForScript(t.version)};${raw(LIVE_SCRIPT)}</script>
 </body>
 </html>`;
