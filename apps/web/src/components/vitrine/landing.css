@@ -1,69 +1,130 @@
-/* Landing « waouh »: stage of the sport ball, expressive title, entrance
+/* Landing « waouh »: night stage hero with the sport ball, expressive title, entrance
    animations and hover micro-interactions. Colors: design tokens only.
    Every animation and transition lives in prefers-reduced-motion: no-preference. */
 
-/* ---- Sport stage ---------------------------------------------------------- */
-.ld-stage {
-  isolation: isolate;
-  background-image: radial-gradient(120% 90% at 85% 0%, var(--os-accent-soft), transparent 60%);
+/* ---- Hero: night stage (static scene first, the 3D canvas fades in on top) --- */
+.ld-hero {
+  --ld-horizon: 15.5rem; /* the 3D camera aligns its horizon on .ld-horizon */
 }
-
-.ld-ballBox {
-  position: relative;
-  width: min(100%, 15rem);
-  aspect-ratio: 1;
-  margin-inline: auto;
-}
-@media (min-width: 40rem) {
-  .ld-ballBox {
-    width: 13.5rem;
+@media (min-width: 64rem) {
+  .ld-hero {
+    --ld-horizon: 34%;
   }
 }
 
-.ld-glow {
-  position: absolute;
-  inset: -14%;
-  z-index: -1;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, var(--os-accent-soft), transparent 75%);
-  pointer-events: none;
-}
-.ld-glow::after {
-  /* soft reflection on the floor */
-  content: "";
-  position: absolute;
-  left: 26%;
-  right: 26%;
-  bottom: 13%;
-  height: 8%;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, var(--os-accent-soft), transparent);
-}
-
-.ld-float,
-.ld-staticBall,
-.ld-canvasHost {
+.ld-backdrop {
   position: absolute;
   inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(75% 18% at 50% var(--ld-horizon), color-mix(in srgb, var(--os-stage-haze) 80%, transparent), transparent 72%),
+    linear-gradient(to bottom, var(--os-stage) 0%, var(--os-stage-deep) var(--ld-horizon), var(--os-stage) 100%);
+}
+
+.ld-stars {
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--ld-horizon);
+  opacity: 0.75;
+  background-image:
+    radial-gradient(1.2px 1.2px at 12% 18%, var(--os-on-stage), transparent),
+    radial-gradient(1px 1px at 33% 62%, var(--os-on-stage), transparent),
+    radial-gradient(1.4px 1.4px at 57% 27%, var(--os-on-stage), transparent),
+    radial-gradient(1px 1px at 76% 71%, var(--os-on-stage), transparent),
+    radial-gradient(1.2px 1.2px at 91% 38%, var(--os-on-stage), transparent),
+    radial-gradient(1px 1px at 4% 83%, var(--os-on-stage), transparent);
+  background-size: 19rem 9rem;
+  -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent);
+  mask-image: linear-gradient(to bottom, #000 30%, transparent);
+}
+
+.ld-horizon {
+  position: absolute;
+  top: var(--ld-horizon);
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--os-stage-line) 30%, var(--os-stage-line) 70%, transparent);
+  box-shadow: 0 0 1.5rem 0.25rem color-mix(in srgb, var(--os-stage-line) 45%, transparent);
+  opacity: 0.8;
+}
+
+.ld-floor {
+  position: absolute;
+  top: var(--ld-horizon);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  color: var(--os-stage-line);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 35%);
+  mask-image: linear-gradient(to bottom, transparent, #000 35%);
+}
+.ld-floor svg {
+  display: block;
   width: 100%;
   height: 100%;
 }
 
+.ld-canvasHost {
+  position: absolute;
+  inset: 0;
+}
 .ld-canvasHost canvas {
   display: block;
   width: 100%;
   height: 100%;
   opacity: 0;
-  cursor: grab;
-  touch-action: pan-y;
 }
 .ld-canvasHost canvas[data-ready] {
   opacity: 1;
 }
-.ld-canvasHost canvas[data-dragging] {
+
+/* Keeps text readable over the scene (left column on wide screens, top band on phones). */
+.ld-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--os-stage) 55%, transparent), transparent 30%, transparent 75%, color-mix(in srgb, var(--os-stage) 60%, transparent));
+}
+@media (min-width: 64rem) {
+  .ld-veil {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--os-stage) 70%, transparent), transparent 55%);
+  }
+}
+
+.ld-ballSpot {
+  position: relative;
+  width: min(100%, 17rem);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  touch-action: pan-y;
+}
+@media (min-width: 64rem) {
+  .ld-ballSpot {
+    width: 21rem;
+  }
+}
+.ld-hero[data-ball="3d"] .ld-ballSpot {
+  cursor: grab;
+}
+.ld-ballSpot[data-dragging] {
   cursor: grabbing;
 }
-.ld-stage[data-ball="3d"] .ld-staticBall {
+.ld-still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.ld-plainBall {
+  inset: 19%;
+  width: auto;
+  height: auto;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, color-mix(in srgb, var(--os-on-stage) 70%, var(--os-accent)), var(--os-accent) 42%, color-mix(in srgb, var(--os-accent) 35%, var(--os-stage)) 100%);
+}
+.ld-hero[data-ball="3d"] :is(.ld-still, .ld-floor, .ld-stars, .ld-horizon) {
   opacity: 0;
 }
 
@@ -81,17 +142,14 @@
 /* ---- Motion (only when the visitor accepts it) ---------------------------- */
 @media (prefers-reduced-motion: no-preference) {
   .ld-canvasHost canvas,
-  .ld-staticBall {
-    transition: opacity 0.7s ease;
+  .ld-still,
+  .ld-floor,
+  .ld-stars,
+  .ld-horizon {
+    transition: opacity 0.9s ease;
   }
-  .ld-staticBall {
+  .ld-still {
     animation: ld-ball-pop 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
-  }
-  .ld-float {
-    animation: ld-ball-float 6s ease-in-out 0.8s infinite;
-  }
-  .ld-glow {
-    animation: ld-glow-breathe 5s ease-in-out infinite;
   }
 
   .ld-highlight {
@@ -143,31 +201,12 @@
   }
 
   @keyframes ld-ball-pop {
+    /* Transform only: an opacity fade would delay the LCP of the ball still. */
     from {
-      transform: scale(0.84) rotate(-28deg);
+      transform: scale(0.92) rotate(-8deg);
     }
     to {
       transform: none;
-    }
-  }
-  @keyframes ld-ball-float {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-5px);
-    }
-  }
-  @keyframes ld-glow-breathe {
-    0%,
-    100% {
-      opacity: 0.8;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1.06);
     }
   }
   @keyframes ld-stretch-in {

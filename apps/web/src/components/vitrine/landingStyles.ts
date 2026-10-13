@@ -5,17 +5,21 @@ import "./landing.css";
  * rule for `*.css` in next.config.ts turns CSS modules into global CSS).
  */
 const styles = {
-  ballBox: "ld-ballBox",
+  backdrop: "ld-backdrop",
+  ballSpot: "ld-ballSpot",
   canvasHost: "ld-canvasHost",
   chip: "ld-chip",
   door: "ld-door",
   doorArrow: "ld-doorArrow",
-  float: "ld-float",
-  glow: "ld-glow",
+  floor: "ld-floor",
+  hero: "ld-hero",
   highlight: "ld-highlight",
+  horizon: "ld-horizon",
+  plainBall: "ld-plainBall",
   rise: "ld-rise",
-  stage: "ld-stage",
-  staticBall: "ld-staticBall",
+  stars: "ld-stars",
+  still: "ld-still",
+  veil: "ld-veil",
 } as const;
 
 export default styles;

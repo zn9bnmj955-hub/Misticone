@@ -528,7 +528,7 @@ function ClubCreate() {
 function Poster({ w, h }: { w: number; h: number }) {
   const s = w / 140;
   return (
-    <div style={{ width: w, height: h, background: "#f3f1ea", borderRadius: 4 * s, padding: 10 * s, boxShadow: `0 0 50px ${C.accent}55`, fontFamily: "Saira", color: C.cobalt, overflow: "hidden" }}>
+    <div style={{ width: w, height: h, background: "#f4f6fb", borderRadius: 4 * s, padding: 10 * s, boxShadow: `0 0 50px ${C.accent}55`, fontFamily: "Saira", color: C.cobalt, overflow: "hidden" }}>
       <div style={{ height: 8 * s, background: C.accent, borderRadius: 2, marginBottom: 6 * s }} />
       <div style={{ ...TITLE, fontSize: 17 * s, lineHeight: 1 }}>GRAND PRIX D'AUTOMNE</div>
       <div style={{ fontSize: 9 * s, fontWeight: 700, margin: `${4 * s}px 0` }}>Samedi 14 juin · 14 h · doublettes</div>

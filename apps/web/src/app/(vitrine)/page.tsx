@@ -5,7 +5,7 @@ import { Icon, LogoMark, Wordmark } from "@orgasport/ui";
 import { fmt, getMessages } from "@/i18n";
 import { FindDrawForm } from "@/components/draw/FindDrawForm";
 import { SiteFooter } from "@/components/vitrine/SiteFooter";
-import { SportHero, SportStage } from "@/components/vitrine/SportStage";
+import { BallSpot, SportChips, SportHero } from "@/components/vitrine/SportHero";
 import styles from "@/components/vitrine/landingStyles";
 import { cn } from "@/components/ui/cn";
 import { ButtonLink } from "@/components/ui/Button";
@@ -53,35 +53,32 @@ export default function LandingPage() {
   ];
   return (
     <>
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-        <Link href="/" className="flex items-center gap-2 text-ink" aria-label={m.meta.title}>
-          <LogoMark size={30} />
-          <Wordmark className="text-2xl" />
-        </Link>
-        <Link href="/connexion" className="rounded-full px-4 py-2 text-sm font-bold hover:bg-surface-2">
-          {l.login}
-        </Link>
+      <header data-scheme="stage" className="bg-stage text-ink">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+          <Link href="/" className="flex items-center gap-2 text-ink" aria-label={m.meta.title}>
+            <LogoMark size={30} />
+            <Wordmark className="text-2xl" />
+          </Link>
+          <Link href="/connexion" className="rounded-full px-4 py-2 text-sm font-bold hover:bg-surface-2">
+            {l.login}
+          </Link>
+        </div>
       </header>
 
-      <main id="contenu" className="mx-auto grid max-w-5xl gap-14 px-4 pb-16">
-        {/* 1. The find-my-draw field comes first, before anything else (DOM order). On mobile the two
-            column wrappers are `display: contents` and `order-*` interleaves their children. */}
+      <main id="contenu">
+        {/* 1. Full-bleed night stage. The find-my-draw field comes first (DOM order); on phones the
+            two column wrappers are `display: contents` and `order-*` interleaves their children. */}
         <SportHero
           sports={stageSports}
-          className="grid gap-6 pt-2 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start lg:gap-x-10 lg:pt-10"
+          className="mx-auto grid max-w-6xl gap-6 px-4 pb-14 pt-2 lg:min-h-[calc(100svh-4.25rem)] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start lg:gap-x-12 lg:pt-8"
         >
-          <div className="contents lg:col-start-2 lg:row-start-1 lg:grid lg:gap-6">
+          <div className="contents lg:col-start-2 lg:row-start-1 lg:grid lg:gap-4">
             <div className="order-1">
               <FindDrawForm headingLevel="h2" />
             </div>
-            <SportStage
-              className={`order-3 ${styles.rise}`}
-              labels={{ eyebrow: h.stageEyebrow, chips: h.chipsLabel, hint: h.dragHint, description: h.ballDescription }}
-            />
-            <div className="order-5">
-              <Suspense fallback={<NumbersFallback />}>
-                <LiveNumbers />
-              </Suspense>
+            <div className="order-3 grid gap-1">
+              <BallSpot description={h.ballDescription} />
+              <SportChips labels={{ eyebrow: h.stageEyebrow, chips: h.chipsLabel, hint: h.dragHint }} />
             </div>
           </div>
           <div className="contents lg:col-start-1 lg:row-start-1 lg:grid lg:gap-6">
@@ -100,7 +97,7 @@ export default function LandingPage() {
                       styles.door,
                       d.primary
                         ? "flex min-h-20 items-center gap-4 rounded-[var(--radius-lg)] bg-accent px-5 text-on-accent hover:brightness-105"
-                        : "flex min-h-20 items-center gap-4 rounded-[var(--radius-lg)] border-2 border-line bg-surface px-5 hover:border-ink",
+                        : "flex min-h-20 items-center gap-4 rounded-[var(--radius-lg)] border-2 border-line bg-surface/85 px-5 hover:border-ink",
                     )}
                   >
                     <span className="grid min-w-0 flex-1">
@@ -114,9 +111,15 @@ export default function LandingPage() {
                 </li>
               ))}
             </ul>
+            <div className="order-5">
+              <Suspense fallback={<NumbersFallback />}>
+                <LiveNumbers />
+              </Suspense>
+            </div>
           </div>
         </SportHero>
 
+        <div className="mx-auto grid max-w-5xl gap-14 px-4 pb-16 pt-14">
         <section aria-labelledby="how" className="grid gap-6">
           <h2 id="how" className="display text-4xl">{l.howTitle}</h2>
           <ol className="grid gap-4 md:grid-cols-3">
@@ -164,6 +167,7 @@ export default function LandingPage() {
             {l.clubCtaButton}
           </ButtonLink>
         </section>
+        </div>
       </main>
       <SiteFooter />
     </>

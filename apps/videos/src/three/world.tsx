@@ -10,7 +10,7 @@ import { C, clamp01, mix, rand, ramp } from "../theme";
 /* Shared helpers                                                            */
 /* ======================================================================== */
 
-type V3 = [number, number, number];
+export type V3 = [number, number, number];
 const v = (p: V3) => new THREE.Vector3(p[0], p[1], p[2]);
 
 /** Smooth camera / object track through timed keys (Catmull-Rom, ease at the ends). */
@@ -90,13 +90,13 @@ const envTex = () =>
   cached("env", () => {
     const { tex } = canvasTexture(1024, 512, (ctx) => {
       const g = ctx.createLinearGradient(0, 0, 0, 512);
-      g.addColorStop(0, "#9aa8d8");
-      g.addColorStop(0.2, "#3a4c9a");
-      g.addColorStop(0.44, "#12245e");
-      g.addColorStop(0.5, "#1d3a9a");
-      g.addColorStop(0.56, "#0a1230");
-      g.addColorStop(0.75, "#05070e");
-      g.addColorStop(1, "#020306");
+      g.addColorStop(0, "#e4e8f0");
+      g.addColorStop(0.22, "#8c94a8");
+      g.addColorStop(0.44, "#2c3446");
+      g.addColorStop(0.5, "#56648c");
+      g.addColorStop(0.56, "#151922");
+      g.addColorStop(0.75, "#07080c");
+      g.addColorStop(1, "#030305");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, 1024, 512);
       ctx.filter = "blur(5px)";
@@ -121,11 +121,11 @@ const GROOVES = [0.455, 0.5, 0.545];
 const bouleTex = () =>
   cached("boule", () =>
     canvasTexture(1024, 512, (ctx) => {
-      ctx.fillStyle = "#d6dbe6";
+      ctx.fillStyle = "#e6e9ef";
       ctx.fillRect(0, 0, 1024, 512);
       for (let i = 0; i < 1400; i++) {
         const y = rand(i * 1.7) * 512;
-        ctx.fillStyle = rand(i * 3.3) > 0.5 ? "rgba(255,255,255,0.05)" : "rgba(40,48,70,0.05)";
+        ctx.fillStyle = rand(i * 3.3) > 0.5 ? "rgba(255,255,255,0.025)" : "rgba(40,48,70,0.025)";
         ctx.fillRect(0, y, 1024, 1);
       }
       for (const v of GROOVES) {
@@ -168,7 +168,7 @@ const bouleRough = () =>
         for (let i = 0; i < 900; i++) {
           const x = rand(i * 5.1) * 1024;
           const y = rand(i * 2.9) * 512;
-          ctx.strokeStyle = `rgba(${rand(i) > 0.5 ? "120,120,120" : "30,30,30"},0.35)`;
+          ctx.strokeStyle = `rgba(${rand(i) > 0.5 ? "100,100,100" : "40,40,40"},0.25)`;
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(x, y);
@@ -570,7 +570,7 @@ function rectBars(c: V3, w: number, l: number): Bar[] {
   ];
 }
 
-const TERRAIN_BARS: Bar[] = Array.from({ length: 32 }, (_, i) => rectBars(terrainCenter(i), TW, TL)).flat();
+export const TERRAIN_BARS: Bar[] = Array.from({ length: 32 }, (_, i) => rectBars(terrainCenter(i), TW, TL)).flat();
 const NUMBER_ITEMS = Array.from({ length: 32 }, (_, i) => {
   const c = terrainCenter(i);
   return { pos: [c[0], 0.02, c[2] + TL / 2 + 1.1] as V3, value: i + 1 };

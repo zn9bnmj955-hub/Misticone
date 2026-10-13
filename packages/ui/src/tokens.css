@@ -122,6 +122,35 @@
 :root[data-theme="dark"][data-sport="football"], :root[data-theme="dark"] [data-sport="football"] { --os-accent: #2bb4ff; --os-accent-ink: #5cc6ff; --os-on-accent: #04060c; }
 
 /* --------------------------------------------------------------------------
+   Îlot « scène » : une zone toujours sombre posée sur la scène 3D noire
+   (ex. le haut de l'accueil), quel que soit le thème. Mêmes valeurs que le
+   mode sombre, appliquées à l'élément data-scheme="stage" et à son contenu.
+   -------------------------------------------------------------------------- */
+[data-scheme="stage"] {
+  --os-bg: #04060c;
+  --os-surface: #0c0f19;
+  --os-surface-2: #151a2a;
+  --os-ink: #eef2ff;
+  --os-ink-soft: #9aa3c0;
+  --os-line: #232a40;
+  --os-inverse: #eef2ff;
+  --os-on-inverse: #04060c;
+  --os-accent: #4d7cff;
+  --os-accent-ink: #7c9dff;
+  --os-on-accent: #04060c;
+  --os-accent-soft: rgba(77, 124, 255, 0.2);
+  --os-live: #ff6a60;
+  --os-success: #3ddc8a;
+  --os-warning: #ffb547;
+  --os-danger: #ff6b61;
+  --os-focus: #7c9dff;
+  --os-on-status: #04060c;
+  color-scheme: dark;
+}
+[data-scheme="stage"][data-sport="petanque"], [data-scheme="stage"] [data-sport="petanque"] { --os-accent: #4d7cff; --os-accent-ink: #7c9dff; --os-on-accent: #04060c; --os-accent-soft: rgba(77, 124, 255, 0.2); }
+[data-scheme="stage"][data-sport="football"], [data-scheme="stage"] [data-sport="football"] { --os-accent: #2bb4ff; --os-accent-ink: #5cc6ff; --os-on-accent: #04060c; --os-accent-soft: rgba(43, 180, 255, 0.2); }
+
+/* --------------------------------------------------------------------------
    Formes, espacements, typographie (hors couleurs)
    -------------------------------------------------------------------------- */
 :root {

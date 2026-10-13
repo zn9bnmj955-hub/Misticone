@@ -1,7 +1,7 @@
 /**
  * When may the landing load its 3D ball? Only on capable devices, never when
  * the visitor asked for reduced motion or to save data, and only once the page
- * is idle and the ball is on screen (see SportStage).
+ * is idle and the ball is on screen (see SportHero).
  */
 
 export type DeviceHints = {

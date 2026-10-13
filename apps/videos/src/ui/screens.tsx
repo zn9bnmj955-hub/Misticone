@@ -224,7 +224,7 @@ export function ScanScreen({ t }: { t: number }) {
           top: 170,
           width: 240,
           height: 330,
-          background: "#f3f1ea",
+          background: "#f4f6fb",
           borderRadius: 6,
           transform: `rotate(-4deg) scale(${1 + t * 0.03})`,
           boxShadow: "0 20px 50px rgba(0,0,0,0.6)",
@@ -733,13 +733,13 @@ export function Checkout({ t, pay }: { t: number; pay: number }) {
       ].map(([a, b], i) => (
         <div key={a} style={{ marginBottom: 10 }}>
           <div style={{ fontSize: 13, color: "#5b6180", marginBottom: 4 }}>{a}</div>
-          <div style={{ height: 44, borderRadius: 8, background: "#fff", border: `1.5px solid ${i === 1 && t > 2 && t < 4 ? "#635bff" : "#d5d8e6"}`, display: "flex", alignItems: "center", padding: "0 12px", fontSize: 16, color: (i === 1 && !card) || (i === 2 && t <= 3.9) ? "#a3a8c0" : "#1a1f36", ...NUM }}>
+          <div style={{ height: 44, borderRadius: 8, background: "#fff", border: `1.5px solid ${i === 1 && t > 2 && t < 4 ? C.blue : "#d5d8e6"}`, display: "flex", alignItems: "center", padding: "0 12px", fontSize: 16, color: (i === 1 && !card) || (i === 2 && t <= 3.9) ? "#a3a8c0" : "#1a1f36", ...NUM }}>
             {b}
           </div>
         </div>
       ))}
       <div style={{ position: "absolute", left: 18, right: 18, bottom: 22 }}>
-        <Button label={done > 0.5 ? "✓ Paiement accepté" : "Payer 23,20 €"} color={done > 0.5 ? "#1f9d55" : "#635bff"} ink="#fff" pressed={press(t, pay)} />
+        <Button label={done > 0.5 ? "✓ Paiement accepté" : "Payer 23,20 €"} color={done > 0.5 ? "#1f9d55" : C.blue} ink="#fff" pressed={press(t, pay)} />
       </div>
     </Screen>
   );
@@ -767,7 +767,7 @@ export function Online({ t }: { t: number }) {
           <div style={{ fontSize: 14, fontWeight: 700, marginTop: 6 }}>QR code</div>
         </Card>
         <Card style={{ flex: 1, textAlign: "center" }}>
-          <div style={{ width: 84, height: 110, margin: "0 auto", background: "#f3f1ea", borderRadius: 4, padding: 6 }}>
+          <div style={{ width: 84, height: 110, margin: "0 auto", background: "#f4f6fb", borderRadius: 4, padding: 6 }}>
             <div style={{ height: 8, background: C.accent, borderRadius: 2, marginBottom: 5 }} />
             <div style={{ height: 5, background: C.cobalt, width: "80%", marginBottom: 3 }} />
             <div style={{ height: 5, background: C.cobalt, width: "60%", marginBottom: 8 }} />
