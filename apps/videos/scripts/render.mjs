@@ -81,6 +81,16 @@ for (const id of ids) {
     tmp,
   ]);
   renameSync(tmp, mp4);
+  // Size budget (≤ 12 MB): re-encode the video track with a higher CRF if needed.
+  for (const crf of [31, 33, 35, 37]) {
+    if (statSync(mp4).size <= 12e6) break;
+    run("ffmpeg", [
+      "-y", "-loglevel", "error", "-i", raw, "-i", mp4, "-map", "0:v", "-map", "1:a",
+      "-c:v", "libx264", "-preset", "slow", "-crf", String(crf), "-pix_fmt", "yuv420p",
+      "-c:a", "copy", "-shortest", "-movflags", "+faststart", tmp,
+    ]);
+    renameSync(tmp, mp4);
+  }
   run("ffmpeg", ["-y", "-loglevel", "error", "-ss", String(v.poster), "-i", mp4, "-frames:v", "1", "-q:v", "4", join(out, `${v.file}.jpg`)]);
   const mb = (statSync(mp4).size / 1e6).toFixed(1);
   console.log(`✓ ${v.file}.mp4 — ${mb} Mo, rendu en ${((Date.now() - started) / 60000).toFixed(1)} min`);
