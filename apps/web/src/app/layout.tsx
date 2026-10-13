@@ -6,14 +6,17 @@ import { env } from "@/lib/env";
 import { SPORT_COOKIE } from "@/lib/prefs";
 import "./globals.css";
 
+// Lightened by scripts/subset-fonts.py: upright text at normal width,
+// italic display type at 50–75 % width (80 KB in all instead of 210 KB).
 const saira = localFont({
   src: [
-    { path: "../fonts/saira-latin-wdth-normal.woff2", style: "normal", weight: "100 900" },
-    { path: "../fonts/saira-latin-wdth-italic.woff2", style: "italic", weight: "100 900" },
+    { path: "../fonts/saira-latin-normal.woff2", style: "normal", weight: "400 900" },
+    { path: "../fonts/saira-latin-italic.woff2", style: "italic", weight: "700 900" },
   ],
   variable: "--font-saira",
   display: "swap",
-  declarations: [{ prop: "font-stretch", value: "50% 125%" }],
+  // Lets the browser drive the italic width axis (font-stretch 50–75 %).
+  declarations: [{ prop: "font-stretch", value: "50% 100%" }],
 });
 
 const m = getMessages();
