@@ -10,6 +10,7 @@ import { payment } from "./fr/payment";
 import { wizard } from "./fr/wizard";
 import { videos } from "./fr/videos";
 import { landing3d } from "./fr/landing3d";
+import { a11y } from "./fr/a11y";
 import { adminAssistant } from "./fr/adminAssistant";
 
 /**
@@ -630,6 +631,7 @@ export const fr = {
   videos,
   adminAssistant,
   landing3d,
+  a11y,
 };
 
 export type Messages = typeof fr;

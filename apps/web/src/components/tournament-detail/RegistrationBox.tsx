@@ -148,6 +148,7 @@ export async function PlacesGauge({ t, sport }: { t: TournamentDetail; sport: Sp
         aria-valuemax={max}
         aria-valuenow={Math.min(count, max)}
         aria-valuetext={text}
+        aria-label={text}
       >
         <span className={`block h-full rounded-full ${left === 0 ? "bg-warning" : "bg-accent"}`} style={{ width: `${Math.round(fill * 100)}%` }} />
       </span>

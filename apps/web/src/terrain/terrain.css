@@ -38,8 +38,8 @@ h3{font-size:18px;margin:16px 0 6px;font-weight:800}
 .vs.wait{background:var(--os-surface-2);color:var(--os-ink)}
 .note{padding:10px 14px;font-weight:700;border-top:1px solid var(--os-line)}
 .msg{border-radius:10px;padding:10px 14px;font-weight:800;margin:10px 0;background:var(--os-surface-2)}
-.msg.ok{background:var(--os-success);color:#fff}
-.msg.err{background:var(--os-danger);color:#fff}
+.msg.ok{background:var(--os-success);color:var(--os-on-status)}
+.msg.err{background:var(--os-danger);color:var(--os-on-status)}
 .tabs{display:block;overflow-x:auto;white-space:nowrap;margin:16px -16px 0;padding:0 16px;border-bottom:2px solid var(--os-line)}
 .tabs a{display:inline-block;padding:12px 12px;font-weight:900;text-decoration:none;color:var(--os-ink-soft);border-bottom:4px solid transparent;margin-bottom:-2px}
 .tabs a[aria-current]{color:var(--os-ink);border-bottom-color:var(--os-accent)}
@@ -65,7 +65,7 @@ tr.mine td{background:var(--os-accent-soft)}
 .pool{margin-bottom:18px}
 .info dt{font-weight:900;margin-top:12px}
 .info dd{margin:2px 0 0}
-.offline{display:none;background:var(--os-warning);color:#000;font-weight:800;padding:8px 12px;border-radius:10px;margin:8px 0}
+.offline{display:none;background:var(--os-warning);color:var(--os-on-status);font-weight:800;padding:8px 12px;border-radius:10px;margin:8px 0}
 html.is-offline .offline{display:block}
 .foot{margin-top:28px;font-size:14px;color:var(--os-ink-soft)}
 .foot a{margin-right:14px}
@@ -99,10 +99,10 @@ details.rules p{white-space:pre-line}
 .cta{display:block;margin:8px 0 4px}
 @media (max-width:420px){.v{font-size:46px}h1{font-size:26px}}
 @media print{
-  body{background:#fff;color:#000;font-size:12pt}
+  body{background:var(--os-paper);color:var(--os-paper-ink);font-size:12pt}
   .find,.tabs,.foot,.score-form,.offline,.no-print{display:none!important}
-  .card,.box{border-color:#000}
-  .vs{background:#fff;color:#000;border-top:2px solid #000}
-  tr.mine td{background:#eee}
+  .card,.box{border-color:var(--os-paper-ink)}
+  .vs{background:var(--os-paper);color:var(--os-paper-ink);border-top:2px solid var(--os-paper-ink)}
+  tr.mine td{background:var(--os-paper-shade)}
   a{text-decoration:none}
 }

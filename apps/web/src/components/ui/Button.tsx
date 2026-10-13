@@ -10,7 +10,7 @@ const VARIANTS: Record<Variant, string> = {
   inverse: "bg-inverse text-on-inverse hover:opacity-90",
   outline: "border-2 border-ink text-ink hover:bg-surface-2",
   ghost: "text-ink hover:bg-surface-2",
-  danger: "bg-danger text-white hover:brightness-105",
+  danger: "bg-danger text-on-status hover:brightness-105",
 };
 const SIZES: Record<Size, string> = {
   md: "min-h-12 px-5 text-base",

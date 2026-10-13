@@ -8,6 +8,9 @@ import { registrationWindow } from "@/lib/tournament/registration-rules";
 import { html, jsonForScript, raw, type SafeHtml } from "./html";
 import { TERRAIN_CSS } from "./styles.generated";
 import { LIVE_SCRIPT } from "./live-script";
+
+/** Browser bar color = the light « inverse » token (read from the token stylesheet, never hard-coded). */
+const THEME_COLOR = /--os-inverse:([^;}]+)/.exec(TERRAIN_CSS)?.[1] ?? "";
 import { notifyBlock, notifyScriptTag, TERRAIN_HEAD_LINKS } from "./notify-script";
 import {
   buildTeamViews,
@@ -397,7 +400,7 @@ export function renderTerrainPage(t: RenderInput, opts: { fragment: boolean }): 
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${t.meta.name} · ${code}</title>
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#0b1640">
+<meta name="theme-color" content="${THEME_COLOR}">
 <noscript><meta http-equiv="refresh" content="30"></noscript>
 <script>${raw('try{var th=localStorage.getItem("os_theme");if(th==="light"||th==="dark")document.documentElement.setAttribute("data-theme",th)}catch(e){}')}</script>
 <style>${raw(TERRAIN_CSS)}</style>

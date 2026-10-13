@@ -23,6 +23,7 @@
   --color-success: var(--os-success);
   --color-warning: var(--os-warning);
   --color-danger: var(--os-danger);
+  --color-on-status: var(--os-on-status);
   --font-display: var(--font-display);
   --font-body: var(--font-body);
   --radius-sm: var(--radius-sm);

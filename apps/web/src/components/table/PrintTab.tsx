@@ -72,11 +72,11 @@ function PrintDoc({ doc, state, tournament }: { doc: Doc; state: EngineState; to
       .map((p) => `${p.firstName} ${p.lastName}`)
       .join(", ");
   const header = (
-    <header style={{ borderBottom: "2px solid #000", marginBottom: "4mm", paddingBottom: "2mm" }}>
+    <header style={{ borderBottom: "2px solid var(--os-paper-ink)", marginBottom: "4mm", paddingBottom: "2mm" }}>
       <strong style={{ fontSize: "16pt" }}>{tournament.name}</strong> · {tournament.code} · {formatDay(tournament.startsAt)} · imprimé à {formatTime(new Date().toISOString())}
     </header>
   );
-  const box = { display: "inline-block", width: "18mm", height: "12mm", border: "2px solid #000", verticalAlign: "middle" } as const;
+  const box = { display: "inline-block", width: "18mm", height: "12mm", border: "2px solid var(--os-paper-ink)", verticalAlign: "middle" } as const;
 
   let body: React.ReactNode;
   if (doc === "draw") {
@@ -87,7 +87,7 @@ function PrintDoc({ doc, state, tournament }: { doc: Doc; state: EngineState; to
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11pt" }}>
           <tbody>
             {matchesOfRound(state, r.id).map((x) => (
-              <tr key={x.id} style={{ borderBottom: "1px solid #999" }}>
+              <tr key={x.id} style={{ borderBottom: "1px solid var(--os-paper-line)" }}>
                 <td style={{ width: "18mm", fontWeight: 900, fontSize: "14pt" }}>{x.venueId ? venues.get(x.venueId) : ""}</td>
                 <td>{sideName(teams, x.sideA)}</td>
                 <td style={{ width: "12mm", textAlign: "center" }}>{x.scoreA ?? ""}</td>
@@ -104,7 +104,7 @@ function PrintDoc({ doc, state, tournament }: { doc: Doc; state: EngineState; to
       .filter((x) => ["waiting_venue", "ready", "playing", "pending", "score_submitted", "disputed"].includes(x.status) && x.sideA.length && x.sideB.length)
       .sort((a, b) => (state.venues[a.venueId ?? ""]?.position ?? 999) - (state.venues[b.venueId ?? ""]?.position ?? 999));
     body = list.map((x) => (
-      <section key={x.id} style={{ border: "2px solid #000", padding: "5mm", marginBottom: "6mm", breakInside: "avoid", height: "125mm" }}>
+      <section key={x.id} style={{ border: "2px solid var(--os-paper-ink)", padding: "5mm", marginBottom: "6mm", breakInside: "avoid", height: "125mm" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14pt" }}>
           <strong>{m.table.print.sheetTitle}</strong>
           <span>{roundName(state, state.rounds[x.roundId]!)}</span>
@@ -137,7 +137,7 @@ function PrintDoc({ doc, state, tournament }: { doc: Doc; state: EngineState; to
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11pt" }}>
           <tbody>
             {b.rows.map((r) => (
-              <tr key={r.id} style={{ borderBottom: "1px solid #999" }}>
+              <tr key={r.id} style={{ borderBottom: "1px solid var(--os-paper-line)" }}>
                 <td style={{ width: "12mm", fontWeight: 900 }}>{r.rank}</td>
                 <td>{sideName(teams, [r.id])}</td>
                 <td>{r.stats.wins} V</td>
@@ -155,7 +155,7 @@ function PrintDoc({ doc, state, tournament }: { doc: Doc; state: EngineState; to
           {Object.values(state.teams)
             .sort((a, b) => a.number - b.number)
             .map((team) => (
-              <tr key={team.id} style={{ borderBottom: "1px solid #999" }}>
+              <tr key={team.id} style={{ borderBottom: "1px solid var(--os-paper-line)" }}>
                 <td style={{ width: "12mm", fontWeight: 900 }}>{team.number}</td>
                 <td>{players(team.id)}</td>
                 <td>{team.club ?? ""}</td>
@@ -168,7 +168,7 @@ function PrintDoc({ doc, state, tournament }: { doc: Doc; state: EngineState; to
     );
   }
   return (
-    <div id="print-root" style={{ fontFamily: "Arial, sans-serif", color: "#000", background: "#fff", padding: "10mm" }}>
+    <div id="print-root" style={{ fontFamily: "Arial, sans-serif", color: "var(--os-paper-ink)", background: "var(--os-paper)", padding: "10mm" }}>
       {header}
       {body}
     </div>

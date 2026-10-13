@@ -28,11 +28,17 @@
   --os-accent-soft: rgba(47, 84, 255, 0.14);
 
   /* États (indépendants du sport) */
-  --os-live: #e5261d;
-  --os-success: #0f8a4f;
-  --os-warning: #b86e00;
+  --os-live: #c81e16;
+  --os-success: #0a6b3d;
+  --os-warning: #8a5200;
   --os-danger: #c4221a;
   --os-focus: #2f54ff;
+  --os-on-status: #ffffff;   /* texte sur live, succès, alerte, danger */
+  /* Impression (papier) : identiques en clair et en sombre, donc non redéfinis plus bas */
+  --os-paper: #ffffff;
+  --os-paper-ink: #000000;
+  --os-paper-line: #999999;
+  --os-paper-shade: #eeeeee;
 
   color-scheme: light;
 }
@@ -51,11 +57,12 @@
     --os-accent-ink: #8ea4ff;
     --os-on-accent: #070c24;
     --os-accent-soft: rgba(111, 139, 255, 0.2);
-    --os-live: #ff4d42;
+    --os-live: #ff6a60;
     --os-success: #3ddc8a;
     --os-warning: #ffb547;
     --os-danger: #ff6b61;
     --os-focus: #8ea4ff;
+    --os-on-status: #070c24;
     color-scheme: dark;
   }
 }
@@ -73,11 +80,12 @@
   --os-accent-ink: #8ea4ff;
   --os-on-accent: #070c24;
   --os-accent-soft: rgba(111, 139, 255, 0.2);
-  --os-live: #ff4d42;
+  --os-live: #ff6a60;
   --os-success: #3ddc8a;
   --os-warning: #ffb547;
   --os-danger: #ff6b61;
   --os-focus: #8ea4ff;
+  --os-on-status: #070c24;
   color-scheme: dark;
 }
 

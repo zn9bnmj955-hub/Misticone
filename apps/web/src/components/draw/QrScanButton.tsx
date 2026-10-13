@@ -23,6 +23,23 @@ export function QrScanButton({ labels }: { labels: Labels }) {
   // eslint-disable-next-line react-hooks/set-state-in-effect -- reveal the button once JS runs
   useEffect(() => setMounted(true), []);
 
+  // Keyboard: focus the close button, Escape closes, focus returns to the trigger.
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    closeRef.current?.focus();
+    const trigger = triggerRef.current;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      trigger?.focus();
+    };
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -97,6 +114,7 @@ export function QrScanButton({ labels }: { labels: Labels }) {
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => {
           setMessage(null);
@@ -109,11 +127,11 @@ export function QrScanButton({ labels }: { labels: Labels }) {
         <Icon name="qr" size={26} />
       </button>
       {open && (
-        <div role="dialog" aria-modal="true" aria-label={labels.title} className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4">
+        <div role="dialog" aria-modal="true" aria-label={labels.title} className="fixed inset-0 z-50 grid place-items-center bg-stage/80 p-4">
           <div className="grid w-full max-w-sm gap-3 rounded-[var(--radius-lg)] bg-surface p-4 text-ink">
             <div className="flex items-center justify-between">
               <p className="display text-2xl">{labels.title}</p>
-              <button type="button" onClick={() => setOpen(false)} className="grid size-12 place-items-center rounded-full hover:bg-surface-2" aria-label={labels.close}>
+              <button ref={closeRef} type="button" onClick={() => setOpen(false)} className="grid size-12 place-items-center rounded-full hover:bg-surface-2" aria-label={labels.close}>
                 <Icon name="close" />
               </button>
             </div>
@@ -121,7 +139,7 @@ export function QrScanButton({ labels }: { labels: Labels }) {
               <p className="text-base">{message}</p>
             ) : (
               <>
-                <video ref={videoRef} playsInline muted className="aspect-square w-full rounded-[var(--radius)] bg-black object-cover" />
+                <video ref={videoRef} playsInline muted className="aspect-square w-full rounded-[var(--radius)] bg-stage object-cover" />
                 <p className="text-sm text-ink-soft">{labels.help}</p>
               </>
             )}

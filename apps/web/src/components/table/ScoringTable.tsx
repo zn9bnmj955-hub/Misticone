@@ -91,7 +91,7 @@ export function ScoringTable({ code }: { code: string }) {
               "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-black",
               connection === "online" && "bg-success/15 text-success",
               connection === "syncing" && "bg-warning/15 text-warning",
-              connection === "offline" && "bg-danger text-white",
+              connection === "offline" && "bg-danger text-on-status",
             )}
           >
             <span className="size-2.5 rounded-full bg-current" aria-hidden="true" />
