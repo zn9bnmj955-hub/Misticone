@@ -170,11 +170,24 @@ Tirages à l'heure prévue, rappels et envoi des notifications passent par l'adr
      );
    $$);
    ```
+   Les actualités (flux RSS ajoutés dans **/admin/actualites**) se récupèrent une fois par heure :
+   ```sql
+   select vault.create_secret('https://votre-domaine.fr/api/cron/news', 'orgasport_news_url');
+
+   select cron.schedule('orgasport-news', '17 * * * *', $$
+     select net.http_get(
+       url := (select decrypted_secret from vault.decrypted_secrets where name = 'orgasport_news_url'),
+       headers := jsonb_build_object('Authorization', 'Bearer ' ||
+         (select decrypted_secret from vault.decrypted_secrets where name = 'orgasport_cron_secret')),
+       timeout_milliseconds := 60000
+     );
+   $$);
+   ```
 3. Vérification au bout de 2 minutes :
    `select status_code, content from net._http_response order by created desc limit 3;`
    doit afficher `200` et `{"drawn":…}`.
 
-Pour l'arrêter : `select cron.unschedule('orgasport-tick');`
+Pour les arrêter : `select cron.unschedule('orgasport-tick');` et `select cron.unschedule('orgasport-news');`
 
 ## Étape 9 — Votre compte administrateur
 

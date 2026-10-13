@@ -3,6 +3,7 @@ import { Suspense, type ReactNode } from "react";
 import { LogoMark, Wordmark } from "@orgasport/ui";
 import { getMessages } from "@/i18n";
 import { getViewer } from "@/lib/viewer";
+import { AssistantBubble } from "@/components/assistant/AssistantBubble";
 import { SideNav, SideNavView, TabBar, TabBarView, type NavLabels } from "./NavLinks";
 
 async function ViewerNav({ labels, kind }: { labels: NavLabels; kind: "tabs" | "side" }) {
@@ -42,6 +43,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
       <Suspense fallback={<TabBarView labels={labels} clubMode={false} pathname={null} />}>
         <ViewerNav labels={labels} kind="tabs" />
+      </Suspense>
+      {/* Reads the address (hidden on /assistant): request data, so inside Suspense. */}
+      <Suspense fallback={null}>
+        <AssistantBubble label={m.assistantUi.open} />
       </Suspense>
     </div>
   );

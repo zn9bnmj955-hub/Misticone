@@ -4,6 +4,7 @@ import type { SportConfig } from "@orgasport/sports";
 import { Icon } from "@orgasport/ui";
 import { fmt, getMessages } from "@/i18n";
 import { Button } from "@/components/ui/Button";
+import { openAssistant } from "@/lib/assistant-client";
 import { DATE_RE, TIME_RE, suggestFormat, type FormatAdvice, type TournamentForm } from "@/lib/tournament-form";
 import { formatLabel, hm } from "./display";
 import { Stepper } from "./fields";
@@ -128,6 +129,26 @@ export function FormatAdvisor({
           </div>
         </div>
       )}
+      <button
+        type="button"
+        className="inline-flex min-h-12 items-center gap-2 justify-self-start text-sm font-bold text-accent-ink underline underline-offset-2"
+        onClick={() => {
+          const a = getMessages().assistantUi;
+          openAssistant(
+            fmt(a.advisorQuestion, {
+              sport: sport.name.toLowerCase(),
+              teams,
+              teamNoun: sport.teamNoun.plural,
+              venues: form.venueCount,
+              venueNoun: venues,
+              time: form.startTime.replace(":", " h "),
+            }),
+          );
+        }}
+      >
+        <Icon name="sparkle" size={18} />
+        {getMessages().assistantUi.advisorAsk}
+      </button>
     </section>
   );
 }

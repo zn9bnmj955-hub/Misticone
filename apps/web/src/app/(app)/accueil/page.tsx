@@ -7,6 +7,7 @@ import { getSport } from "@orgasport/sports";
 import { fmt, getMessages } from "@/i18n";
 import { SportBar } from "@/components/shell/SportBar";
 import { NextMatchCard } from "@/components/draw/NextMatchCard";
+import { NotifyButton } from "@/components/notifications/NotifyButton";
 import { FeedEmpty, FeedList } from "@/components/feed/FeedList";
 import { ButtonLink } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -85,7 +86,13 @@ async function Head() {
   return (
     <>
       <h1 className="display text-4xl">{name ? fmt(m.home.greeting, { name }) : m.home.greetingGuest}</h1>
-      {next && <NextMatchCard match={next} />}
+      {next && (
+        <>
+          <NextMatchCard match={next} />
+          {/* « À vous ! » on this phone for every tournament of the account. */}
+          <NotifyButton texts={m.notifications} />
+        </>
+      )}
       {viewer?.activeClub && <ClubBlock viewer={viewer} />}
     </>
   );

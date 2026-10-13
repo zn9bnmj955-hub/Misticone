@@ -1,6 +1,6 @@
 "use server";
 import { cookies } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getSport, isValidLicenseNumber } from "@orgasport/sports";
 import { createClient } from "@/lib/supabase/server";
@@ -147,6 +147,7 @@ export async function createClubFromOnboarding(input: ClubOnboarding, logo: Form
     else if (error && error.code !== "23505") return { ok: false, error: "save" };
   }
   if (!club) return { ok: false, error: "save" };
+  revalidateTag("clubs", "max"); // « Nouveau club » in the feeds.
 
   const file = logo?.get("logo");
   if (file instanceof File && file.size > 0 && file.size <= 2 * 1024 * 1024 && LOGO_TYPES[file.type]) {

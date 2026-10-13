@@ -1,4 +1,4 @@
-/** AI assistant: chat texts (bubble and page). */
+/** AI assistant: chat texts (bubble, panel and page). */
 export const assistantUi = {
   today: "{date}",
   fallbackIntro: "L'assistant intelligent n'est pas encore activé sur ce site. Voici ce que j'ai trouvé dans l'aide :",
@@ -15,5 +15,42 @@ export const assistantUi = {
     too_long: "Ma réponse a été coupée. Posez une question plus précise.",
     limited: "Trop de questions d'affilée. Patientez un peu.",
     invalid: "Message invalide.",
+    offline: "Pas de connexion. Réessayez quand le réseau revient.",
   },
+  // Chat interface (page /assistant and floating bubble).
+  title: "Assistant",
+  intro: "Posez vos questions sur les concours, les règles du jeu ou le site. Je réponds en quelques lignes.",
+  starters: ["Mon prochain match", "Concours près de chez moi ce week-end", "La règle du but à 13", "Comment acheter un lien concours ?"],
+  startersLabel: "Exemples de questions",
+  label: "Votre question",
+  placeholder: "Posez votre question…",
+  send: "Envoyer",
+  stop: "Arrêter",
+  retry: "Réessayer",
+  newChat: "Nouvelle conversation",
+  you: "Vous :",
+  bot: "Assistant :",
+  thinking: "L'assistant réfléchit…",
+  tools: {
+    search_tournaments: "Je regarde les concours…",
+    my_next_match: "Je cherche votre prochain match…",
+    tournament_info: "Je consulte la page du concours…",
+    tournament_registrants: "Je regarde les inscrits…",
+    format_advice: "Je calcule un format adapté…",
+    knowledge_search: "Je cherche dans l'aide…",
+    default: "Je vérifie…",
+  } as Record<string, string>,
+  suggestionsLabel: "Questions suggérées",
+  quota: "{used} questions sur {limit} aujourd'hui",
+  counter: "{count} / {max} caractères",
+  smallPrint: "L'assistant peut se tromper : les horaires et tirages officiels sont sur la page du concours. Ne partagez pas de données personnelles.",
+  newTab: "(nouvel onglet)",
+  conversation: "Conversation avec l'assistant",
+  // Bubble.
+  open: "Ouvrir l'assistant",
+  close: "Fermer l'assistant",
+  fullPage: "Plein écran",
+  // Tournament form (« Aide-moi à choisir »).
+  advisorAsk: "Demander à l'assistant",
+  advisorQuestion: "Je prépare un concours de {sport} : environ {teams} {teamNoun}, {venues} {venueNoun}, début à {time}. Quel format me conseilles-tu, et pourquoi ?",
 };

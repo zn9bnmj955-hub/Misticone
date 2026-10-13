@@ -21,6 +21,7 @@ import {
 } from "@orgasport/engine";
 import { entityToRow } from "../src/engine-mapping";
 import { KB_DOCS } from "./kb-content";
+import { APP_SETTINGS, LEGAL_PAGES, PRICING_PLANS } from "./reference-data";
 
 // ---------------------------------------------------------------------------
 // Deterministic randomness
@@ -437,9 +438,9 @@ tournaments.push({
   short_code: "TR8E",
   name: "Trophée d'été des Platanes",
   status: "check_in",
-  starts_at: raw("now() - interval '30 days'"),
-  registration_closes_at: raw("now() - interval '31 days'"),
-  checkin_closes_at: raw("now() - interval '30 days 30 minutes'"),
+  starts_at: raw("now() - interval '3 days'"),
+  registration_closes_at: raw("now() - interval '4 days'"),
+  checkin_closes_at: raw("now() - interval '3 days 30 minutes'"),
   team_format: "triplette",
   category: "veterans",
   eligibility: "licensed",
@@ -451,10 +452,10 @@ tournaments.push({
   rules_text: "Réservé aux licenciés vétérans. Parties en 13 points.",
   config: raw(`'${JSON.stringify(t3Config)}'::jsonb`),
   draw_seed: "ete-2026",
-  published_at: raw("now() - interval '50 days'"),
+  published_at: raw("now() - interval '20 days'"),
 });
 {
-  const start = -60 * 24 * 30;
+  const start = -60 * 24 * 3;
   let s = engineState(t3, "check_in", at(start), 16, petanqueSport, "triplette", t3Config, makeEngineTeams(16, 3, { status: "checked_in", checkedInAt: at(start - 20) }), makeVenuesState(10));
   s = run(s, { type: "round.draw", bracket: "main", seed: "ete-2026" }, start);
   let clock = start;
@@ -599,29 +600,10 @@ insert("public.announcements", [
 ]);
 
 // Pricing, settings and legal placeholders --------------------------------------
-insert("public.pricing_plans", [
-  {
-    id: uuid(),
-    code: "lien-concours",
-    label: "Lien concours",
-    description: "Prix de démonstration, à fixer dans l'administration.",
-    price_cents: 2900,
-    currency: "eur",
-    active: true,
-    sort_order: 10,
-  },
-  {
-    id: uuid(),
-    code: "petit-concours",
-    label: "Petit concours (16 équipes max.)",
-    description: "Prix de démonstration pour les petits concours.",
-    price_cents: 1900,
-    currency: "eur",
-    max_teams: 16,
-    active: true,
-    sort_order: 20,
-  },
-]);
+insert(
+  "public.pricing_plans",
+  PRICING_PLANS.map((p) => ({ id: uuid(), ...p, max_teams: p.max_teams ?? null, currency: "eur", active: true })),
+);
 // Demo promo codes (local only).
 insert("public.promo_codes", [
   { id: uuid(), code: "BIENVENUE", description: "Premier concours offert (démo)", percent_off: 100, active: true },
@@ -642,19 +624,9 @@ insert("public.tournaments", [
     ),
   },
 ]);
-const settings: [string, unknown, string][] = [
-  ["ai.model", "claude-haiku-5-5", "Modèle de l'assistant"],
-  ["ai.daily_quota", { guest: 5, account: 20, paying_club: 100 }, "Questions par jour"],
-  ["ai.monthly_budget_eur", 20, "Plafond de dépense mensuel de l'assistant"],
-  ["features.sms", false, "Notifications SMS (option payante, désactivée)"],
-  ["features.paypal", false, "PayPal via Stripe"],
-  ["ai.enabled", true, "Assistant activé"],
-  ["ai.usd_to_eur", 0.92, "Taux de conversion dollar → euro pour le suivi des coûts"],
-  ["ai.pricing", {}, "Prix par million de jetons (vide = prix par défaut du modèle)"],
-];
 insert(
   "public.app_settings",
-  settings.map(([key, value, description]) => ({
+  APP_SETTINGS.map(([key, value, description]) => ({
     key,
     value: raw(`'${JSON.stringify(value)}'::jsonb`),
     description,
@@ -666,20 +638,16 @@ insert(
   KB_DOCS.map((d) => ({ id: uuid(), title: d.title, sport_slug: d.sport, source_url: d.source, body: d.body, published: true })),
 );
 // News feed demo: one clearly fictional source (real feeds are added in the admin).
+// Enabled so its items show in the feed; the hourly fetch just fails on example.org.
 const demoSource = uuid();
 insert("public.news_sources", [
-  { id: demoSource, name: "Démo OrgaSport", feed_url: "https://example.org/orgasport-demo.xml", site_url: "https://example.org", sport_slug: null, enabled: false },
+  { id: demoSource, name: "Démo OrgaSport", feed_url: "https://example.org/orgasport-demo.xml", site_url: "https://example.org", sport_slug: null, enabled: true },
 ]);
 insert("public.news_items", [
   { id: uuid(), source_id: demoSource, title: "(Démo) Championnat départemental doublettes : les résultats", url: "https://example.org/demo/resultats-doublettes", published_at: ago(60 * 5) },
   { id: uuid(), source_id: demoSource, title: "(Démo) Nouvelle saison de foot à 7 : ce qui change", url: "https://example.org/demo/foot-a-7", published_at: ago(60 * 26) },
   { id: uuid(), source_id: demoSource, title: "(Démo) Les clubs de pétanque recrutent des bénévoles", url: "https://example.org/demo/benevoles", published_at: ago(60 * 50) },
 ]);
-insert("public.legal_pages", [
-  { slug: "mentions-legales", title: "Mentions légales", body: "", published: false },
-  { slug: "cgv", title: "Conditions générales de vente", body: "", published: false },
-  { slug: "confidentialite", title: "Politique de confidentialité", body: "", published: false },
-  { slug: "cookies", title: "Cookies", body: "", published: false },
-]);
+insert("public.legal_pages", LEGAL_PAGES.map((l) => ({ ...l, body: "", published: false })));
 
 process.stdout.write(out.join("\n"));

@@ -17,6 +17,6 @@ export const config = {
   // Tournament pages (/c/...) stay out of the proxy: they must be as fast as
   // possible and never depend on an account.
   matcher: [
-    "/((?!_next/static|_next/image|c/|api/public|favicon.ico|icons/|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)",
+    "/((?!_next/static|_next/image|c/|api/public|favicon.ico|icons/|manifest.webmanifest|terrain.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)",
   ],
 };

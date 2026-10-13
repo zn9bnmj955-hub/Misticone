@@ -9,6 +9,8 @@ import { clubSpace } from "./fr/clubSpace";
 import { payment } from "./fr/payment";
 import { wizard } from "./fr/wizard";
 import { videos } from "./fr/videos";
+import { landing3d } from "./fr/landing3d";
+import { adminAssistant } from "./fr/adminAssistant";
 
 /**
  * French interface texts. Every visible string goes through this file so a
@@ -573,11 +575,6 @@ export const fr = {
     title: "Concours",
     empty: "Aucun concours publié pour ce sport.",
   },
-  assistant: {
-    title: "Assistant",
-    text: "L'assistant sportif répondra à vos questions sur les règles, les concours et l'utilisation du site.",
-    soon: "Disponible à la phase 6.",
-  },
   profile: {
     title: "Profil",
     guestTitle: "Vous naviguez sans compte",
@@ -631,6 +628,8 @@ export const fr = {
   feed,
   assistantUi,
   videos,
+  adminAssistant,
+  landing3d,
 };
 
 export type Messages = typeof fr;

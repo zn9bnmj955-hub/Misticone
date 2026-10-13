@@ -11,12 +11,13 @@ const LINKS = [
   { href: "/admin/paiements", key: "payments" },
   { href: "/admin/concours", key: "tournaments" },
   { href: "/admin/actualites", key: "news" },
+  { href: "/admin/assistant", key: "assistant" },
 ] as const;
 
 /** Tab row of the admin area: every section is one tap away. */
 export function AdminNav() {
   const t = getMessages().admin;
-  const labels = { ...t.nav, news: getMessages().feed.admin.nav };
+  const labels = { ...t.nav, news: getMessages().feed.admin.nav, assistant: getMessages().adminAssistant.nav };
   const pathname = usePathname();
   return (
     <nav aria-label={t.navLabel}>

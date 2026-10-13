@@ -97,7 +97,13 @@ export async function POST(request: NextRequest) {
       if (results.length === 0) emit({ type: "text", text: m.fallbackNothing });
       else {
         emit({ type: "text", text: `${m.fallbackIntro}\n\n` });
-        for (const r of results.slice(0, 2)) emit({ type: "text", text: `**${r.title}**\n${r.text.replace(/^.*? — /, "")}\n\n` });
+        // The two best paragraphs, under one title per document.
+        let lastTitle = "";
+        for (const r of results.slice(0, 2)) {
+          const heading = r.title === lastTitle ? "" : `**${r.title}**\n`;
+          lastTitle = r.title;
+          emit({ type: "text", text: `${heading}${r.text.replace(/^.*? — /, "")}\n\n` });
+        }
       }
       emit({ type: "done", suggestions: m.fallbackSuggestions });
       return;

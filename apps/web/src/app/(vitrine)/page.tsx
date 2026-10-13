@@ -1,9 +1,13 @@
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, type CSSProperties } from "react";
+import { enabledSports } from "@orgasport/sports";
 import { Icon, LogoMark, Wordmark } from "@orgasport/ui";
 import { fmt, getMessages } from "@/i18n";
 import { FindDrawForm } from "@/components/draw/FindDrawForm";
 import { SiteFooter } from "@/components/vitrine/SiteFooter";
+import { SportHero, SportStage } from "@/components/vitrine/SportStage";
+import styles from "@/components/vitrine/landing.module.css";
+import { cn } from "@/components/ui/cn";
 import { ButtonLink } from "@/components/ui/Button";
 import { VideoPlayer } from "@/components/video/VideoPlayer";
 import { getLiveStats } from "@/lib/data/tournaments";
@@ -40,6 +44,8 @@ export default function LandingPage() {
   const m = getMessages();
   const l = m.landing;
   const v = m.videos;
+  const h = m.landing3d;
+  const stageSports = enabledSports().map(({ slug, name, icon, accentToken }) => ({ slug, name, icon, accentToken }));
   const doors = [
     { href: "/inscription/joueur", icon: "petanque", ...l.doors.play, primary: true },
     { href: "/inscription/club", icon: "club", ...l.doors.organize, primary: false },
@@ -58,41 +64,58 @@ export default function LandingPage() {
       </header>
 
       <main id="contenu" className="mx-auto grid max-w-5xl gap-14 px-4 pb-16">
-        {/* 1. The find-my-draw field comes first, before anything else. */}
-        <section className="grid gap-8 pt-2 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start lg:pt-10">
-          <div className="grid gap-6 lg:order-2">
-            <FindDrawForm headingLevel="h2" />
-            <Suspense fallback={<NumbersFallback />}>
-              <LiveNumbers />
-            </Suspense>
+        {/* 1. The find-my-draw field comes first, before anything else (DOM order). On mobile the two
+            column wrappers are `display: contents` and `order-*` interleaves their children. */}
+        <SportHero
+          sports={stageSports}
+          className="grid gap-6 pt-2 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start lg:gap-x-10 lg:pt-10"
+        >
+          <div className="contents lg:col-start-2 lg:row-start-1 lg:grid lg:gap-6">
+            <div className="order-1">
+              <FindDrawForm headingLevel="h2" />
+            </div>
+            <SportStage
+              className={`order-3 ${styles.rise}`}
+              labels={{ eyebrow: h.stageEyebrow, chips: h.chipsLabel, hint: h.dragHint, description: h.ballDescription }}
+            />
+            <div className="order-5">
+              <Suspense fallback={<NumbersFallback />}>
+                <LiveNumbers />
+              </Suspense>
+            </div>
           </div>
-          <div className="grid gap-6 lg:order-1">
-            <div className="grid gap-3">
-              <h1 className="display text-[3.25rem] sm:text-7xl">{l.heroTitle}</h1>
+          <div className="contents lg:col-start-1 lg:row-start-1 lg:grid lg:gap-6">
+            <div className="order-2 grid gap-3">
+              <h1 className="display text-[3.25rem] sm:text-7xl lg:text-[5.25rem]">
+                {h.titleLead} <span className={`${styles.highlight} text-accent-ink`}>{h.titleHighlight}</span>
+              </h1>
               <p className="max-w-[46ch] text-lg text-ink-soft">{l.heroText}</p>
             </div>
-            <ul className="grid gap-3">
-              {doors.map((d) => (
-                <li key={d.href}>
+            <ul className="order-4 grid gap-3">
+              {doors.map((d, i) => (
+                <li key={d.href} className={styles.rise} style={{ "--rise-delay": `${120 + i * 70}ms` } as CSSProperties}>
                   <Link
                     href={d.href}
-                    className={
+                    className={cn(
+                      styles.door,
                       d.primary
-                        ? "flex min-h-20 items-center gap-4 rounded-[var(--radius-lg)] bg-accent px-5 text-on-accent transition hover:brightness-105"
-                        : "flex min-h-20 items-center gap-4 rounded-[var(--radius-lg)] border-2 border-line bg-surface px-5 transition hover:border-ink"
-                    }
+                        ? "flex min-h-20 items-center gap-4 rounded-[var(--radius-lg)] bg-accent px-5 text-on-accent hover:brightness-105"
+                        : "flex min-h-20 items-center gap-4 rounded-[var(--radius-lg)] border-2 border-line bg-surface px-5 hover:border-ink",
+                    )}
                   >
                     <span className="grid min-w-0 flex-1">
                       <span className="display text-3xl">{d.title}</span>
                       <span className={d.primary ? "text-sm font-semibold opacity-80" : "text-sm text-ink-soft"}>{d.text}</span>
                     </span>
-                    <Icon name="arrowRight" size={26} />
+                    <span className={styles.doorArrow}>
+                      <Icon name="arrowRight" size={26} />
+                    </span>
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
-        </section>
+        </SportHero>
 
         <section aria-labelledby="how" className="grid gap-6">
           <h2 id="how" className="display text-4xl">{l.howTitle}</h2>
