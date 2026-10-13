@@ -105,13 +105,17 @@ export function Caption({
   eyebrow,
   accent = C.blueSoft,
   place,
+  stagger,
+  size,
 }: {
   words: Words | string;
   at?: number;
   out?: number;
   eyebrow?: string;
   accent?: string;
-  place?: "bottom" | "top" | "left" | "center";
+  place?: "bottom" | "top" | "left" | "leftTop" | "center";
+  stagger?: number;
+  size?: number;
 }) {
   const t = useTime();
   const { vertical } = useLayout();
@@ -123,7 +127,9 @@ export function Caption({
       ? { left: 48, right: 48, top: 130 }
       : where === "left"
         ? { left: 80, width: 520, top: 0, bottom: 0, justifyContent: "center" }
-        : where === "center"
+        : where === "leftTop"
+          ? { left: 80, width: 540, top: 150 }
+          : where === "center"
           ? { left: 60, right: 60, top: 0, bottom: 0, justifyContent: "center", alignItems: "center" }
           : { left: 72, right: 72, bottom: 64 };
   return (
@@ -161,7 +167,8 @@ export function Caption({
           words={words}
           at={at}
           out={out}
-          size={vertical ? 70 : where === "left" ? 66 : 60}
+          size={size ?? (vertical ? 70 : where === "left" || where === "leftTop" ? 64 : 60)}
+          stagger={stagger}
           align={where === "center" ? "center" : "left"}
           style={{ textShadow: "0 4px 30px rgba(7,12,36,0.9)" }}
         />

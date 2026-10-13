@@ -124,7 +124,7 @@ export function Slides({ t, items }: { t: number; items: Array<[number, (lt: num
         const end = i + 1 < items.length ? items[i + 1][0] : Infinity;
         if (t < start - 0.01 || t > end + 0.5) return null;
         const kin = i === 0 ? 1 : ramp(t, start, start + 0.45, "inOut");
-        const kout = ramp(t, end, end + 0.45, "inOut");
+        const kout = Number.isFinite(end) ? ramp(t, end, end + 0.45, "inOut") : 0;
         const x = (1 - kin) * SCREEN_W - kout * SCREEN_W * 0.3;
         return (
           <div key={i} style={{ position: "absolute", inset: 0, transform: `translateX(${x}px)`, opacity: 1 - kout * 0.6, zIndex: i }}>
@@ -290,7 +290,7 @@ export type Entry = { at: number; terrain: number; a: number; b: number; sa: num
 export function Witness({ state, pending = 0 }: { state: "live" | "offline" | "synced"; pending?: number }) {
   const map = {
     live: { c: C.success, label: "En direct" },
-    offline: { c: C.live, label: `Hors ligne · ${pending} saisie${pending > 1 ? "s" : ""} en attente` },
+    offline: { c: C.live, label: pending > 0 ? `Hors ligne · ${pending} saisie${pending > 1 ? "s" : ""} en attente` : "Hors ligne" },
     synced: { c: C.success, label: "En direct · tout est envoyé" },
   }[state];
   return (

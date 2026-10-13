@@ -8,6 +8,7 @@ import { assistantUi } from "./fr/assistantUi";
 import { clubSpace } from "./fr/clubSpace";
 import { payment } from "./fr/payment";
 import { wizard } from "./fr/wizard";
+import { videos } from "./fr/videos";
 
 /**
  * French interface texts. Every visible string goes through this file so a
@@ -629,6 +630,7 @@ export const fr = {
   notifications,
   feed,
   assistantUi,
+  videos,
 };
 
 export type Messages = typeof fr;

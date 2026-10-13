@@ -87,20 +87,23 @@ const envTex = () =>
   cached("env", () => {
     const { tex } = canvasTexture(1024, 512, (ctx) => {
       const g = ctx.createLinearGradient(0, 0, 0, 512);
-      g.addColorStop(0, "#3a4fb8");
-      g.addColorStop(0.42, "#121d55");
-      g.addColorStop(0.5, "#0b1640");
-      g.addColorStop(0.56, "#1a2560");
-      g.addColorStop(1, "#02040c");
+      g.addColorStop(0, "#c8d2ff");
+      g.addColorStop(0.25, "#6276d8");
+      g.addColorStop(0.47, "#24358a");
+      g.addColorStop(0.5, "#2a3a90");
+      g.addColorStop(0.6, "#0e1748");
+      g.addColorStop(1, "#060a20");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, 1024, 512);
-      ctx.filter = "blur(8px)";
+      ctx.filter = "blur(6px)";
       ctx.fillStyle = "#ffffff";
-      for (let k = 0; k < 6; k++) ctx.fillRect(k * 170 + 40, 70 + (k % 2) * 30, 90, 22);
+      for (let k = 0; k < 8; k++) ctx.fillRect(k * 128 + 20, 60 + (k % 2) * 40, 80, 26);
       ctx.fillStyle = "#ffc24d";
-      ctx.fillRect(120, 238, 300, 12);
+      ctx.fillRect(80, 236, 360, 16);
       ctx.fillStyle = "#8ea4ff";
-      ctx.fillRect(560, 232, 380, 14);
+      ctx.fillRect(520, 230, 440, 20);
+      ctx.fillStyle = "#3b5bff";
+      for (let k = 0; k < 6; k++) ctx.fillRect(0, 300 + k * 30, 1024, 4);
       ctx.filter = "none";
     });
     tex.mapping = THREE.EquirectangularReflectionMapping;
@@ -227,10 +230,10 @@ export function Floor({ veil = 0.8 }: { veil?: number }) {
   }, [width, height]);
   return (
     <>
-      <primitive object={mirror} />
-      <mesh rotation-x={-Math.PI / 2} position-y={0.003}>
+      <primitive object={mirror} renderOrder={-2} />
+      <mesh rotation-x={-Math.PI / 2} position-y={0.003} renderOrder={-1}>
         <planeGeometry args={[600, 600]} />
-        <meshBasicMaterial color="#050a1e" transparent opacity={veil} />
+        <meshBasicMaterial color={C.stage} transparent opacity={veil} />
       </mesh>
     </>
   );
@@ -405,10 +408,10 @@ export function Boule({ pos, radius = 0.5, rot = 0, cut, glow = 0 }: { pos: V3; 
     const u = { value: 2 };
     const m = new THREE.MeshStandardMaterial({
       color: "#e2e6f2",
-      metalness: 1,
-      roughness: 0.2,
+      metalness: 0.95,
+      roughness: 0.18,
       map: bouleTex(),
-      envMapIntensity: 1.5,
+      envMapIntensity: 1.9,
       emissive: new THREE.Color(C.amber),
       emissiveIntensity: 0,
     });
@@ -569,13 +572,13 @@ export function WorldScene({ t, mode, vertical }: { t: number; mode: "drop" | "t
       lines[i] = 0.4 * w + 0.8 * on[i];
     }
     const fall = clamp01(t / impact);
-    const y = t < impact ? 7.5 - 7 * fall * fall : 0.5 + Math.max(0, Math.sin((Math.PI * (t - impact)) / 0.7)) * 0.3 * (t < impact + 0.7 ? 1 : 0);
+    const y = t < impact ? 5.6 - 5.1 * fall * fall : 0.5 + Math.max(0, Math.sin((Math.PI * (t - impact)) / 0.7)) * 0.3 * (t < impact + 0.7 ? 1 : 0);
     ball = [T12[0], y, T12[2]];
     const far = vertical ? 1.35 : 1;
     cam = track(
       [
-        [0, [T12[0] + 2.6 * far, 0.7, T12[2] + 3.8 * far]],
-        [impact, [T12[0] + 2.9 * far, 0.9, T12[2] + 4.2 * far]],
+        [0, [T12[0] + 3.4 * far, 1.4, T12[2] + 6.6 * far]],
+        [impact, [T12[0] + 2.8 * far, 0.9, T12[2] + 4.6 * far]],
         [5.6, [T12[0] + 7 * far, 4.8, T12[2] + 11 * far]],
         [9.5, [6, 14 * far, 30 * far]],
         [12.6, [-4, 9, 8]],
@@ -585,8 +588,8 @@ export function WorldScene({ t, mode, vertical }: { t: number; mode: "drop" | "t
     );
     look = track(
       [
-        [0, [T12[0], 1.1, T12[2]]],
-        [impact, [T12[0], 0.6, T12[2]]],
+        [0, [T12[0], 2.9, T12[2]]],
+        [impact, [T12[0], 0.8, T12[2]]],
         [5.6, [T12[0], 0.4, T12[2]]],
         [9.5, [0, 0, -4]],
         [12.6, [T12[0], 0, T12[2]]],
@@ -608,7 +611,7 @@ export function WorldScene({ t, mode, vertical }: { t: number; mode: "drop" | "t
   }
   return (
     <Stage3D>
-      <Cam pos={cam} look={look} fog={mode === "drop" ? 0.02 : 0.014} />
+      <Cam pos={cam} look={look} fog={mode === "drop" ? mix(0.02, 0.011, ramp(t, 4, 8)) : 0.012} />
       <Floor />
       <Boulodrome lines={lines} on={on} t={t} />
       {ball ? <Boule pos={ball} rot={t * 0.6} /> : null}
@@ -623,6 +626,12 @@ export function WorldScene({ t, mode, vertical }: { t: number; mode: "drop" | "t
             <meshBasicMaterial color={C.blueSoft} transparent opacity={clamp01(0.35 - wave / 150)} blending={THREE.AdditiveBlending} toneMapped={false} depthWrite={false} />
           </mesh>
         </>
+      ) : null}
+      {mode === "drop" && t < impact + 0.3 ? (
+        <mesh position={[T12[0], 0.03, T12[2]]} rotation-x={-Math.PI / 2} scale={mix(5, 1.6, clamp01(t / impact))}>
+          <circleGeometry args={[1, 48]} />
+          <meshBasicMaterial map={dotTex()} color="#9fb4ff" transparent opacity={0.25 + 0.6 * clamp01(t / impact) ** 2} blending={THREE.AdditiveBlending} toneMapped={false} depthWrite={false} />
+        </mesh>
       ) : null}
       {mode === "drop" && t > impact && t < impact + 1.2 ? (
         <mesh position={[T12[0], 0.05, T12[2]]} rotation-x={-Math.PI / 2} scale={1 + (t - impact) * 3}>
@@ -820,8 +829,8 @@ export function BracketScene({ t, vertical }: { t: number; vertical: boolean }) 
   );
 
   // Camera: close on the boules, then up to frame the whole bracket.
-  const end: V3 = vertical ? [0, 12.5, 13.5] : [0, 6, 13.5];
-  const endLook: V3 = vertical ? [0, 12.2, -6] : [0, 4.3, -6];
+  const end: V3 = vertical ? [0, 15.5, 19.2] : [0, 6.4, 16.5];
+  const endLook: V3 = vertical ? [0, 15.5, -6] : [0, 4.6, -6];
   const cam = track(
     [
       [0, [3.4, 1.5, 4.6]],
@@ -1011,11 +1020,11 @@ export function FranceScene({ t, vertical }: { t: number; vertical: boolean }) {
     const k = ramp(t, st, st + 0.4);
     const pulse = 1 + 0.25 * Math.sin(t * 3 + i);
     const col = new THREE.Color(i % 4 === 3 ? C.greenInk : C.amberInk);
-    mtx.makeScale(2.6 * k * pulse, 1, 2.6 * k * pulse).setPosition(p[0], 0.05, p[2]);
+    mtx.makeScale(4.2 * k * pulse, 1, 4.2 * k * pulse).setPosition(p[0], 0.05, p[2]);
     dots.halo.setMatrixAt(i, mtx);
     dots.halo.setColorAt(i, col.clone().multiplyScalar(k));
     const rk = ((t - st) % 1.6) / 1.6;
-    mtx.makeScale(0.5 + rk * 3.5, 1, 0.5 + rk * 3.5).setPosition(p[0], 0.04, p[2]);
+    mtx.makeScale(0.8 + rk * 5, 1, 0.8 + rk * 5).setPosition(p[0], 0.04, p[2]);
     dots.ring.setMatrixAt(i, mtx);
     dots.ring.setColorAt(i, col.clone().multiplyScalar(t > st ? (1 - rk) * 0.7 : 0));
   });
@@ -1029,9 +1038,9 @@ export function FranceScene({ t, vertical }: { t: number; vertical: boolean }) {
   // France spans ~85 × 115 units; its center is (-20, -19) from Valence.
   const center: V3 = [-20, 0, -19];
   const k = ramp(t, 0.2, 5.5, "inOut");
-  const sideShift = vertical ? 0 : -32;
+  const sideShift = vertical ? 0 : -26;
   const look: V3 = [mix(0, center[0] + sideShift, k), 0, mix(0, center[2] + (vertical ? 22 : 0), k)];
-  const cam: V3 = [mix(10, look[0] + 0, k), mix(22, vertical ? 205 : 150, k), mix(30, look[2] + (vertical ? 60 : 70), k)];
+  const cam: V3 = [mix(10, look[0] + 0, k), mix(22, vertical ? 165 : 118, k), mix(30, look[2] + (vertical ? 55 : 60), k)];
   return (
     <Stage3D>
       <Cam pos={cam} look={look} fog={mix(0.012, 0.0012, k)} />
@@ -1039,7 +1048,7 @@ export function FranceScene({ t, vertical }: { t: number; vertical: boolean }) {
       <group scale={shrink}>
         <Boulodrome lines={lines} on={on} t={t} numbers={false} />
       </group>
-      <Bars bars={outline} bright={bright} grow={grow} color={C.blueSoft} core={0.35} glow={3.2} glowStrength={0.5} />
+      <Bars bars={outline} bright={bright} grow={grow} color={C.blueSoft} core={0.55} glow={5} glowStrength={0.55} />
       <primitive object={dots.ring} />
       <primitive object={dots.halo} />
       <mesh position={[0, 0.06, 0]} rotation-x={-Math.PI / 2} scale={mix(4, 7, ramp(t, 2.5, 3.5))}>
