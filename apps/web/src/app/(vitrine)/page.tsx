@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Icon, LogoMark, Wordmark } from "@orgasport/ui";
-import { getMessages } from "@/i18n";
+import { fmt, getMessages } from "@/i18n";
 import { FindDrawForm } from "@/components/draw/FindDrawForm";
 import { SiteFooter } from "@/components/vitrine/SiteFooter";
 import { ButtonLink } from "@/components/ui/Button";
+import { VideoPlayer } from "@/components/video/VideoPlayer";
 import { getLiveStats } from "@/lib/data/tournaments";
 import { formatCount } from "@/lib/format";
 
@@ -38,6 +39,7 @@ function NumbersFallback() {
 export default function LandingPage() {
   const m = getMessages();
   const l = m.landing;
+  const v = m.videos;
   const doors = [
     { href: "/inscription/joueur", icon: "petanque", ...l.doors.play, primary: true },
     { href: "/inscription/club", icon: "club", ...l.doors.organize, primary: false },
@@ -107,16 +109,27 @@ export default function LandingPage() {
 
         <section aria-labelledby="video" className="grid gap-4">
           <h2 id="video" className="display text-4xl">{l.videoTitle}</h2>
-          <div className="grid aspect-video w-full max-w-3xl place-items-center rounded-[var(--radius-lg)] bg-stage p-6 text-center text-on-stage">
-            <div className="grid justify-items-center gap-3">
-              <span className="grid size-16 place-items-center rounded-full bg-accent text-on-accent">
-                <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M8 5v14l11-7z" fill="currentColor" />
-                </svg>
-              </span>
-              <p className="font-semibold opacity-80">{l.videoSoon}</p>
-            </div>
+          <div className="w-full max-w-3xl">
+            <VideoPlayer
+              title={v.discovery.title}
+              duration={v.discovery.duration}
+              wide={{ src: "/videos/decouverte-16x9.mp4", poster: "/videos/decouverte-16x9.jpg", width: 1280, height: 720 }}
+              tall={{ src: "/videos/decouverte-9x16.mp4", poster: "/videos/decouverte-9x16.jpg", width: 720, height: 1280 }}
+              captions="/videos/decouverte.vtt"
+              labels={{
+                play: fmt(v.player.play, { title: v.discovery.title, duration: v.discovery.duration }),
+                subtitles: v.player.subtitles,
+                chapters: v.player.chapters,
+                chapterAt: v.player.chapterAt,
+                noVideo: v.player.noVideo,
+                download: v.player.download,
+              }}
+            />
           </div>
+          <Link href="/decouvrir" className="flex items-center gap-2 justify-self-start font-bold underline-offset-4 hover:underline">
+            {v.landingLink}
+            <Icon name="arrowRight" size={20} />
+          </Link>
         </section>
 
         <section className="grid gap-4 rounded-[var(--radius-lg)] border-2 border-ink p-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">

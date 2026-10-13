@@ -13,6 +13,11 @@ export function SiteFooter() {
         </span>
         <nav aria-label={m.legal.title}>
           <ul className="flex flex-wrap gap-x-5 gap-y-2">
+            <li>
+              <Link href="/decouvrir" className="font-semibold text-ink underline-offset-4 hover:underline">
+                {m.videos.footerLink}
+              </Link>
+            </li>
             {Object.entries(m.legal.pages).map(([slug, title]) => (
               <li key={slug}>
                 <Link href={`/legal/${slug}`} className="underline-offset-4 hover:underline">

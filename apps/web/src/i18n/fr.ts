@@ -91,7 +91,6 @@ export const fr = {
       },
     ],
     videoTitle: "Découvrir OrgaSport en vidéo",
-    videoSoon: "La vidéo de présentation arrive bientôt.",
     clubCta: "Vous organisez des concours ?",
     clubCtaText: "Créez votre premier lien concours en moins de 3 minutes.",
     clubCtaButton: "Créer un compte club",

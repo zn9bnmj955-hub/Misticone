@@ -14,7 +14,9 @@
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > packages/db/src/database.types.ts",
     "seed:gen": "pnpm --filter @orgasport/db seed:gen",
-    "test:db": "PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -q -f supabase/tests/rls.sql"
+    "test:db": "PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -q -f supabase/tests/rls.sql",
+    "videos:render": "pnpm --filter @orgasport/videos render",
+    "videos:studio": "pnpm --filter @orgasport/videos studio"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

@@ -82,6 +82,10 @@ async function Dashboard() {
             <Icon name="club" size={18} />
             {t.publicPage}
           </Link>
+          <Link href="/decouvrir#tutoriel" className="inline-flex min-h-10 items-center gap-1.5 justify-self-start text-sm font-bold underline-offset-4 hover:underline">
+            <Icon name="arrowRight" size={18} />
+            {m.videos.clubLink}
+          </Link>
         </div>
         <ButtonLink href="/club/concours/nouveau">
           <Icon name="plus" size={20} />
