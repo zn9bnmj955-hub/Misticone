@@ -1,0 +1,27 @@
+# Netlify — réglages du site OrgaSport.
+# Dans Netlify : « Base directory » vide (racine du dépôt) et
+# « Package directory » = apps/web (ce fichier). Netlify reconnaît Next.js et
+# installe tout seul son adaptateur : rien d'autre à configurer ici.
+# Les clés (Supabase, Stripe…) se mettent dans Site configuration >
+# Environment variables, jamais dans ce fichier : voir docs/DEPLOIEMENT.md.
+
+[build]
+  command = "pnpm build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Le service worker doit toujours être relu (sinon une ancienne version reste
+# en place des jours entiers sur les téléphones).
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+# Vidéos (lourdes, rarement modifiées) : gardées une semaine par les navigateurs.
+[[headers]]
+  for = "/videos/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

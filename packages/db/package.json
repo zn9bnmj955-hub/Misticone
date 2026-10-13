@@ -11,7 +11,8 @@
   "scripts": {
     "seed:gen": "tsx scripts/generate-seed.ts > ../../supabase/seed.sql",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "reference:gen": "tsx scripts/generate-reference.ts > ../../supabase/reference.sql"
   },
   "dependencies": {
     "@orgasport/engine": "workspace:*",
