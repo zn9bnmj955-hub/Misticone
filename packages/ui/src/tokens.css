@@ -10,29 +10,32 @@
 
 :root {
   /* Fonds et textes — mode clair */
-  --os-bg: #eef0f7;          /* « Studio » : fond général */
+  --os-bg: #f3f5fa;          /* « Studio » : fond général */
   --os-surface: #ffffff;     /* cartes, champs */
-  --os-surface-2: #e2e6f2;   /* zones secondaires, survol */
-  --os-ink: #0b1640;         /* « Cobalt » : texte principal */
-  --os-ink-soft: #4a5480;    /* « Ardoise » : texte secondaire */
-  --os-line: #cfd5e8;        /* bordures, séparateurs */
-  --os-inverse: #0b1640;     /* bandeaux inversés (ex. « Retrouver mon tirage ») */
+  --os-surface-2: #e6eaf3;   /* zones secondaires, survol */
+  --os-ink: #0a0c14;         /* « Noir » : texte principal */
+  --os-ink-soft: #4a5168;    /* « Ardoise » : texte secondaire */
+  --os-line: #d3d8e6;        /* bordures, séparateurs */
+  --os-inverse: #0a0c14;     /* bandeaux inversés (ex. « Retrouver mon tirage ») */
   --os-on-inverse: #ffffff;
-  --os-stage: #070c24;          /* fond des vidéos et scènes 3D (identique en clair et en sombre) */
-  --os-on-stage: #eef1ff;
+  --os-stage: #04060c;          /* fond des vidéos et scènes 3D (identique en clair et en sombre) */
+  --os-on-stage: #eef2ff;
+  --os-stage-deep: #070b18;     /* scène 3D : brume au-dessus de l'horizon */
+  --os-stage-haze: #12307a;     /* scène 3D : halo de l'horizon */
+  --os-stage-line: #3d6bff;     /* scène 3D : quadrillage néon du terrain */
 
   /* Accent par défaut (sélecteur sur « Tous ») */
-  --os-accent: #2f54ff;
-  --os-accent-ink: #2443d6;  /* accent utilisé comme texte sur le fond */
+  --os-accent: #1f5bff;
+  --os-accent-ink: #1a47d1;  /* accent utilisé comme texte sur le fond */
   --os-on-accent: #ffffff;
-  --os-accent-soft: rgba(47, 84, 255, 0.14);
+  --os-accent-soft: rgba(31, 91, 255, 0.12);
 
   /* États (indépendants du sport) */
   --os-live: #c81e16;
   --os-success: #0a6b3d;
   --os-warning: #8a5200;
   --os-danger: #c4221a;
-  --os-focus: #2f54ff;
+  --os-focus: #1f5bff;
   --os-on-status: #ffffff;   /* texte sur live, succès, alerte, danger */
   /* Impression (papier) : identiques en clair et en sombre, donc non redéfinis plus bas */
   --os-paper: #ffffff;
@@ -45,47 +48,47 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --os-bg: #070c24;
-    --os-surface: #0f1736;
-    --os-surface-2: #17214a;
-    --os-ink: #eef1ff;
-    --os-ink-soft: #9aa3cf;
-    --os-line: #26305e;
-    --os-inverse: #eef1ff;
-    --os-on-inverse: #070c24;
-    --os-accent: #6f8bff;
-    --os-accent-ink: #8ea4ff;
-    --os-on-accent: #070c24;
-    --os-accent-soft: rgba(111, 139, 255, 0.2);
+    --os-bg: #04060c;
+    --os-surface: #0c0f19;
+    --os-surface-2: #151a2a;
+    --os-ink: #eef2ff;
+    --os-ink-soft: #9aa3c0;
+    --os-line: #232a40;
+    --os-inverse: #eef2ff;
+    --os-on-inverse: #04060c;
+    --os-accent: #4d7cff;
+    --os-accent-ink: #7c9dff;
+    --os-on-accent: #04060c;
+    --os-accent-soft: rgba(77, 124, 255, 0.2);
     --os-live: #ff6a60;
     --os-success: #3ddc8a;
     --os-warning: #ffb547;
     --os-danger: #ff6b61;
-    --os-focus: #8ea4ff;
-    --os-on-status: #070c24;
+    --os-focus: #7c9dff;
+    --os-on-status: #04060c;
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --os-bg: #070c24;
-  --os-surface: #0f1736;
-  --os-surface-2: #17214a;
-  --os-ink: #eef1ff;
-  --os-ink-soft: #9aa3cf;
-  --os-line: #26305e;
-  --os-inverse: #eef1ff;
-  --os-on-inverse: #070c24;
-  --os-accent: #6f8bff;
-  --os-accent-ink: #8ea4ff;
-  --os-on-accent: #070c24;
-  --os-accent-soft: rgba(111, 139, 255, 0.2);
+  --os-bg: #04060c;
+  --os-surface: #0c0f19;
+  --os-surface-2: #151a2a;
+  --os-ink: #eef2ff;
+  --os-ink-soft: #9aa3c0;
+  --os-line: #232a40;
+  --os-inverse: #eef2ff;
+  --os-on-inverse: #04060c;
+  --os-accent: #4d7cff;
+  --os-accent-ink: #7c9dff;
+  --os-on-accent: #04060c;
+  --os-accent-soft: rgba(77, 124, 255, 0.2);
   --os-live: #ff6a60;
   --os-success: #3ddc8a;
   --os-warning: #ffb547;
   --os-danger: #ff6b61;
-  --os-focus: #8ea4ff;
-  --os-on-status: #070c24;
+  --os-focus: #7c9dff;
+  --os-on-status: #04060c;
   color-scheme: dark;
 }
 
@@ -96,27 +99,27 @@
    (ex. la carte d'un concours de football dans une liste « Tous »).
    -------------------------------------------------------------------------- */
 
-/* Pétanque : « Or » */
+/* Pétanque : « Électrique » (bleu de la marque) */
 [data-sport="petanque"] {
-  --os-accent: #ffb020;
-  --os-accent-ink: #8f5a00;
-  --os-on-accent: #0b1640;
-  --os-accent-soft: rgba(255, 176, 32, 0.22);
+  --os-accent: #1f5bff;
+  --os-accent-ink: #1a47d1;
+  --os-on-accent: #ffffff;
+  --os-accent-soft: rgba(31, 91, 255, 0.12);
 }
-/* Football : « Menthe » */
+/* Football : « Cyan » */
 [data-sport="football"] {
-  --os-accent: #00d68f;
-  --os-accent-ink: #00754d;
-  --os-on-accent: #04121f;
-  --os-accent-soft: rgba(0, 214, 143, 0.2);
+  --os-accent: #0077cc;
+  --os-accent-ink: #00609f;
+  --os-on-accent: #ffffff;
+  --os-accent-soft: rgba(0, 119, 204, 0.14);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"])[data-sport="petanque"], :root:not([data-theme="light"]) [data-sport="petanque"] { --os-accent-ink: #ffc24d; }
-  :root:not([data-theme="light"])[data-sport="football"], :root:not([data-theme="light"]) [data-sport="football"] { --os-accent-ink: #2bf0a6; }
+  :root:not([data-theme="light"])[data-sport="petanque"], :root:not([data-theme="light"]) [data-sport="petanque"] { --os-accent: #4d7cff; --os-accent-ink: #7c9dff; --os-on-accent: #04060c; }
+  :root:not([data-theme="light"])[data-sport="football"], :root:not([data-theme="light"]) [data-sport="football"] { --os-accent: #2bb4ff; --os-accent-ink: #5cc6ff; --os-on-accent: #04060c; }
 }
-:root[data-theme="dark"][data-sport="petanque"], :root[data-theme="dark"] [data-sport="petanque"] { --os-accent-ink: #ffc24d; }
-:root[data-theme="dark"][data-sport="football"], :root[data-theme="dark"] [data-sport="football"] { --os-accent-ink: #2bf0a6; }
+:root[data-theme="dark"][data-sport="petanque"], :root[data-theme="dark"] [data-sport="petanque"] { --os-accent: #4d7cff; --os-accent-ink: #7c9dff; --os-on-accent: #04060c; }
+:root[data-theme="dark"][data-sport="football"], :root[data-theme="dark"] [data-sport="football"] { --os-accent: #2bb4ff; --os-accent-ink: #5cc6ff; --os-on-accent: #04060c; }
 
 /* --------------------------------------------------------------------------
    Formes, espacements, typographie (hors couleurs)
@@ -129,5 +132,5 @@
   --tap: 48px;                  /* hauteur minimale d'une zone tactile */
   --font-display: var(--font-saira, "Saira"), "Arial Narrow", system-ui, sans-serif;
   --font-body: var(--font-saira, "Saira"), system-ui, -apple-system, "Segoe UI", sans-serif;
-  --shadow-pop: 0 8px 24px -8px rgba(11, 22, 64, 0.35);
+  --shadow-pop: 0 8px 24px -8px rgba(4, 6, 12, 0.35);
 }

@@ -40,9 +40,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Same values as --os-bg in packages/ui/src/tokens.css (light, dark).
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#eef0f7" },
-    { media: "(prefers-color-scheme: dark)", color: "#070c24" },
+    { media: "(prefers-color-scheme: light)", color: "#f3f5fa" },
+    { media: "(prefers-color-scheme: dark)", color: "#04060c" },
   ],
 };
 
