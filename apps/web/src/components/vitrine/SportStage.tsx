@@ -7,7 +7,7 @@ import { LOOK_INDEX, ballLookFor, type StageSport } from "./ballGeometry";
 import { REDUCED_MOTION_QUERY, canRun3D, readDeviceHints, whenIdle } from "./loadPolicy";
 import { StaticBall } from "./StaticBall";
 import type { BallHandle } from "./sportBall3d";
-import styles from "./landing.module.css";
+import styles from "./landingStyles";
 
 /**
  * Landing hero: the sport chosen in the stage sets `data-sport` on the hero

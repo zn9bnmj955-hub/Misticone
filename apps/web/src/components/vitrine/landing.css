@@ -3,24 +3,24 @@
    Every animation and transition lives in prefers-reduced-motion: no-preference. */
 
 /* ---- Sport stage ---------------------------------------------------------- */
-.stage {
+.ld-stage {
   isolation: isolate;
   background-image: radial-gradient(120% 90% at 85% 0%, var(--os-accent-soft), transparent 60%);
 }
 
-.ballBox {
+.ld-ballBox {
   position: relative;
   width: min(100%, 15rem);
   aspect-ratio: 1;
   margin-inline: auto;
 }
 @media (min-width: 40rem) {
-  .ballBox {
+  .ld-ballBox {
     width: 13.5rem;
   }
 }
 
-.glow {
+.ld-glow {
   position: absolute;
   inset: -14%;
   z-index: -1;
@@ -28,7 +28,7 @@
   background: radial-gradient(closest-side, var(--os-accent-soft), transparent 75%);
   pointer-events: none;
 }
-.glow::after {
+.ld-glow::after {
   /* soft reflection on the floor */
   content: "";
   position: absolute;
@@ -40,16 +40,16 @@
   background: radial-gradient(closest-side, var(--os-accent-soft), transparent);
 }
 
-.float,
-.staticBall,
-.canvasHost {
+.ld-float,
+.ld-staticBall,
+.ld-canvasHost {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
 
-.canvasHost canvas {
+.ld-canvasHost canvas {
   display: block;
   width: 100%;
   height: 100%;
@@ -57,18 +57,18 @@
   cursor: grab;
   touch-action: pan-y;
 }
-.canvasHost canvas[data-ready] {
+.ld-canvasHost canvas[data-ready] {
   opacity: 1;
 }
-.canvasHost canvas[data-dragging] {
+.ld-canvasHost canvas[data-dragging] {
   cursor: grabbing;
 }
-.stage[data-ball="3d"] .staticBall {
+.ld-stage[data-ball="3d"] .ld-staticBall {
   opacity: 0;
 }
 
 /* ---- Expressive title ----------------------------------------------------- */
-.highlight {
+.ld-highlight {
   background-image: linear-gradient(var(--os-accent), var(--os-accent));
   background-repeat: no-repeat;
   background-position: 0 96%;
@@ -80,69 +80,69 @@
 
 /* ---- Motion (only when the visitor accepts it) ---------------------------- */
 @media (prefers-reduced-motion: no-preference) {
-  .canvasHost canvas,
-  .staticBall {
+  .ld-canvasHost canvas,
+  .ld-staticBall {
     transition: opacity 0.7s ease;
   }
-  .staticBall {
-    animation: ball-pop 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+  .ld-staticBall {
+    animation: ld-ball-pop 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
   }
-  .float {
-    animation: ball-float 6s ease-in-out 0.8s infinite;
+  .ld-float {
+    animation: ld-ball-float 6s ease-in-out 0.8s infinite;
   }
-  .glow {
-    animation: glow-breathe 5s ease-in-out infinite;
+  .ld-glow {
+    animation: ld-glow-breathe 5s ease-in-out infinite;
   }
 
-  .highlight {
+  .ld-highlight {
     animation:
-      stretch-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both,
-      underline-in 0.7s 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      ld-stretch-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+      ld-underline-in 0.7s 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
 
-  .rise {
-    animation: rise 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  .ld-rise {
+    animation: ld-rise 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) both;
     animation-delay: var(--rise-delay, 0ms);
   }
 
-  .door {
+  .ld-door {
     transition:
       transform 0.2s ease,
       box-shadow 0.2s ease,
       border-color 0.2s ease,
       filter 0.2s ease;
   }
-  .door:hover {
+  .ld-door:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-pop);
   }
-  .door:active {
+  .ld-door:active {
     transform: scale(0.99);
   }
-  .doorArrow {
+  .ld-doorArrow {
     display: inline-flex;
     transition: transform 0.2s ease;
   }
-  .door:hover .doorArrow,
-  .door:focus-visible .doorArrow {
+  .ld-door:hover .ld-doorArrow,
+  .ld-door:focus-visible .ld-doorArrow {
     transform: translateX(5px);
   }
 
-  .chip {
+  .ld-chip {
     transition:
       transform 0.15s ease,
       background-color 0.25s ease,
       border-color 0.25s ease,
       color 0.25s ease;
   }
-  .chip:hover {
+  .ld-chip:hover {
     transform: translateY(-1px);
   }
-  .chip:active {
+  .ld-chip:active {
     transform: scale(0.95);
   }
 
-  @keyframes ball-pop {
+  @keyframes ld-ball-pop {
     from {
       transform: scale(0.84) rotate(-28deg);
     }
@@ -150,7 +150,7 @@
       transform: none;
     }
   }
-  @keyframes ball-float {
+  @keyframes ld-ball-float {
     0%,
     100% {
       transform: translateY(0);
@@ -159,7 +159,7 @@
       transform: translateY(-5px);
     }
   }
-  @keyframes glow-breathe {
+  @keyframes ld-glow-breathe {
     0%,
     100% {
       opacity: 0.8;
@@ -170,7 +170,7 @@
       transform: scale(1.06);
     }
   }
-  @keyframes stretch-in {
+  @keyframes ld-stretch-in {
     from {
       font-stretch: 50%;
       font-weight: 300;
@@ -180,7 +180,7 @@
       font-weight: 800;
     }
   }
-  @keyframes underline-in {
+  @keyframes ld-underline-in {
     from {
       background-size: 0% 0.11em;
     }
@@ -188,7 +188,7 @@
       background-size: 100% 0.11em;
     }
   }
-  @keyframes rise {
+  @keyframes ld-rise {
     from {
       opacity: 0;
       transform: translateY(16px);

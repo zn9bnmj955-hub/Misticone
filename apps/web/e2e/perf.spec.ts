@@ -31,6 +31,16 @@ test.describe("speed budgets", () => {
     expect(media).toEqual([]);
   });
 
+  test("no 3D on the landing when the person asks for reduced motion", async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await page.goto("/", { waitUntil: "networkidle" });
+    await page.waitForTimeout(2500); // Past the idle delay that would load the 3D.
+    await expect(page.locator("[data-ball]").first()).toHaveAttribute("data-ball", "static");
+    await expect(page.locator("[data-ball-canvas]")).toHaveCount(0);
+    await context.close();
+  });
+
   test("fonts stay light", async ({ page }) => {
     const sizes: number[] = [];
     page.on("response", async (r) => {

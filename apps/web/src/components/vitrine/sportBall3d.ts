@@ -71,7 +71,7 @@ OsSurface osSteel(vec3 p) {
   float polish = 0.5 + 0.5 * sin(p.x * 7.0 + p.y * 11.0) * sin(p.z * 9.0 - p.y * 5.0);
   OsSurface s;
   s.color = uLight * mix(0.8, 0.3, g);
-  s.rough = mix(0.12 + 0.1 * polish, 0.55, g);
+  s.rough = mix(0.2 + 0.1 * polish, 0.55, g);
   s.metal = 1.0;
   s.height = -0.006 * g;
   return s;
@@ -170,13 +170,13 @@ function buildStudio(stage: Color, light: Color) {
     return material;
   };
   const roomGeometry = new BoxGeometry(14, 14, 14);
-  const roomMaterial = new MeshBasicMaterial({ color: stage.clone().multiplyScalar(2.5), side: BackSide });
+  const roomMaterial = new MeshBasicMaterial({ color: stage.clone().lerp(light, 0.38), side: BackSide });
   scene.add(new Mesh(roomGeometry, roomMaterial));
   disposables.push(roomGeometry, roomMaterial);
   add(5, 3, [-4, 4, 4], light.clone().multiplyScalar(5));
   add(7, 7, [0, 6.5, 0], light.clone().multiplyScalar(1.4));
   add(3, 5, [5.5, 0.5, 3], light.clone().multiplyScalar(1.6));
-  add(14, 14, [0, -6.5, 0], light.clone().multiplyScalar(0.12));
+  add(14, 14, [0, -6.5, 0], light.clone().multiplyScalar(0.3));
   const rimA = add(9, 0.9, [0, -2.2, -5.5], new Color());
   const rimB = add(0.9, 7, [5.8, 0, -3], new Color());
   return {

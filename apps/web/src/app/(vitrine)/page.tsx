@@ -6,7 +6,7 @@ import { fmt, getMessages } from "@/i18n";
 import { FindDrawForm } from "@/components/draw/FindDrawForm";
 import { SiteFooter } from "@/components/vitrine/SiteFooter";
 import { SportHero, SportStage } from "@/components/vitrine/SportStage";
-import styles from "@/components/vitrine/landing.module.css";
+import styles from "@/components/vitrine/landingStyles";
 import { cn } from "@/components/ui/cn";
 import { ButtonLink } from "@/components/ui/Button";
 import { VideoPlayer } from "@/components/video/VideoPlayer";

@@ -2,7 +2,7 @@
 
 SaaS de gestion de concours sportifs. Un club achète un « lien concours » (`/c/7KQ2`) qui gère inscriptions, tirage, terrains, scores et résultats. Lancement pétanque, **multi-sport dès le départ**.
 
-> État : **phases 1 (socle) et 2 (moteur de tirage + lien concours) terminées**. Prochaine : phase 3 (espace clubs, formulaire, paiement Stripe).
+> État : **les 8 phases du plan sont terminées** (socle, moteur + lien concours, espace clubs + paiement, catalogue + inscription en ligne, fil + notifications, assistant IA, vidéos, finitions). Mise en ligne : `docs/DEPLOIEMENT.md`.
 > Plan validé : `docs/PLAN.md`. Direction visuelle validée : **C « Direct »** (maquettes : `docs/design/directions.html`).
 
 ## Priorités (en cas de conflit, dans cet ordre)
@@ -18,30 +18,42 @@ Invité (préférences sur l'appareil) · Joueur · Club (plusieurs membres) · 
 - **Next.js 16** (App Router, Turbopack, `cacheComponents` + `partialPrefetching` activés), React 19, TypeScript strict, **Tailwind v4**.
   - ⚠️ Next 16 diffère de Next 13-15 : `middleware` s'appelle **`proxy.ts`** ; avec Cache Components, toute lecture de cookies / `searchParams` / `params` / heure courante doit être dans un `<Suspense>` ; `"use cache"` + `cacheLife` pour les données publiques. Doc locale : `apps/web/node_modules/next/dist/docs/`.
 - **Supabase** (Postgres 17, Auth, Realtime, Storage) — en local via Docker (`pnpm db:start`).
-- Prévu : Stripe Checkout (phase 3), Web Push + Resend (phase 5), SDK Anthropic `claude-haiku-5-5` (phase 6), Remotion (phase 7).
+- Stripe Checkout (paiement du lien concours), Web Push (VAPID, `web-push`) + emails Resend, SDK Anthropic (`claude-haiku-5-5`, assistant), Remotion + React Three Fiber (`apps/videos`), three.js (boule 3D de l'accueil, chargée en différé).
 - Tests : **Vitest** (paquets + web), **Playwright** (`apps/web/e2e`), tests RLS en SQL (`supabase/tests/rls.sql`).
 
 ## Structure
 ```
 apps/web                  Next.js
-  src/app/(vitrine)       accueil public "/", pages légales (vides)
-  src/app/(app)           app avec navigation : accueil, concours, tirage, assistant, profil, club
+  src/app/(vitrine)       accueil public "/" (boule 3D différée, vidéo), /decouvrir (vidéos), pages légales (vides)
+  src/app/(app)           app avec navigation : accueil (fil), concours (catalogue + détail), tirage, assistant,
+                          profil (notifications), club (tableau de bord, concours/nouveau = formulaire 8 étapes,
+                          paiement, membres, annonces, factures, statistiques), admin (tarifs, codes promo,
+                          paiements, concours, assistant, actualités), clubs/[slug] (page publique)
   src/app/(auth)          connexion, inscription/[joueur|club|invite] (une question par écran)
   src/app/c/[code]        lien concours PUBLIC : route.ts = HTML serveur léger (pas de React côté client)
     score/ affiche/ qr.svg/   saisie capitaines (formulaire POST), affiche A4, QR code
+    inscription/ calendrier.ics   inscription en ligne (sans JS), fichier agenda
     table/                table de marque (page Next + client hors ligne)
   src/app/api/t/[code]/*  API table de marque : state, commands, undo, history, pin, staff
-  src/app/api/cron/tick   tirages automatiques à l'heure (protégé par CRON_SECRET)
+  src/app/api/cron/tick   chaque minute : tirages à l'heure, rappels, envoi des notifications (CRON_SECRET)
+  src/app/api/cron/news   chaque heure : flux RSS des actualités
+  src/app/api/stripe/webhook  seule porte de publication d'un concours payé (signature vérifiée)
+  src/app/api/assistant   assistant (flux SSE, outils côté serveur, quotas, budget)
+  src/app/api/push/subscribe  abonnements Web Push (compte ou équipe suivie sur l'appareil)
   src/terrain/            rendu des pages terrain : html.ts (échappement), render.ts, view-model.ts,
                           live-script.ts (seul JS de la page, ES5), terrain.css → styles.generated.ts
   src/lib/tournament/     load.ts (état moteur depuis la base), execute.ts (commandes, annulation,
                           diffusion), staff.ts (compte ou PIN signé), auto-draw.ts, command-schema.ts
   src/app/auth/*          callback lien magique / OAuth, déconnexion
   src/app/api/geocode     proxy géocodage (Géoplateforme IGN)
-  src/components          ui/, shell/, draw/, onboarding/, profile/, tournament/,
+  src/components          ui/, shell/, draw/, onboarding/, profile/, tournament/, tournament-form/, catalog/,
+                          tournament-detail/, feed/, notifications/, assistant/, admin/, club/, video/, vitrine/,
                           table/ (table de marque : store.ts = file hors ligne + moteur local)
-  src/lib                 supabase/ (server, client, admin, public, proxy), data/, viewer.ts, prefs.ts, format.ts
-  src/i18n                textes FR (fr.ts) — aucun texte en dur dans les composants
+  src/lib                 supabase/ (server, client, admin, public, proxy), data/, viewer.ts, prefs.ts, format.ts,
+                          tournament-form/ (schéma, valeurs par défaut, conseiller), payments/ (prix, Stripe,
+                          simulation locale, webhook), notifications/, assistant/, feed/, news/, email/, ics.ts, weather.ts
+  src/i18n                textes FR (fr.ts + fr/*.ts par domaine) — aucun texte en dur dans les composants
+  scripts/                build-terrain-css.mjs, build-icons.mjs (icônes PWA), subset-fonts.py, build-auth-emails.ts
   e2e/                    tests Playwright
 packages/sports           configs de sports (zod) : petanque.ts, football.ts
 packages/engine           moteur de tirage — TS pur, 80 tests (dont tests aléatoires massifs)
@@ -52,8 +64,11 @@ packages/engine           moteur de tirage — TS pur, 80 tests (dont tests alé
   pairing.ts bracket.ts venues.ts standings.ts scoring.ts tx.ts (changements + inverses) rng.ts
 packages/ui               tokens.css (TOUTES les couleurs), icônes, logo
 packages/db               types générés, engine-mapping.ts (moteur ↔ tables), générateur du seed
-                          (les concours de démo sont joués par le moteur)
-supabase/                 config.toml, migrations/, seed.sql (généré), tests/rls.sql
+                          (les concours de démo sont joués par le moteur) et de reference.sql (production)
+apps/videos               Remotion : découverte (75 s) et tutoriel (150 s), 16:9 et 9:16 → apps/web/public/videos
+supabase/                 config.toml, migrations/, seed.sql (démo, généré), reference.sql (production, généré),
+                          templates/ (emails de connexion FR), tests/rls.sql
+docs/                     PLAN.md, DEPLOIEMENT.md (mise en ligne pas à pas), videos/storyboard.md, design/
 ```
 
 ## Règles d'architecture (non négociables)
@@ -65,7 +80,8 @@ supabase/                 config.toml, migrations/, seed.sql (généré), tests/
 - **Table de marque** : moteur exécuté dans le navigateur ; chaque saisie est appliquée tout de suite, gardée dans `localStorage` (`os_outbox_CODE`) et envoyée dans l'ordre jusqu'à confirmation. Témoin de connexion toujours visible. Accès : organisateur connecté ou PIN (cookie HMAC signé `STAFF_SESSION_SECRET`, 24 h, révocable). Seuls les échecs de PIN sont comptés (8 / appareil, 60 / concours par 15 min).
 - **Données privées** : licences (`players_private`, `profiles_private`), contacts (`registrations`), PIN (`tournament_staff.pin_hash`, colonne non lisible par l'API). Le public ne lit jamais `players` directement : le serveur applique « noms complets / initiales » (`lib/names.ts`).
 - **Publication** : un concours ne quitte `draft` que via le serveur (rôle service = webhook Stripe), garanti par un trigger SQL.
-- **Paiement** : activation uniquement par webhook Stripe signé ; aucune donnée bancaire chez nous ; prix en base (`pricing_plans`).
+- **Paiement** : activation uniquement par webhook Stripe signé ; aucune donnée bancaire chez nous ; prix en base (`pricing_plans`). Le formulaire est figé sur la ligne `payments` (`form_snapshot`) au moment du paiement ; `publish_tournament` (SQL, rôle service, idempotent) le transforme en concours publié. Sans clé Stripe et hors production : « paiement simulé » local qui passe par le même webhook signé.
+- **Notifications** : les changements du moteur deviennent des événements → file `notifications` (clé anti-doublon) → Web Push, sinon email de secours. Permission du navigateur demandée **seulement au clic** sur « Me prévenir ».
 - **IA** : appelée seulement côté serveur ; les infos officielles viennent toujours de la base.
 - **Aucun secret dans le code** : variables d'environnement, voir `.env.example`. `apps/web/.env.local` (ignoré par git) contient les clés locales de démo.
 
@@ -78,6 +94,8 @@ supabase/                 config.toml, migrations/, seed.sql (généré), tests/
 - Le seed est **généré** : modifier `packages/db/scripts/generate-seed.ts` puis `pnpm seed:gen && pnpm db:reset`.
 - Après une migration : `pnpm db:types` pour régénérer les types.
 - Fin de phase : `pnpm -r test`, `pnpm test:db`, `pnpm test:e2e`, `pnpm build`, captures, résumé, mise à jour de ce fichier, commit + push.
+- Les tests e2e remettent la base à zéro au démarrage (`e2e/global-setup.ts`) ; `E2E_SKIP_RESET=1` pour l'éviter.
+- Données de production : modifier `reference-data.ts` / `kb-content.ts` puis `pnpm --filter @orgasport/db reference:gen`.
 
 ## Commandes
 ```
@@ -88,10 +106,11 @@ pnpm dev               # http://localhost:3000
 pnpm -r test           # tests unitaires
 pnpm test:db           # tests de sécurité (RLS) en SQL
 pnpm test:e2e          # parcours Playwright (lance le serveur si besoin)
+pnpm videos:render     # rend les 4 vidéos (long : ~15 min chacune)
 ```
 Variables locales nécessaires dans `apps/web/.env.local` : voir `.env.example` (dont `STAFF_SESSION_SECRET`, `CRON_SECRET`). Les tests Playwright lisent ce fichier (aucune clé dans les tests).
 Comptes de démo (local uniquement, mot de passe `orgasport-demo`) : `joueur@demo.orgasport.fr`, `club@demo.orgasport.fr`, `benevole@demo.orgasport.fr`, `admin@demo.orgasport.fr`. PIN table de marque du concours 7KQ2 : `4821`.
-Codes de démo : `7KQ2` (en cours, 32 doublettes, 2e tour), `GP3M` (à venir), `TR8E` (terminé), `FT8S` (foot à 7, 8 équipes).
+Codes de démo : `7KQ2` (en cours, 32 doublettes, 2e tour), `GP3M` (à venir, inscriptions ouvertes), `TR8E` (terminé il y a 3 jours), `FT8S` (foot à 7, 8 équipes). Codes promo de démo : `BIENVENUE` (100 %), `CLUB50`. Boîte mail locale : http://127.0.0.1:54324.
 
 ## Hors périmètre (place réservée)
 CGV, mentions légales, confidentialité, cookies (pages vides `/legal/*` + table `legal_pages`), paiement en ligne des inscriptions, SMS (`notification_channel` 'sms', désactivé), app native, import Facebook/affiche par IA.
@@ -100,7 +119,7 @@ CGV, mentions légales, confidentialité, cookies (pages vides `/legal/*` + tabl
 - Hébergement : Netlify gratuit (Vercel Hobby interdit l'usage commercial) — à revérifier au déploiement.
 - Météo : MET Norway (Open-Meteo gratuit = non commercial). PayPal : via Stripe.
 - i18n maison (`src/i18n`) plutôt que next-intl : un seul fichier par langue, aucune dépendance aux en-têtes de requête (compatible Cache Components et pages terrain légères).
-- Police : Saira variable (largeur + graisse), auto-hébergée (`apps/web/src/fonts`, licence OFL) — pas d'appel à Google Fonts. ~100 Ko par style : sous-ensemble à faire en phase 8.
+- Police : Saira variable, auto-hébergée (`apps/web/src/fonts`, licence OFL) — pas d'appel à Google Fonts. Allégée par `scripts/subset-fonts.py` : texte droit en largeur normale (38 Ko), titres italiques 50–75 % (41 Ko).
 - Géocodage : Géoplateforme IGN via `/api/geocode` ; si le service ne répond pas, la saisie libre est conservée.
 - Notifications : à l'inscription on enregistre seulement l'accord de principe (`notifications_opt_in`) ; la demande d'autorisation du navigateur viendra au bon moment (phase 5), jamais à la première visite.
 - Onboarding : préférences d'abord, compte à la fin (facultatif pour joueur/invité, obligatoire pour un club, placé avant l'étape logo). Brouillon gardé dans `localStorage os_onboarding` pour survivre au lien magique.
@@ -119,3 +138,12 @@ CGV, mentions légales, confidentialité, cookies (pages vides `/legal/*` + tabl
 - Phase 2 — « C'est mon équipe » : cookie `os_t_CODE` (30 jours) sur l'appareil, sans compte ; l'équipe est ensuite mise en avant automatiquement.
 - Phase 2 — tirage automatique : `config.autoDrawAt` ; à brancher en production sur un appel minute de `/api/cron/tick` (Supabase pg_cron ou service gratuit), avec en filet de sécurité un déclenchement après l'affichage de la page publique.
 - Environnement de dev cloud : Docker Hub limite les téléchargements anonymes ; `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io` et relances. Le géocodage IGN est bloqué par le réseau de cet environnement (pas en production).
+- Phase 3 — formulaire « Créer un concours » : 8 étapes, tout prérempli par le sport, brouillon enregistré tout seul (`tournaments.draft_form`, effacé à la publication) ; conseiller de format (terrains nécessaires, heure de fin). Prix choisi par `pickPlan` (le plus petit plan qui convient) ; code promo dans sa propre table, essais limités (10 échecs / heure) ; reste < 0,50 € → gratuit (minimum Stripe).
+- Phase 3 — membres de club : invitation par lien (20 / jour), le propriétaire ne peut être ni modifié ni retiré ; les clients ne modifient que les brouillons (RLS), tout le reste passe par le serveur.
+- Phase 4 — inscription en ligne : page terrain sans JS, moteur `team.create` (`source: "online"`, refus si complet sauf liste d'attente), contacts dans `registrations` via `register_team_private` ; anti-robots Turnstile obligatoire en production (refus si les clés manquent) ; fichier `.ics` ; météo MET Norway sur la page détail.
+- Phase 5 — fil « Pour vous » : éléments classés par une fonction pure (`lib/feed/rank.ts` : en direct, sport, distance, date, suivis) ; actualités = titre + lien vers la source seulement (jamais le texte), flux RSS ajoutés dans l'admin, téléchargement protégé (pas d'adresse privée, 1 Mo, 8 s).
+- Phase 5 — notifications : PWA installable (`manifest.webmanifest` ; `terrain.webmanifest` pour qu'une page concours ajoutée à l'écran d'accueil rouvre sur l'équipe, nécessaire au push sur iPhone) ; aide pas à pas sur iPhone ; équipes suivies sans compte en `localStorage os_push_teams` ; emails de secours désactivables dans le profil.
+- Phase 6 — assistant : boucle d'outils manuelle en streaming, outils côté serveur (concours, prochain match, inscrits, conseil de format, base de connaissances), effort bas ; quotas par jour (invité 5, compte 20, club payant 100) et budget mensuel (20 €) réglables dans `/admin/assistant` ; sans clé API il répond avec la base de connaissances, sans se faire passer pour l'IA. Bulle chargée seulement à l'ouverture ; conversation en `sessionStorage`.
+- Phase 7 — vidéos : rendues une fois (MP4 H.264, sous-titres WebVTT) et servies comme fichiers ; image d'aperçu seulement, la vidéo n'est téléchargée qu'au clic ; version verticale choisie au clic sur un téléphone tenu droit.
+- Phase 8 — accueil : boule 3D (pétanque ↔ ballon) en three.js, chargée après l'affichage, seulement si l'appareil est assez puissant, sans « réduire les animations » ni économie de données ; sinon image fixe de même taille. En-têtes de sécurité sur toutes les routes (`next.config.ts`). Tâches planifiées en production : Supabase `pg_cron` + `pg_net` (voir `docs/DEPLOIEMENT.md`).
+- Emails de connexion Supabase en français : `supabase/templates/` (générés par `scripts/build-auth-emails.ts`), à copier dans le tableau de bord Supabase en production.
