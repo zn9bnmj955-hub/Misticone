@@ -51,9 +51,15 @@ export function shiftTime(time: string, minutes: number): string {
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
-/** Paris calendar date of an instant, plus `days`. */
+/** "2026-10-24" + n calendar days (no time zone involved). */
+export function addDays(date: string, days: number): string {
+  const [y, mo, d] = date.split("-").map(Number) as [number, number, number];
+  return new Date(Date.UTC(y, mo - 1, d + days)).toISOString().slice(0, 10);
+}
+
+/** Paris calendar date of an instant, plus `days` calendar days (DST-safe). */
 export function parisDatePlus(nowMs: number, days: number): string {
-  return isoToParis(new Date(nowMs + days * 86_400_000).toISOString()).date;
+  return addDays(isoToParis(new Date(nowMs).toISOString()).date, days);
 }
 
 /** Next Saturday (Paris), at least `minDays` from now: a sensible default date. */

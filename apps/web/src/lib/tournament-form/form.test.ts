@@ -97,6 +97,13 @@ describe("validation", () => {
     expect(good.ok).toBe(true);
   });
 
+  it("refuses a start time already passed today (server check)", () => {
+    const now = Date.parse("2026-10-12T13:00:00Z"); // 15 h 00 in Paris
+    const res = validateForm({ ...base, date: "2026-10-12", startTime: "14:30" }, getSport, today, now);
+    expect(res.ok ? [] : res.issues).toContainEqual({ path: "startTime", code: "in_past" });
+    expect(validateForm({ ...base, date: "2026-10-12", startTime: "18:00", registrationClosesTime: "17:00", checkInClosesTime: "17:30" }, getSport, today, now).ok).toBe(true);
+  });
+
   it("requires a number of rounds for swiss", () => {
     const res = validateForm({ ...base, format: "swiss", rounds: null }, getSport, today);
     expect(res.ok).toBe(false);

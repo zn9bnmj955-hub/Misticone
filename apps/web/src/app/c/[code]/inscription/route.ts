@@ -194,7 +194,8 @@ export async function POST(request: NextRequest, { params }: Ctx) {
   }
 
   const res = NextResponse.redirect(new URL(`/c/${code}/inscription/ok?equipe=${result.number}`, request.nextUrl.origin), 303);
-  res.cookies.set(myTeamCookie(code), String(result.number), { path: `/c/${code}`, maxAge: 60 * 60 * 24 * 30, sameSite: "lax" });
+  // Path "/" so the tournament details page (/concours/CODE) also knows the team.
+  res.cookies.set(myTeamCookie(code), String(result.number), { path: "/", maxAge: 60 * 60 * 24 * 30, sameSite: "lax" });
   res.cookies.set(regCookie(code), deviceToken, { path: `/c/${code}`, maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: true });
   return res;
 }

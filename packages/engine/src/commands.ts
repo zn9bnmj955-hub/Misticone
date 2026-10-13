@@ -23,7 +23,16 @@ import { autoAssignVenues } from "./venues";
 export type PlayerInput = { firstName: string; lastName: string };
 
 export type Command =
-  | { type: "team.create"; name?: string | null; club?: string | null; players: PlayerInput[]; checkIn?: boolean; source?: "onsite" | "organizer" | "online" }
+  | {
+      type: "team.create";
+      name?: string | null;
+      club?: string | null;
+      players: PlayerInput[];
+      checkIn?: boolean;
+      source?: "onsite" | "organizer" | "online";
+      /** No waiting list: refuse instead of putting the team on it (decided on the latest state). */
+      refuseIfFull?: boolean;
+    }
   | { type: "team.update"; teamId: string; name?: string | null; club?: string | null; seed?: number | null; players?: PlayerInput[] }
   | { type: "team.setStatus"; teamId: string; status: TeamStatus }
   | { type: "team.lateEntry"; teamId: string }
@@ -186,6 +195,7 @@ function run(tx: Transaction, cmd: Command, ctx: DrawContext): void {
       const id = ctx.newId();
       const active = Object.values(state().teams).filter((x) => x.status !== "waitlist" && x.status !== "withdrawn").length;
       const full = t.maxTeams !== null && active >= t.maxTeams;
+      if (full && cmd.refuseIfFull) fail("TOURNAMENT_FULL");
       tx.create("team", {
         id,
         number,

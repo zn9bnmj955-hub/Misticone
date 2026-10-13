@@ -7,6 +7,7 @@ import { formatDay } from "@/lib/format";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fulfillPayment } from "@/lib/tournament/publish";
 import { parisDatePlus, parisToIso, validateForm } from "@/lib/tournament-form";
+import { checkStoredMedia } from "@/lib/tournament-form/media-check";
 import { quoteFor } from "./pricing";
 import { selectProvider } from "./provider";
 import { getStripe } from "./stripe";
@@ -117,9 +118,19 @@ async function checkout(input: { tournamentId: string; userId: string; promoCode
   if (!member) return fail("forbidden");
   if (tournament.status !== "draft") return fail("not_draft");
 
-  const valid = validateForm(tournament.draft_form, getSport, parisDatePlus(Date.now(), 0));
+  const valid = validateForm(tournament.draft_form, getSport, parisDatePlus(Date.now(), 0), Date.now());
   if (!valid.ok) return { kind: "error", error: "invalid_form", issues: valid.issues };
-  const { form, sport } = valid;
+  const { sport } = valid;
+  // Files are frozen with the form: only checked files of this tournament go online.
+  const [poster, rules] = await Promise.all([
+    valid.form.posterPath ? checkStoredMedia(input.tournamentId, "poster", valid.form.posterPath) : Promise.resolve("ok" as const),
+    valid.form.rulesPdfPath ? checkStoredMedia(input.tournamentId, "rules", valid.form.rulesPdfPath) : Promise.resolve("ok" as const),
+  ]);
+  const form = {
+    ...valid.form,
+    posterPath: poster === "ok" ? valid.form.posterPath : null,
+    rulesPdfPath: rules === "ok" ? valid.form.rulesPdfPath : null,
+  };
 
   const quote = await quoteFor({ sportSlug: sport.slug, maxTeams: form.maxTeams, promoCode: input.promoCode });
   if (!quote) return fail("no_plan");

@@ -13,6 +13,12 @@ describe("turnstile", () => {
     expect(await verifyTurnstile(null)).toBe(true);
   });
 
+  it("refuses in production when the keys are missing", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("TURNSTILE_SECRET_KEY", "");
+    expect(await verifyTurnstile("tok")).toBe(false);
+  });
+
   it("fails closed once configured", async () => {
     vi.stubEnv("TURNSTILE_SECRET_KEY", "secret");
     vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "site");

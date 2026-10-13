@@ -216,5 +216,56 @@ begin
 end $$;
 select pg_temp.reset();
 
+-- 7. Hardening (review of phases 3-4).
+-- A club admin cannot demote or remove the owner, nor add someone directly.
+do $$
+declare
+  c uuid := (select id from public.clubs where slug = 'as-les-platanes');
+  owner uuid := (select user_id from public.club_members where club_id = c and role = 'owner');
+  vol uuid := (select id from auth.users where email = 'benevole@demo.orgasport.fr');
+  pl uuid := (select id from auth.users where email = 'joueur@demo.orgasport.fr');
+  n int;
+begin
+  update public.club_members set role = 'admin' where club_id = c and user_id = vol;
+  perform pg_temp.as_user('benevole@demo.orgasport.fr');
+  update public.club_members set role = 'member' where club_id = c and user_id = owner;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'an admin demoted the owner'; end if;
+  delete from public.club_members where club_id = c and user_id = owner;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'an admin removed the owner'; end if;
+  begin
+    insert into public.club_members (club_id, user_id, role) values (c, pl, 'member');
+    raise exception 'an admin added a member without invitation';
+  exception when insufficient_privilege then null;
+  end;
+  perform pg_temp.reset();
+end $$;
+-- A member cannot edit a published tournament directly.
+select pg_temp.as_user('benevole@demo.orgasport.fr');
+do $$
+declare n int;
+begin
+  update public.tournaments set name_display = 'full', max_teams = 999 where short_code = '7KQ2';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'a member edited a published tournament'; end if;
+end $$;
+select pg_temp.reset();
+-- Published tournaments never expose the draft form (private contacts).
+do $$ begin
+  update public.tournaments set draft_form = '{"organizer":{"email":"x@y.z"}}' where short_code = 'GP3M';
+  if (select draft_form from public.tournaments where short_code = 'GP3M') <> '{}'::jsonb then
+    raise exception 'draft form kept on a published tournament';
+  end if;
+end $$;
+-- Media buckets cannot be listed by visitors.
+select pg_temp.as_anon();
+do $$ begin
+  if exists (select 1 from storage.objects where bucket_id in ('tournament-media', 'club-logos')) then
+    raise exception 'anon can list media buckets';
+  end if;
+end $$;
+select pg_temp.reset();
+
 \echo 'RLS checks passed'
 rollback;

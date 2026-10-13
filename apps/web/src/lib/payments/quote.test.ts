@@ -59,6 +59,10 @@ describe("quote", () => {
     expect(quote(p, promo({ percent_off: 10, max_redemptions: 1, redemptions: 1 }), true, NOW).promoError).toBe("exhausted");
     expect(checkPromo(promo({ percent_off: 10, active: false }), NOW)).toBe("unknown");
   });
+  it("never asks a card payment under 0,50 €", () => {
+    expect(quote(p, promo({ amount_off_cents: 2880 }), true, NOW)).toMatchObject({ totalCents: 0, discountCents: 2900 });
+    expect(quote(p, promo({ amount_off_cents: 2850 }), true, NOW).totalCents).toBe(50);
+  });
   it("no code asked, no error", () => {
     expect(quote(p, null, false, NOW)).toMatchObject({ promoError: null, totalCents: 2900 });
   });

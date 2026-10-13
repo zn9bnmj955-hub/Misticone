@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { quoteFor } from "@/lib/payments/pricing";
 import { startCheckout, type CheckoutError, type CheckoutResult } from "@/lib/payments/checkout";
 import { normalizePromoCode, type PromoError } from "@/lib/payments/quote";
+import { rateLimit, rateLimited } from "@/lib/tournament/http";
 import { STEPS, defaultForm, draftSchema, validateForm, type FormIssue } from "@/lib/tournament-form";
 import {
   CLUB_CONTEXT_COLUMNS,
@@ -151,7 +152,7 @@ export type CheckDraftResult = { ok: true; issues: FormIssue[] } | Fail<"auth" |
 export async function checkDraft(id: string): Promise<CheckDraftResult> {
   const a = await access(id);
   if (a.error) return fail(a.error);
-  const res = validateForm(a.draft.tournament.draft_form, getSport, todayParis());
+  const res = validateForm(a.draft.tournament.draft_form, getSport, todayParis(), Date.now());
   return { ok: true, issues: res.ok ? [] : res.issues };
 }
 
@@ -165,9 +166,18 @@ export type PricePreview = {
   promoCode: string | null;
   promoError: PromoError | null;
 };
-export type PreviewPriceResult = { ok: true; price: PricePreview } | Fail<"auth" | "invalid" | "not_found" | "not_draft" | "no_plan">;
+export type PreviewPriceResult = { ok: true; price: PricePreview } | Fail<"auth" | "invalid" | "not_found" | "not_draft" | "no_plan" | "promo_limited">;
 
 const promoSchema = z.string().max(40).nullish();
+
+/**
+ * Promo codes cannot be guessed: 10 wrong codes per account and per hour,
+ * and the answer never says whether a code exists, expired or is used up.
+ */
+const PROMO_TRIES = 10;
+const promoKey = (userId: string) => `promo:fail:${userId}`;
+const promoBlocked = (userId: string) => rateLimited(promoKey(userId), PROMO_TRIES, 3600);
+const promoFailed = (userId: string) => rateLimit(promoKey(userId), PROMO_TRIES, 3600);
 
 /** Price of the saved draft (sport and maximum number of teams), promo code included. */
 export async function previewPrice(id: string, promoCode?: string | null): Promise<PreviewPriceResult> {
@@ -179,8 +189,11 @@ export async function previewPrice(id: string, promoCode?: string | null): Promi
   const draft = (a.draft.tournament.draft_form ?? {}) as { sportSlug?: unknown; maxTeams?: unknown };
   const sport = draftSport(typeof draft.sportSlug === "string" ? draft.sportSlug : a.draft.tournament.sport_slug);
   const maxTeams = typeof draft.maxTeams === "number" && draft.maxTeams >= 2 ? Math.min(1024, Math.floor(draft.maxTeams)) : sport.defaults.maxTeams;
-  const q = await quoteFor({ sportSlug: sport.slug, maxTeams, promoCode: normalizePromoCode(promo.data) || null });
+  const code = normalizePromoCode(promo.data) || null;
+  if (code && (await promoBlocked(a.userId))) return fail("promo_limited");
+  const q = await quoteFor({ sportSlug: sport.slug, maxTeams, promoCode: code });
   if (!q) return fail("no_plan");
+  if (code && q.promoError) await promoFailed(a.userId);
   return {
     ok: true,
     price: {
@@ -191,7 +204,7 @@ export async function previewPrice(id: string, promoCode?: string | null): Promi
       totalCents: q.totalCents,
       currency: q.currency,
       promoCode: q.promo?.code ?? null,
-      promoError: q.promoError,
+      promoError: q.promoError ? "unknown" : null,
     },
   };
 }
@@ -214,15 +227,18 @@ export async function payDraft(id: string, promoCode?: string | null): Promise<P
   const a = await access(id);
   if (a.error) return fail(a.error);
 
+  const code = normalizePromoCode(promo.data) || null;
+  if (code && (await promoBlocked(a.userId))) return fail("promo_invalid");
   let result: CheckoutResult;
   try {
-    result = await startCheckout({ tournamentId: id, userId: a.userId, promoCode: normalizePromoCode(promo.data) || null });
+    result = await startCheckout({ tournamentId: id, userId: a.userId, promoCode: code });
   } catch (e) {
     console.error("payDraft: startCheckout failed", e);
     return fail("provider_error");
   }
   if (result.kind === "redirect") redirect(result.url);
   if (result.kind === "published") redirect(`/club/concours/${id}/paiement`);
+  if (result.error === "promo_invalid" && code) await promoFailed(a.userId);
   return { ok: false, error: result.error, issues: result.issues };
 }
 

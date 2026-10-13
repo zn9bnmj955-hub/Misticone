@@ -46,12 +46,13 @@ export async function registerOnline(
       club: input.club || null,
       players: input.players.map((p) => ({ firstName: p.firstName, lastName: p.lastName })),
       source: "online",
+      refuseIfFull: !loaded.meta.waitlist_enabled,
     },
     clientOpId,
     actor: null,
     source: "online",
   });
-  if (!result.ok) return { ok: false, error: result.status === 409 ? "busy" : "closed" };
+  if (!result.ok) return { ok: false, error: result.status === 409 ? "busy" : result.error.code === "TOURNAMENT_FULL" ? "full" : "closed" };
 
   const created = result.changes.find((c): c is Extract<Change, { op: "create" }> => c.op === "create" && c.entity === "team");
   if (!created) return { ok: false, error: "busy" };
@@ -70,6 +71,7 @@ export async function registerOnline(
         position: i + 1,
         license: p.license ?? "",
         category: p.category ?? "",
+        substitute: i >= shape.players,
         // The account holder is the first player when they register their own team.
         user_id: i === 0 && opts.userId && input.selfIsFirstPlayer ? opts.userId : "",
       })),

@@ -41,8 +41,11 @@ export async function GET(request: NextRequest, { params }: Ctx) {
     const n = Number(moi);
     if (Number.isInteger(n) && n > 0) url.searchParams.set("equipe", String(n));
     const res = NextResponse.redirect(url, 303);
-    if (Number.isInteger(n) && n > 0) res.cookies.set(myTeamCookie(code), String(n), { path: `/c/${code}`, maxAge: 60 * 60 * 24 * 30, sameSite: "lax" });
-    else res.cookies.delete({ name: myTeamCookie(code), path: `/c/${code}` });
+    if (Number.isInteger(n) && n > 0) res.cookies.set(myTeamCookie(code), String(n), { path: "/", maxAge: 60 * 60 * 24 * 30, sameSite: "lax" });
+    else {
+      res.cookies.delete({ name: myTeamCookie(code), path: "/" });
+      res.cookies.delete({ name: myTeamCookie(code), path: `/c/${code}` });
+    }
     return res;
   }
 

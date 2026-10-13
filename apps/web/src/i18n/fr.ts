@@ -542,6 +542,7 @@ export const fr = {
     errors: {
       NOT_FOUND: "Élément introuvable (il a peut-être été supprimé).",
       TOURNAMENT_CLOSED: "Ce concours n'est pas ouvert.",
+      TOURNAMENT_FULL: "Le concours est complet et n'a pas de liste d'attente.",
       INVALID_STATUS_CHANGE: "Changement d'étape impossible.",
       NOT_ENOUGH_TEAMS: "Pas assez d'équipes pointées pour tirer.",
       ROUND_INCOMPLETE: "Le tour en cours n'est pas terminé.",

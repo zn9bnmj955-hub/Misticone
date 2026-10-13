@@ -8,6 +8,7 @@ import { renderEmail, sendEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/tournament/http";
 import { getViewer } from "@/lib/viewer";
 import {
   CLUB_LOGO_BUCKET,
@@ -106,6 +107,9 @@ export async function inviteMember(_prev: ActionState, fd: FormData): Promise<Ac
 
   const members = await listClubMembers(club.id);
   if (members.some((member) => member.email?.toLowerCase() === email)) return fail("alreadyMember");
+  // Invitations send emails in our name: 20 per day per club and per person.
+  const [okClub, okUser] = await Promise.all([rateLimit(`invite:club:${club.id}`, 20, 86_400), rateLimit(`invite:user:${viewer.id}`, 20, 86_400)]);
+  if (!okClub || !okUser) return fail("limited");
 
   const admin = createAdminClient();
   // A new link replaces any link still pending for the same address.

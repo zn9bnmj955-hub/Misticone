@@ -279,6 +279,7 @@ export const clubSpace = {
     owner: "Le propriétaire du club ne peut être ni modifié ni retiré.",
     self: "Vous ne pouvez pas modifier votre propre rôle.",
     alreadyMember: "Cette personne fait déjà partie du club.",
+    limited: "Trop d'invitations envoyées aujourd'hui. Réessayez demain.",
     email: "Adresse email invalide.",
     logoType: "Format non accepté : PNG, JPEG ou WebP.",
     logoSize: "L'image dépasse 2 Mo.",

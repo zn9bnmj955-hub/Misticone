@@ -285,8 +285,22 @@ export async function getPublicClub(slug: string): Promise<PublicClub | null> {
     .maybeSingle();
   if (!club) return null;
 
-  const [{ data: tournaments }, { data: announcements }] = await Promise.all([
-    supabase.from("tournaments").select(CARD_COLUMNS).eq("club_id", club.id).neq("status", "draft").order("starts_at", { ascending: true }).limit(100),
+  // Two lists, each with its own order and limit: a long history never hides what is coming.
+  const [{ data: upcomingRows }, { data: pastRows }, { data: announcements }] = await Promise.all([
+    supabase
+      .from("tournaments")
+      .select(CARD_COLUMNS)
+      .eq("club_id", club.id)
+      .in("status", ["published", "registration_closed", "check_in", "live"])
+      .order("starts_at", { ascending: true })
+      .limit(50),
+    supabase
+      .from("tournaments")
+      .select(CARD_COLUMNS)
+      .eq("club_id", club.id)
+      .in("status", ["finished", "archived"])
+      .order("starts_at", { ascending: false })
+      .limit(20),
     supabase
       .from("announcements")
       .select("id, title, body, link_url, sport_slug, published_at")
@@ -296,16 +310,17 @@ export async function getPublicClub(slug: string): Promise<PublicClub | null> {
       .limit(10),
   ]);
 
-  const cards: TournamentCard[] = (tournaments ?? []).map(({ teams, ...t }) => ({
-    ...t,
-    club: { name: club.name, slug: club.slug },
-    teamCount: countTeams(teams).active,
-  }));
+  const toCards = (rows: typeof upcomingRows): TournamentCard[] =>
+    (rows ?? []).map(({ teams, ...t }) => ({
+      ...t,
+      club: { name: club.name, slug: club.slug },
+      teamCount: countTeams(teams).active,
+    }));
   const { logo_path, ...rest } = club;
   return {
     club: { ...rest, logoUrl: clubLogoUrl(logo_path, club.updated_at) },
-    upcoming: cards.filter((c) => c.status !== "finished" && c.status !== "archived"),
-    past: cards.filter((c) => c.status === "finished" || c.status === "archived").reverse().slice(0, 20),
+    upcoming: toCards(upcomingRows),
+    past: toCards(pastRows),
     announcements: announcements ?? [],
   };
 }

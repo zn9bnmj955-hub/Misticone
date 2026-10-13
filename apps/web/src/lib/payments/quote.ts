@@ -40,6 +40,9 @@ export type Quote = {
   promoError: PromoError | null;
 };
 
+/** Smallest amount a card payment accepts (Stripe, euros). */
+export const MIN_CHARGE_CENTS = 50;
+
 export function normalizePromoCode(raw: string | null | undefined): string {
   return (raw ?? "").trim().toUpperCase().replace(/\s+/g, "");
 }
@@ -78,6 +81,8 @@ export function quote(plan: PlanRow, promo: PromoRow | null, promoRequested: boo
   if (valid?.percent_off) discount = Math.round((base * valid.percent_off) / 100);
   else if (valid?.amount_off_cents) discount = valid.amount_off_cents;
   discount = Math.min(base, Math.max(0, discount));
+  // Card payments under 0,50 € are refused by Stripe: such a small rest is offered.
+  if (base - discount > 0 && base - discount < MIN_CHARGE_CENTS) discount = base;
   return {
     plan,
     baseCents: base,

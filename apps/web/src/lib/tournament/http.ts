@@ -7,12 +7,24 @@ import { getStaffActor, type StaffActor } from "./staff";
 export const json = (body: unknown, status = 200) =>
   NextResponse.json(body, { status, headers: { "cache-control": "no-store" } });
 
-export function clientIp(request: NextRequest): string {
-  return (request.headers.get("x-forwarded-for") ?? "").split(",")[0]!.trim() || request.headers.get("x-real-ip") || "local";
+/**
+ * The visitor's IP for rate limits. Only headers set by the hosting platform
+ * are trusted (the left-most X-Forwarded-For value is chosen by the client):
+ * Netlify's client IP header, then the proxy's own header, then the last hop
+ * appended by the proxy.
+ */
+export function clientIp(request: Pick<NextRequest, "headers">): string {
+  const h = request.headers;
+  const platform = h.get("x-nf-client-connection-ip") ?? h.get("x-real-ip");
+  if (platform?.trim()) return platform.trim();
+  const hops = (h.get("x-forwarded-for") ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+  return hops[hops.length - 1] ?? "local";
 }
 
+/** Counts one hit; false when the limit is reached. A database error counts as "limited" (fail closed). */
 export async function rateLimit(key: string, max: number, windowSeconds: number): Promise<boolean> {
-  const { data } = await createAdminClient().rpc("hit_rate_limit", { p_key: key, p_max: max, p_window_seconds: windowSeconds });
+  const { data, error } = await createAdminClient().rpc("hit_rate_limit", { p_key: key, p_max: max, p_window_seconds: windowSeconds });
+  if (error) return false;
   return data !== false;
 }
 

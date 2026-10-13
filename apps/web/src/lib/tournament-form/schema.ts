@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CATEGORIES, COMPETITION_FORMATS, RANKING_CRITERIA, type SportConfig } from "@orgasport/sports";
-import { DATE_RE, TIME_RE } from "./time";
+import { DATE_RE, TIME_RE, parisToIso } from "./time";
 
 /**
  * The "Créer un concours" form. The same shape is autosaved as a draft
@@ -164,9 +164,14 @@ const minutes = (t: string) => {
  * competition formats, categories, coherent times and venues.
  * `today` is the Paris calendar date ("YYYY-MM-DD").
  */
-export function sportIssues(form: TournamentForm, sport: SportConfig, today: string): FormIssue[] {
+export function sportIssues(form: TournamentForm, sport: SportConfig, today: string, nowMs?: number): FormIssue[] {
   const issues: FormIssue[] = [];
   const add = (path: string, code: string) => issues.push({ path, code });
+  // Same day: the start (and the end of online registrations) must still be ahead.
+  if (nowMs !== undefined && form.date === today) {
+    if (Date.parse(parisToIso(form.date, form.startTime)) <= nowMs) add("startTime", "in_past");
+    else if (form.registrationMode !== "onsite" && Date.parse(parisToIso(form.date, form.registrationClosesTime)) <= nowMs) add("registrationClosesTime", "in_past");
+  }
   if (form.sportSlug !== sport.slug) add("sportSlug", "sport_mismatch");
   const teamFormat = sport.teamFormats.find((f) => f.id === form.teamFormat);
   if (!teamFormat) add("teamFormat", "unknown_team_format");
@@ -199,6 +204,8 @@ export function validateForm(
   raw: unknown,
   sportOf: (slug: string) => SportConfig | undefined,
   today: string,
+  /** Current instant: also checks times on the same day (server side). */
+  nowMs?: number,
 ): { ok: true; form: TournamentForm; sport: SportConfig } | { ok: false; issues: FormIssue[] } {
   const parsed = formSchema.safeParse(raw);
   if (!parsed.success) {
@@ -206,7 +213,7 @@ export function validateForm(
   }
   const sport = sportOf(parsed.data.sportSlug);
   if (!sport || !sport.enabled) return { ok: false, issues: [{ path: "sportSlug", code: "unknown_sport" }] };
-  const issues = sportIssues(parsed.data, sport, today);
+  const issues = sportIssues(parsed.data, sport, today, nowMs);
   return issues.length ? { ok: false, issues } : { ok: true, form: parsed.data, sport };
 }
 
