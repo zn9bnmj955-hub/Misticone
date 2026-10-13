@@ -5,6 +5,7 @@ Gestion de concours sportifs : inscriptions, tirage, terrains, scores et résult
 - Plan et architecture : [`docs/PLAN.md`](docs/PLAN.md)
 - Règles du projet et choix techniques : [`CLAUDE.md`](CLAUDE.md)
 - Variables d'environnement : [`.env.example`](.env.example)
+- Mettre le site en ligne, pas à pas : [`docs/DEPLOIEMENT.md`](docs/DEPLOIEMENT.md)
 
 ## Lancer le projet sur votre ordinateur
 
@@ -21,9 +22,14 @@ Dans `apps/web/.env.local`, collez les deux clés affichées par `pnpm db:start`
 - `Publishable key` → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `Secret key` → `SUPABASE_SECRET_KEY`
 
-Et inventez deux longues phrases secrètes (n'importe quelle suite de caractères, au moins 16) :
+Et inventez trois longues phrases secrètes (n'importe quelle suite de caractères, au moins 16) :
 - `STAFF_SESSION_SECRET` (sessions des bénévoles connectés par code PIN)
 - `CRON_SECRET` (protège le déclenchement des tirages automatiques)
+- `STRIPE_WEBHOOK_SECRET` (sans clé Stripe, signe les « paiements simulés » locaux)
+
+Facultatif : notifications sur téléphone → `npx web-push generate-vapid-keys`, puis collez les deux clés dans
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY`. Assistant intelligent → `ANTHROPIC_API_KEY` (sans clé, il répond avec
+la base de connaissances du site).
 
 Puis :
 
@@ -50,12 +56,16 @@ Mot de passe pour tous les comptes : `orgasport-demo` (données locales uniqueme
 |---|---|
 | `7KQ2` | Pétanque en cours, 32 doublettes, 2e tour |
 | `GP3M` | Pétanque à venir, inscriptions ouvertes |
-| `TR8E` | Pétanque terminée (triplettes vétérans) |
+| `TR8E` | Pétanque terminée il y a 3 jours (triplettes vétérans) |
 | `FT8S` | Tournoi de foot à 7, 8 équipes |
 
 Code PIN de la table de marque du concours `7KQ2` : **4821** (page `/c/7KQ2/table`).
 
-## Ce qu'on peut essayer (phase 2)
+Codes promo de démonstration : `BIENVENUE` (concours offert), `CLUB50` (-50 %).
+
+## Ce qu'on peut essayer
+
+### Le jour du concours
 
 - **Page publique d'un concours** : http://localhost:3000/c/7KQ2 → tapez `14` dans « Trouver mon équipe ». Elle fonctionne aussi avec JavaScript désactivé.
 - **Table de marque** : http://localhost:3000/c/7KQ2/table, PIN `4821`. Onglet Scores : tapez `12 13 7` puis Entrée (terrain 12, score 13 à 7). La page publique se met à jour toute seule.
@@ -64,10 +74,38 @@ Code PIN de la table de marque du concours `7KQ2` : **4821** (page `/c/7KQ2/tabl
 - **Préparer un concours** : connectez-vous avec `club@demo.orgasport.fr`, ouvrez http://localhost:3000/c/GP3M/table → Ouvrir le pointage, pointez des équipes, Tirage → Lancer le tirage.
 - **Affiche A4** : http://localhost:3000/c/7KQ2/affiche (imprimer ou « Enregistrer en PDF »).
 
+### Créer et payer un concours (club)
+- Connectez-vous avec `club@demo.orgasport.fr` → **Club** → « Créer un concours ». Tout est prérempli : « Continuer » à chaque
+  étape (ou « Tout le reste par défaut »), puis « Payer et publier ». Sans clé Stripe, une page de **paiement simulé** remplace
+  Stripe ; le concours passe « en ligne » tout seul, avec lien, QR code, affiche et codes PIN envoyés par email
+  (boîte locale http://127.0.0.1:54324). Avec le code `BIENVENUE`, il est publié sans paiement.
+- Espace club : tableau de bord, membres (invitation par lien), annonces, factures, statistiques, page publique du club.
+
+### Trouver un concours et s'inscrire (joueur)
+- http://localhost:3000/concours : filtres (sport, date, distance, places libres), carte. Ouvrez `GP3M` → « S'inscrire » :
+  le formulaire marche même sans JavaScript ; à la fin, fichier agenda et bouton « Me prévenir quand c'est à moi ».
+
+### Accueil personnalisé et notifications
+- Connectez-vous avec `joueur@demo.orgasport.fr` : l'accueil épingle « En direct » (votre terrain et votre heure), puis le fil
+  « Pour vous » (concours proches, résultats, annonces des clubs suivis, actualités).
+- Les notifications sur téléphone demandent l'autorisation **seulement** quand on touche « Me prévenir ». Gestion dans **Profil**.
+  L'application s'installe sur l'écran d'accueil (menu du navigateur → « Installer » / « Sur l'écran d'accueil »).
+
+### Assistant
+- Bulle en bas à droite, ou http://localhost:3000/assistant : « Mon prochain match », « La règle du but à 13 »…
+  Administration (compte `admin@demo.orgasport.fr`) : http://localhost:3000/admin/assistant (réglages, coûts, base de connaissances).
+
+### Vitrine et vidéos
+- http://localhost:3000 : boule 3D qui se transforme selon le sport (désactivée si « réduire les animations » est activé).
+- http://localhost:3000/decouvrir : vidéo de découverte (75 s) et tutoriel (2 min 30), sous-titrés.
+- Administration : http://localhost:3000/admin (tarifs, codes promo, paiements, concours, assistant, actualités).
+
 ## Tests
 
 ```bash
 pnpm -r test         # tests unitaires
 pnpm test:db         # règles de sécurité de la base
-pnpm test:e2e        # parcours complets dans un navigateur
+pnpm test:e2e        # parcours complets dans un navigateur (remet la base de démo à zéro)
 ```
+
+Vidéos : `pnpm videos:studio` (aperçu et retouches) et `pnpm videos:render` (rendu des 4 fichiers, une quinzaine de minutes chacun).

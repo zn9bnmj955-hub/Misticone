@@ -9,6 +9,8 @@ export type VideoPlayerProps = {
   title: string;
   /** Shown on the play button, e.g. « 1 min 15 ». */
   duration: string;
+  /** First thing on the page: preload the poster (it is the largest paint). */
+  priority?: boolean;
   /** 16:9 version (always) and 9:16 version (phones held upright). */
   wide: VideoFile;
   tall?: VideoFile;
@@ -27,7 +29,7 @@ export const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s
  * The `<video>` element is created on click, with French subtitles on by
  * default, native controls and sound (never autoplay without a click).
  */
-export function VideoPlayer({ title, duration, wide, tall, captions, chapters, labels }: VideoPlayerProps) {
+export function VideoPlayer({ title, duration, priority, wide, tall, captions, chapters, labels }: VideoPlayerProps) {
   const [file, setFile] = useState<VideoFile | null>(null);
   const startAt = useRef(0);
   const video = useRef<HTMLVideoElement>(null);
@@ -84,7 +86,7 @@ export function VideoPlayer({ title, duration, wide, tall, captions, chapters, l
           </video>
         ) : (
           <button type="button" onClick={() => open()} className="group absolute inset-0 text-on-accent" aria-label={labels.play}>
-            <Image src={wide.poster} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" />
+            <Image src={wide.poster} alt="" fill priority={priority} sizes="(min-width: 768px) 768px, 100vw" className="object-cover" />
             {/* Bottom corner: the poster's own title stays readable. */}
             <span className="absolute bottom-3 left-3 flex min-h-12 items-center gap-2 rounded-full bg-accent py-2 pl-3 pr-5 font-bold shadow-lg transition group-hover:scale-105 motion-reduce:transition-none">
               <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">

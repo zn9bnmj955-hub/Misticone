@@ -46,11 +46,12 @@ export default function DiscoverPage() {
           <p className="text-lg text-ink-soft">{v.page.intro}</p>
         </div>
 
-        {videos.map((video) => (
+        {videos.map((video, i) => (
           <section key={video.id} id={video.id} aria-labelledby={`${video.id}-title`} className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
             <VideoPlayer
               title={video.title}
               duration={video.duration}
+              priority={i === 0}
               wide={file(video.id, "16x9")}
               tall={file(video.id, "9x16")}
               captions={`/videos/${video.id}.vtt`}
