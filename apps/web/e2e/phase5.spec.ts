@@ -18,10 +18,12 @@ async function signIn(page: Page, email: string) {
 /** A browser where push "works": permission asked on click, fake subscription. */
 const MOCK_PUSH = (endpoint: string) => `
   (() => {
-    let permission = "default";
+    // Kept across pages of the test, like a real browser.
+    let permission = localStorage.getItem("__e2e_permission") || "default";
     Object.defineProperty(Notification, "permission", { get: () => permission });
     Notification.requestPermission = (cb) => {
       permission = "granted";
+      localStorage.setItem("__e2e_permission", permission);
       window.__permissionAsked = (window.__permissionAsked || 0) + 1;
       if (cb) cb(permission);
       return Promise.resolve(permission);
@@ -30,9 +32,10 @@ const MOCK_PUSH = (endpoint: string) => `
     const subscription = {
       endpoint: ${JSON.stringify(endpoint)},
       toJSON: () => ({ endpoint: ${JSON.stringify(endpoint)}, keys: { p256dh: "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM", auth: "tBHItJI5svbpez7KI4CCXg" } }),
-      unsubscribe: () => { sub = null; return Promise.resolve(true); },
+      unsubscribe: () => { sub = null; localStorage.removeItem("__e2e_sub"); return Promise.resolve(true); },
     };
-    const reg = { pushManager: { getSubscription: () => Promise.resolve(sub), subscribe: () => { sub = subscription; return Promise.resolve(sub); } } };
+    if (localStorage.getItem("__e2e_sub")) sub = subscription;
+    const reg = { pushManager: { getSubscription: () => Promise.resolve(sub), subscribe: () => { sub = subscription; localStorage.setItem("__e2e_sub", "1"); return Promise.resolve(sub); } } };
     const sw = { register: () => Promise.resolve(reg), ready: Promise.resolve(reg), getRegistration: () => Promise.resolve(reg), controller: null, addEventListener() {} };
     Object.defineProperty(navigator, "serviceWorker", { get: () => sw });
   })();
