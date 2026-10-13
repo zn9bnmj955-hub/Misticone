@@ -6,6 +6,7 @@ Gestion de concours sportifs : inscriptions, tirage, terrains, scores et résult
 - Règles du projet et choix techniques : [`CLAUDE.md`](CLAUDE.md)
 - Variables d'environnement : [`.env.example`](.env.example)
 - Mettre le site en ligne, pas à pas : [`docs/DEPLOIEMENT.md`](docs/DEPLOIEMENT.md)
+- Faire une démo en 10 minutes : [`docs/DEMO.md`](docs/DEMO.md) (enregistrements dans `docs/demo/`)
 
 ## Lancer le projet sur votre ordinateur
 
