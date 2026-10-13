@@ -170,7 +170,7 @@ export function Caption({
           size={size ?? (vertical ? 70 : where === "left" || where === "leftTop" ? 64 : 60)}
           stagger={stagger}
           align={where === "center" ? "center" : "left"}
-          style={{ textShadow: "0 4px 30px rgba(7,12,36,0.9)" }}
+          style={{ textShadow: "0 4px 30px rgba(4,6,12,0.9)" }}
         />
       </div>
     </div>
@@ -200,7 +200,7 @@ export function Backdrop({ accent = C.blueSoft, speed = 1, glow = 1 }: { accent?
     <AbsoluteFill style={{ background: C.stage, overflow: "hidden" }}>
       <AbsoluteFill
         style={{
-          background: `radial-gradient(ellipse 80% 55% at 50% ${vertical ? 52 : 58}%, #1a2a78 0%, ${C.cobalt} 45%, ${C.stage} 85%)`,
+          background: `radial-gradient(ellipse 80% 55% at 50% ${vertical ? 52 : 58}%, #0f2a8a 0%, ${C.cobalt} 45%, ${C.stage} 85%)`,
         }}
       />
       <div
@@ -309,7 +309,7 @@ export function Phone({
         width: SCREEN_W + b * 2,
         height: SCREEN_H + b * 2,
         borderRadius: 58,
-        background: "linear-gradient(145deg, #2a3466, #090e28 40%, #1b2350)",
+        background: "linear-gradient(145deg, #262b3a, #06080f 40%, #161b2a)",
         padding: b,
         boxShadow: `0 40px 90px rgba(0,0,0,0.55), 0 0 70px ${glow}55, inset 0 0 0 1.5px rgba(255,255,255,0.18)`,
         transformOrigin: "50% 50%",
@@ -420,7 +420,7 @@ export function Panel({
 
 export function Button({
   label,
-  color = C.amber,
+  color = C.accent,
   ink = C.stage,
   pressed = 0,
   big,
@@ -644,7 +644,7 @@ export function Caret({ on = true }: { on?: boolean }) {
 }
 
 /** Notification banner (push notification look). */
-export function Notification({ title, body, k, accent = C.amber, style }: { title: string; body: string; k: number; accent?: string; style?: React.CSSProperties }) {
+export function Notification({ title, body, k, accent = C.accent, style }: { title: string; body: string; k: number; accent?: string; style?: React.CSSProperties }) {
   return (
     <div
       style={{

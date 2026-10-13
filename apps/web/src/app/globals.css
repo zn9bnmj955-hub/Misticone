@@ -15,6 +15,9 @@
   --color-on-inverse: var(--os-on-inverse);
   --color-stage: var(--os-stage);
   --color-on-stage: var(--os-on-stage);
+  --color-stage-deep: var(--os-stage-deep);
+  --color-stage-haze: var(--os-stage-haze);
+  --color-stage-line: var(--os-stage-line);
   --color-accent: var(--os-accent);
   --color-accent-ink: var(--os-accent-ink);
   --color-on-accent: var(--os-on-accent);

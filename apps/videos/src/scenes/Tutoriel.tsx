@@ -46,16 +46,16 @@ function Intro() {
   return (
     <>
       <WorldScene t={t} mode="title" vertical={vertical} />
-      <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(7,12,36,0.55), transparent 70%)" }} />
+      <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(4,6,12,0.55), transparent 70%)" }} />
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", padding: 60 }}>
         <div style={{ opacity: ramp(t, 0.4, 1), marginBottom: 22 }}>
-          <Logo size={vertical ? 54 : 44} accent={C.amber} />
+          <Logo size={vertical ? 54 : 44} accent={C.accent} />
         </div>
-        <div style={{ ...TITLE, fontSize: vertical ? 34 : 28, color: C.amberInk, textTransform: "uppercase", letterSpacing: "0.12em", opacity: ramp(t, 0.8, 1.3), marginBottom: 10 }}>
+        <div style={{ ...TITLE, fontSize: vertical ? 34 : 28, color: C.accentInk, textTransform: "uppercase", letterSpacing: "0.12em", opacity: ramp(t, 0.8, 1.3), marginBottom: 10 }}>
           Tutoriel
         </div>
         {(vertical ? ["Votre lien concours,", "pas à pas"] : ["Votre lien concours, pas à pas"]).map((line, i) => (
-          <Kinetic key={line} words={line} at={1.0 + i * 0.3} size={vertical ? 84 : 96} align="center" style={{ textShadow: "0 6px 40px rgba(7,12,36,0.9)", whiteSpace: "nowrap" }} />
+          <Kinetic key={line} words={line} at={1.0 + i * 0.3} size={vertical ? 84 : 96} align="center" style={{ textShadow: "0 6px 40px rgba(4,6,12,0.9)", whiteSpace: "nowrap" }} />
         ))}
       </AbsoluteFill>
       <AbsoluteFill style={{ background: C.stage, opacity: 1 - ramp(t, 0, 0.6) }} />
@@ -153,7 +153,7 @@ const POPS: Pop[] = [
     w: 380,
     h: [80, 470],
     v: [300, 1050],
-    node: <PopCard icon="◷" color={C.amber} title="Fin estimée vers 21 h" sub="32 terrains nécessaires · 20 disponibles" />,
+    node: <PopCard icon="◷" color={C.accent} title="Fin estimée vers 21 h" sub="32 terrains nécessaires · 20 disponibles" />,
   },
   {
     from: 64.2,
@@ -185,7 +185,7 @@ const POPS: Pop[] = [
     w: 380,
     h: [80, 470],
     v: [300, 1080],
-    node: <PopCard icon="⚡" color={C.amber} title="Tirage fait en 1 seconde" sub="29 parties · terrains attribués" />,
+    node: <PopCard icon="⚡" color={C.accent} title="Tirage fait en 1 seconde" sub="29 parties · terrains attribués" />,
   },
   {
     from: 111,
@@ -201,7 +201,7 @@ const POPS: Pop[] = [
     w: 400,
     h: [80, 470],
     v: [300, 1080],
-    node: <PopCard icon="🔔" color={C.amber} title="« À vous ! Terrain 5 »" sub="Les équipes sont prévenues sur leur téléphone" />,
+    node: <PopCard icon="🔔" color={C.accent} title="« À vous ! Terrain 5 »" sub="Les équipes sont prévenues sur leur téléphone" />,
   },
 ];
 
@@ -233,8 +233,8 @@ function PopCard({ icon, color, title, sub }: { icon: string; color: string; tit
 
 function PopPoster() {
   return (
-    <div style={{ width: 220, height: 311, background: "#f3f1ea", borderRadius: 6, padding: 16, color: C.cobalt, fontFamily: "Saira", boxShadow: `0 30px 70px rgba(0,0,0,0.55), 0 0 60px ${C.amber}55` }}>
-      <div style={{ height: 12, background: C.amber, borderRadius: 3, marginBottom: 10 }} />
+    <div style={{ width: 220, height: 311, background: "#f3f1ea", borderRadius: 6, padding: 16, color: C.cobalt, fontFamily: "Saira", boxShadow: `0 30px 70px rgba(0,0,0,0.55), 0 0 60px ${C.accent}55` }}>
+      <div style={{ height: 12, background: C.accent, borderRadius: 3, marginBottom: 10 }} />
       <div style={{ ...TITLE, fontSize: 28, lineHeight: 0.95 }}>GRAND PRIX D'AUTOMNE</div>
       <div style={{ fontSize: 14, fontWeight: 700, margin: "8px 0", ...NUM }}>Samedi 14 juin · 14 h · doublettes</div>
       <QR size={110} seed={11} style={{ display: "block", margin: "6px auto" }} />
@@ -257,7 +257,7 @@ function Steps() {
   const exit = ramp(t, 126.2, 127.4, "inOut");
   const float = Math.sin(t * 0.9) * 7;
   const P = vertical ? { cx: 360, cy: 790, s: 1.0 } : { cx: 905, cy: 362, s: 0.86 };
-  const accent = T >= 72 && T < 85 ? C.success : C.amber;
+  const accent = T >= 72 && T < 85 ? C.success : C.accent;
   return (
     <>
       <Backdrop accent={C.blueSoft} speed={0.35} glow={0.8} />
@@ -287,7 +287,7 @@ function Steps() {
             at={s.start - T0 + 0.35}
             out={s.end - T0 - 0.45}
             eyebrow={EYEBROWS[idx]}
-            accent={idx === 5 ? C.success : idx === 8 ? C.blueSoft : C.amber}
+            accent={idx === 5 ? C.success : idx === 8 ? C.blueSoft : C.accent}
             place={vertical ? "top" : "leftTop"}
             size={vertical ? (text.length > 34 ? 58 : 66) : text.length > 34 ? 54 : 62}
           />
@@ -325,15 +325,15 @@ function Outro() {
   return (
     <>
       <WorldScene t={t} mode="outro" vertical={vertical} />
-      <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(7,12,36,0.6), transparent 70%)" }} />
+      <AbsoluteFill style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(4,6,12,0.6), transparent 70%)" }} />
       <AbsoluteFill style={{ alignItems: "center", justifyContent: vertical ? "flex-start" : "center", paddingTop: vertical ? 200 : 0 }}>
         <div style={{ opacity: ramp(t, 0.6, 1.2), transform: `scale(${mix(0.85, 1, ramp(t, 0.6, 1.4))})` }}>
-          <Logo size={vertical ? 70 : 60} accent={C.amber} />
+          <Logo size={vertical ? 70 : 60} accent={C.accent} />
         </div>
-        <Kinetic words="À vous de jouer !" at={1.4} size={vertical ? 64 : 56} color={C.amberInk} align="center" style={{ marginTop: 26 }} />
-        <Kinetic words="Créez votre premier concours" at={2.2} size={vertical ? 82 : 84} align="center" style={{ maxWidth: vertical ? 620 : 1100, marginTop: 6, textShadow: "0 6px 40px rgba(7,12,36,0.9)" }} />
+        <Kinetic words="À vous de jouer !" at={1.4} size={vertical ? 64 : 56} color={C.accentInk} align="center" style={{ marginTop: 26 }} />
+        <Kinetic words="Créez votre premier concours" at={2.2} size={vertical ? 82 : 84} align="center" style={{ maxWidth: vertical ? 620 : 1100, marginTop: 6, textShadow: "0 6px 40px rgba(4,6,12,0.9)" }} />
         <div style={{ marginTop: 34, opacity: ramp(t, 3.4, 4), transform: `translateY(${(1 - ramp(t, 3.4, 4)) * 20}px)` }}>
-          <Button label="orgasport.fr · Créer un concours →" color={C.amber} big style={{ padding: "0 34px", fontSize: vertical ? 30 : 28 }} />
+          <Button label="orgasport.fr · Créer un concours →" color={C.accent} big style={{ padding: "0 34px", fontSize: vertical ? 30 : 28 }} />
         </div>
       </AbsoluteFill>
       <AbsoluteFill style={{ background: C.stage, opacity: ramp(t, 14, 15) }} />

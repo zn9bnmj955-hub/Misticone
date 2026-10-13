@@ -21,7 +21,7 @@ export function AppBar({ title, sub, right }: { title: string; sub?: string; rig
   );
 }
 
-export function Field({ label, value, focus, hint, tag, accent = C.amber }: { label: string; value: React.ReactNode; focus?: boolean; hint?: string; tag?: string; accent?: string }) {
+export function Field({ label, value, focus, hint, tag, accent = C.accent }: { label: string; value: React.ReactNode; focus?: boolean; hint?: string; tag?: string; accent?: string }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: C.inkSoft, fontWeight: 600, marginBottom: 6 }}>
@@ -50,7 +50,7 @@ export function Field({ label, value, focus, hint, tag, accent = C.amber }: { la
   );
 }
 
-export function Chip({ label, active, accent = C.amber }: { label: string; active?: boolean; accent?: string }) {
+export function Chip({ label, active, accent = C.accent }: { label: string; active?: boolean; accent?: string }) {
   return (
     <span
       style={{
@@ -105,7 +105,7 @@ export function Toast({ text, k, color = C.success }: { text: string; k: number;
 
 /** Bottom button of a screen (always at the same place: easy to point at). */
 export const BOTTOM_BTN: [number, number] = [180, 712];
-export function BottomButton({ label, pressed = 0, color = C.amber, ink }: { label: string; pressed?: number; color?: string; ink?: string }) {
+export function BottomButton({ label, pressed = 0, color = C.accent, ink }: { label: string; pressed?: number; color?: string; ink?: string }) {
   return (
     <div style={{ position: "absolute", left: 18, right: 18, bottom: 22 }}>
       <Button label={label} pressed={pressed} color={color} ink={ink} />
@@ -145,7 +145,7 @@ export function TerrainPage({ t, highlight = 0 }: { t: number; highlight?: numbe
   return (
     <Screen style={{ padding: "54px 16px 16px" }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
-        <Logo size={20} accent={C.amber} />
+        <Logo size={20} accent={C.accent} />
         <span style={{ flex: 1 }} />
         <LiveBadge />
       </div>
@@ -155,16 +155,16 @@ export function TerrainPage({ t, highlight = 0 }: { t: number; highlight?: numbe
         style={{
           borderRadius: 22,
           padding: "16px 18px",
-          background: `linear-gradient(150deg, ${C.amber}, #ff8a1f)`,
+          background: `linear-gradient(150deg, ${C.accent}, #00c2ff)`,
           color: C.stage,
           transform: `translateY(${(1 - card) * 40}px) scale(${mix(0.92, 1, card) + highlight * 0.03})`,
           opacity: card,
-          boxShadow: `0 16px 50px ${C.amber}${highlight > 0 ? "aa" : "55"}`,
+          boxShadow: `0 16px 50px ${C.accent}${highlight > 0 ? "aa" : "55"}`,
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ ...TITLE, fontSize: 30 }}>À vous !</span>
-          <span style={{ fontSize: 14, fontWeight: 800, background: "rgba(7,12,36,0.12)", padding: "3px 10px", borderRadius: 99 }}>Équipe 12</span>
+          <span style={{ fontSize: 14, fontWeight: 800, background: "rgba(4,6,12,0.12)", padding: "3px 10px", borderRadius: 99 }}>Équipe 12</span>
         </div>
         <div style={{ display: "flex", alignItems: "baseline", marginTop: 4 }}>
           <span style={{ ...TITLE, fontSize: 64, lineHeight: 1, ...NUM }}>Terrain 12</span>
@@ -194,7 +194,7 @@ export function TerrainPage({ t, highlight = 0 }: { t: number; highlight?: numbe
             ...NUM,
           }}
         >
-          <span style={{ ...TITLE, width: 44, color: C.amberInk, fontSize: 20 }}>T{n}</span>
+          <span style={{ ...TITLE, width: 44, color: C.accentInk, fontSize: 20 }}>T{n}</span>
           <span style={{ flex: 1, fontWeight: 600 }}>{m}</span>
           <span style={{ color: C.inkSoft }}>{h}</span>
         </div>
@@ -267,8 +267,8 @@ export function ScanScreen({ t }: { t: number }) {
             right: 70,
             top: 225 + line * 270,
             height: 3,
-            background: C.amber,
-            boxShadow: `0 0 16px 4px ${C.amber}`,
+            background: C.accent,
+            boxShadow: `0 0 16px 4px ${C.accent}`,
           }}
         />
       ) : null}
@@ -313,7 +313,7 @@ export function Tabs({ active, small }: { active: string; small?: boolean }) {
             fontSize: small ? 13.5 : 16,
             fontWeight: 700,
             color: tab === active ? C.ink : C.inkSoft,
-            borderBottom: `3px solid ${tab === active ? C.amber : "transparent"}`,
+            borderBottom: `3px solid ${tab === active ? C.accent : "transparent"}`,
             marginBottom: -1.5,
           }}
         >
@@ -356,7 +356,7 @@ function ScoreRows({ t, entries, small }: { t: number; entries: Entry[]; small?:
                 ...NUM,
               }}
             >
-              <span style={{ ...TITLE, color: C.amberInk, width: small ? 40 : 50, fontSize: small ? 18 : 21 }}>T{e.terrain}</span>
+              <span style={{ ...TITLE, color: C.accentInk, width: small ? 40 : 50, fontSize: small ? 18 : 21 }}>T{e.terrain}</span>
               <span style={{ flex: 1 }}>Éq. {e.a}</span>
               <span style={{ ...TITLE, fontSize: small ? 22 : 26, margin: "0 10px" }}>
                 <span style={{ color: e.sa > e.sb ? C.ink : C.inkSoft }}>{e.sa}</span>
@@ -392,7 +392,7 @@ export function Board({
   return (
     <div style={{ position: "absolute", inset: 0, padding: 22, display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
-        <Logo size={22} accent={C.amber} />
+        <Logo size={22} accent={C.accent} />
         <span style={{ marginLeft: 14, fontSize: 16, color: C.inkSoft, fontWeight: 600 }}>Table de marque · 7KQ2</span>
         <span style={{ flex: 1 }} />
         <Witness state={state} pending={pending} />
@@ -405,7 +405,7 @@ export function Board({
             style={{
               height: 54,
               borderRadius: 14,
-              border: `2px solid ${cur ? C.amber : C.line}`,
+              border: `2px solid ${cur ? C.accent : C.line}`,
               background: C.stage,
               display: "flex",
               alignItems: "center",
@@ -414,7 +414,7 @@ export function Board({
               fontSize: 30,
               letterSpacing: "0.04em",
               marginBottom: 12,
-              boxShadow: cur ? `0 0 0 4px ${C.amber}33` : undefined,
+              boxShadow: cur ? `0 0 0 4px ${C.accent}33` : undefined,
               ...NUM,
             }}
           >
@@ -436,8 +436,8 @@ export function Board({
                   height: 38,
                   marginBottom: 8,
                   borderRadius: 10,
-                  border: `1.5px solid ${w ? C.amber : C.line}`,
-                  background: w ? `${C.amber}22` : "transparent",
+                  border: `1.5px solid ${w ? C.accent : C.line}`,
+                  background: w ? `${C.accent}22` : "transparent",
                   display: "flex",
                   alignItems: "center",
                   padding: "0 10px",
@@ -516,20 +516,20 @@ export function SportChoice({ t, tap, next }: { t: number; tap: number; next: nu
       <AppBar sub="Créer un concours · 1/8" title="Quel sport ?" />
       {sport(
         "Pétanque",
-        C.amber,
+        C.accent,
         "Tête-à-tête, doublettes, triplettes",
         <div style={{ width: 54, height: 54, borderRadius: 54, background: "radial-gradient(circle at 35% 30%, #fff, #9aa3cf 45%, #3a4166)" }} />,
         chosen,
       )}
       {sport(
         "Football",
-        C.green,
+        C.cyan,
         "Foot à 5, à 7, à 11",
         <div style={{ width: 54, height: 54, borderRadius: 54, background: "#fff", border: `6px solid ${C.stage}`, boxShadow: "inset 0 0 0 9px #fff, inset 0 0 0 20px #111" }} />,
         0,
       )}
       <div style={{ fontSize: 15, color: C.inkSoft, textAlign: "center" }}>D'autres sports arrivent bientôt.</div>
-      <BottomButton label="Continuer" pressed={press(t, next)} color={chosen ? C.amber : C.surface2} ink={chosen ? C.stage : C.inkSoft} />
+      <BottomButton label="Continuer" pressed={press(t, next)} color={chosen ? C.accent : C.surface2} ink={chosen ? C.stage : C.inkSoft} />
     </Screen>
   );
 }
@@ -576,7 +576,7 @@ const STEPS: Array<{ title: string; body: (t: number) => React.ReactNode }> = [
           {[80, 200, 280].map((x) => (
             <div key={x} style={{ position: "absolute", top: 0, bottom: 0, left: x, width: 2, background: C.line }} />
           ))}
-          <div style={{ position: "absolute", left: 150, top: 52, width: 26, height: 26, borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", background: C.amber, boxShadow: `0 0 20px ${C.amber}` }} />
+          <div style={{ position: "absolute", left: 150, top: 52, width: 26, height: 26, borderRadius: "50% 50% 50% 0", transform: "rotate(-45deg)", background: C.accent, boxShadow: `0 0 20px ${C.accent}` }} />
         </div>
       </>
     ),
@@ -604,7 +604,7 @@ export function Wizard({ t, taps }: { t: number; taps: number[] }) {
     <Screen>
       <AppBar sub={`Créer un concours · ${Math.min(step + 2, 8)}/8`} title="Grand Prix d'automne" />
       <div style={{ height: 8, borderRadius: 4, background: C.surface2, marginBottom: 18 }}>
-        <div style={{ height: 8, borderRadius: 4, width: `${progress * 100}%`, background: C.amber, boxShadow: `0 0 12px ${C.amber}` }} />
+        <div style={{ height: 8, borderRadius: 4, width: `${progress * 100}%`, background: C.accent, boxShadow: `0 0 12px ${C.accent}` }} />
       </div>
       <div style={{ position: "relative", height: 470, overflow: "hidden" }}>
         {STEPS.map((s, i) => {
@@ -636,9 +636,9 @@ export function TerrainsStep({ t, help }: { t: number; help: number }) {
     <Screen>
       <AppBar sub="Créer un concours · 6/8" title="Terrains" />
       <Field label="Terrains disponibles" value={<>{value}<Caret on={t > 1.5 && t < 4} /></>} focus={t > 1.5 && t < 4} />
-      <Card accent={`${C.amber}66`} style={{ background: `${C.amber}12` }}>
+      <Card accent={`${C.accent}66`} style={{ background: `${C.accent}12` }}>
         <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 6, ...line(3.6) }}>64 doublettes : 32 terrains nécessaires.</div>
-        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 6, color: C.amberInk, ...line(4.6) }}>Vous en avez 20 : 12 parties en décalé.</div>
+        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 6, color: C.accentInk, ...line(4.6) }}>Vous en avez 20 : 12 parties en décalé.</div>
         <div style={{ fontSize: 17, fontWeight: 700, ...line(5.6) }}>Fin estimée vers 21 h.</div>
       </Card>
       <div style={{ marginTop: 16 }}>
@@ -757,7 +757,7 @@ export function Online({ t }: { t: number }) {
       <Card style={{ marginTop: 16, display: "flex", alignItems: "center", ...k(0.5) }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, color: C.inkSoft }}>Lien du concours</div>
-          <div style={{ ...TITLE, fontSize: 24, color: C.amberInk }}>orgasport.fr/c/7KQ2</div>
+          <div style={{ ...TITLE, fontSize: 24, color: C.accentInk }}>orgasport.fr/c/7KQ2</div>
         </div>
         <Pill color={C.ink} bg={C.surface2}>Copier</Pill>
       </Card>
@@ -768,7 +768,7 @@ export function Online({ t }: { t: number }) {
         </Card>
         <Card style={{ flex: 1, textAlign: "center" }}>
           <div style={{ width: 84, height: 110, margin: "0 auto", background: "#f3f1ea", borderRadius: 4, padding: 6 }}>
-            <div style={{ height: 8, background: C.amber, borderRadius: 2, marginBottom: 5 }} />
+            <div style={{ height: 8, background: C.accent, borderRadius: 2, marginBottom: 5 }} />
             <div style={{ height: 5, background: C.cobalt, width: "80%", marginBottom: 3 }} />
             <div style={{ height: 5, background: C.cobalt, width: "60%", marginBottom: 8 }} />
             <QR size={44} seed={11} />
@@ -833,7 +833,7 @@ export function CheckIn({ t, ticks, launch }: { t: number; ticks: number[]; laun
             >
               {on ? "✓" : ""}
             </span>
-            <span style={{ ...TITLE, width: 52, fontSize: 19, color: C.amberInk }}>Éq. {n}</span>
+            <span style={{ ...TITLE, width: 52, fontSize: 19, color: C.accentInk }}>Éq. {n}</span>
             <span style={{ fontWeight: 600 }}>{names}</span>
           </div>
         );
@@ -871,7 +871,7 @@ export function DrawResult({ t }: { t: number }) {
             ...NUM,
           }}
         >
-          <span style={{ ...TITLE, width: 48, fontSize: 19, color: C.amberInk }}>T{n}</span>
+          <span style={{ ...TITLE, width: 48, fontSize: 19, color: C.accentInk }}>T{n}</span>
           <span style={{ flex: 1 }}>Éq. {a}</span>
           <span style={{ color: C.inkSoft, margin: "0 8px" }}>contre</span>
           <span style={{ flex: 1, textAlign: "right" }}>Éq. {b}</span>
@@ -895,7 +895,7 @@ export function ScoreEntry({ t, entries, typing }: { t: number; entries: Entry[]
         style={{
           height: 58,
           borderRadius: 14,
-          border: `2px solid ${cur ? C.amber : C.line}`,
+          border: `2px solid ${cur ? C.accent : C.line}`,
           display: "flex",
           alignItems: "center",
           padding: "0 14px",
@@ -903,7 +903,7 @@ export function ScoreEntry({ t, entries, typing }: { t: number; entries: Entry[]
           fontSize: 32,
           letterSpacing: "0.05em",
           marginBottom: 12,
-          boxShadow: cur ? `0 0 0 4px ${C.amber}33` : undefined,
+          boxShadow: cur ? `0 0 0 4px ${C.accent}33` : undefined,
           ...NUM,
         }}
       >
@@ -965,7 +965,7 @@ export function PlayerFind({ t, tap }: { t: number; tap: number }) {
   return (
     <Screen>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
-        <Logo size={20} accent={C.amber} />
+        <Logo size={20} accent={C.accent} />
         <span style={{ flex: 1 }} />
         <LiveBadge />
       </div>
@@ -973,10 +973,10 @@ export function PlayerFind({ t, tap }: { t: number; tap: number }) {
       <div style={{ fontSize: 15, color: C.inkSoft, marginBottom: 14 }}>Pétanque · doublettes · tour 2</div>
       <Field label="Trouver mon équipe" value={<>{q || <span style={{ color: C.inkSoft, fontWeight: 500 }}>Nom ou numéro</span>}<Caret on={t > 1 && t < 2.6} /></>} focus={t > 1 && t < tap} />
       {res > 0 ? (
-        <Card accent={C.amber} style={{ opacity: res, transform: `scale(${1 - press(t, tap) * 0.04})` }}>
+        <Card accent={C.accent} style={{ opacity: res, transform: `scale(${1 - press(t, tap) * 0.04})` }}>
           <div style={{ display: "flex", alignItems: "center" }}>
-            <span style={{ ...TITLE, fontSize: 26, color: C.amberInk, marginRight: 12 }}>Éq. 12</span>
-            <span style={{ fontSize: 17, fontWeight: 700, flex: 1 }}>Dupont – <span style={{ background: `${C.amber}44` }}>Martin</span></span>
+            <span style={{ ...TITLE, fontSize: 26, color: C.accentInk, marginRight: 12 }}>Éq. 12</span>
+            <span style={{ fontSize: 17, fontWeight: 700, flex: 1 }}>Dupont – <span style={{ background: `${C.accent}44` }}>Martin</span></span>
             <span style={{ fontSize: 22 }}>›</span>
           </div>
         </Card>
@@ -992,9 +992,9 @@ export function PlayerTeam({ t, notif }: { t: number; notif: number }) {
     <Screen>
       <Notification title="À vous ! Terrain 5 · 16 h 20" body="Tour 2 contre Équipe 44 · Leroy – Faure" k={k} style={{ transform: `translateY(${(1 - k) * -130}px) translateX(${wiggle}px)` }} />
       <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
-        <Logo size={20} accent={C.amber} />
+        <Logo size={20} accent={C.accent} />
         <span style={{ flex: 1 }} />
-        <Pill color={C.amberInk}>C'est mon équipe ★</Pill>
+        <Pill color={C.accentInk}>C'est mon équipe ★</Pill>
       </div>
       <div style={{ ...TITLE, fontSize: 30 }}>Équipe 12</div>
       <div style={{ fontSize: 16, color: C.inkSoft, marginBottom: 14 }}>Dupont – Martin</div>
@@ -1006,10 +1006,10 @@ export function PlayerTeam({ t, notif }: { t: number; notif: number }) {
         style={{
           borderRadius: 22,
           padding: "16px 18px",
-          background: k > 0 ? `linear-gradient(150deg, ${C.amber}, #ff8a1f)` : C.surface,
+          background: k > 0 ? `linear-gradient(150deg, ${C.accent}, #00c2ff)` : C.surface,
           color: k > 0 ? C.stage : C.ink,
-          border: `2px solid ${C.amber}`,
-          boxShadow: k > 0 ? `0 14px 40px ${C.amber}77` : undefined,
+          border: `2px solid ${C.accent}`,
+          boxShadow: k > 0 ? `0 14px 40px ${C.accent}77` : undefined,
         }}
       >
         <div style={{ fontSize: 15, fontWeight: 700 }}>{k > 0 ? "À vous !" : "Prochain match · tour 2"}</div>

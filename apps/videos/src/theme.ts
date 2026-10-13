@@ -5,24 +5,28 @@ export { script };
 export const FPS = 30;
 
 /**
- * Colors of the site (packages/ui/src/tokens.css, dark theme + sport accents).
- * Videos always use the dark « stage » palette, like the 3D scenes of the site.
+ * Colors of the site (packages/ui/src/tokens.css, dark theme + sport accents):
+ * brand = BLUE and BLACK. Videos always use the dark « stage » palette, like the
+ * 3D scenes of the site. Only status colors (success, warning, live) are not blue.
  */
 export const C = {
-  stage: "#070c24",
-  cobalt: "#0b1640",
-  surface: "#0f1736",
-  surface2: "#17214a",
-  ink: "#eef1ff",
-  inkSoft: "#9aa3cf",
-  line: "#26305e",
-  blue: "#2f54ff",
-  blueSoft: "#6f8bff",
-  blueInk: "#8ea4ff",
-  amber: "#ffb020",
-  amberInk: "#ffc24d",
-  green: "#00d68f",
-  greenInk: "#2bf0a6",
+  stage: "#04060c",
+  cobalt: "#070b18",
+  surface: "#0c0f19",
+  surface2: "#151a2a",
+  ink: "#eef2ff",
+  inkSoft: "#9aa3c0",
+  line: "#232a40",
+  blue: "#1f5bff",
+  blueSoft: "#4d7cff",
+  blueInk: "#7c9dff",
+  /** Main accent: electric blue (petanque accent, dark theme). */
+  accent: "#3d74ff",
+  accentInk: "#8fb0ff",
+  /** Secondary accent: cyan-blue (football accent). */
+  cyan: "#2bb4ff",
+  cyanInk: "#5cc6ff",
+  haze: "#12307a",
   live: "#ff4d42",
   liveDeep: "#e5261d",
   success: "#3ddc8a",

@@ -82,43 +82,104 @@ const dotTex = () =>
     }).tex,
   );
 
-/** Night sky with stadium lights, used as reflection map for the metal. */
+/**
+ * Night stadium used as reflection map for the metal: black ground, blue horizon
+ * haze, white softboxes (projectors) and a few blue light strips. No warm colors.
+ */
 const envTex = () =>
   cached("env", () => {
     const { tex } = canvasTexture(1024, 512, (ctx) => {
       const g = ctx.createLinearGradient(0, 0, 0, 512);
-      g.addColorStop(0, "#c8d2ff");
-      g.addColorStop(0.25, "#6276d8");
-      g.addColorStop(0.47, "#24358a");
-      g.addColorStop(0.5, "#2a3a90");
-      g.addColorStop(0.6, "#0e1748");
-      g.addColorStop(1, "#060a20");
+      g.addColorStop(0, "#9aa8d8");
+      g.addColorStop(0.2, "#3a4c9a");
+      g.addColorStop(0.44, "#12245e");
+      g.addColorStop(0.5, "#1d3a9a");
+      g.addColorStop(0.56, "#0a1230");
+      g.addColorStop(0.75, "#05070e");
+      g.addColorStop(1, "#020306");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, 1024, 512);
-      ctx.filter = "blur(6px)";
+      ctx.filter = "blur(5px)";
       ctx.fillStyle = "#ffffff";
-      for (let k = 0; k < 8; k++) ctx.fillRect(k * 128 + 20, 60 + (k % 2) * 40, 80, 26);
-      ctx.fillStyle = "#ffc24d";
-      ctx.fillRect(80, 236, 360, 16);
-      ctx.fillStyle = "#8ea4ff";
-      ctx.fillRect(520, 230, 440, 20);
-      ctx.fillStyle = "#3b5bff";
-      for (let k = 0; k < 6; k++) ctx.fillRect(0, 300 + k * 30, 1024, 4);
+      for (let k = 0; k < 6; k++) ctx.fillRect(k * 170 + 30, 70 + (k % 2) * 34, 96, 30);
+      ctx.fillRect(380, 8, 260, 22);
+      ctx.fillStyle = "#cfe0ff";
+      ctx.fillRect(60, 236, 380, 12);
+      ctx.fillStyle = "#4d7cff";
+      ctx.fillRect(520, 232, 440, 16);
+      ctx.fillStyle = "#2bb4ff";
+      for (let k = 0; k < 5; k++) ctx.fillRect(0, 300 + k * 34, 1024, 3);
       ctx.filter = "none";
     });
     tex.mapping = THREE.EquirectangularReflectionMapping;
     return tex;
   });
 
-/** Grooves of a « boule striée ». */
+/** Three grooves of a « boule striée » around the equator; v = latitude (0 top … 1 bottom). */
+const GROOVES = [0.455, 0.5, 0.545];
+/** Albedo: polished steel with a faint brushed grain, grooves slightly darker. No logo, no text. */
 const bouleTex = () =>
   cached("boule", () =>
-    canvasTexture(512, 256, (ctx) => {
-      ctx.fillStyle = "#c9cfdc";
-      ctx.fillRect(0, 0, 512, 256);
-      ctx.fillStyle = "#3b4152";
-      for (const y of [74, 88, 168, 182]) ctx.fillRect(0, y, 512, 3);
+    canvasTexture(1024, 512, (ctx) => {
+      ctx.fillStyle = "#d6dbe6";
+      ctx.fillRect(0, 0, 1024, 512);
+      for (let i = 0; i < 1400; i++) {
+        const y = rand(i * 1.7) * 512;
+        ctx.fillStyle = rand(i * 3.3) > 0.5 ? "rgba(255,255,255,0.05)" : "rgba(40,48,70,0.05)";
+        ctx.fillRect(0, y, 1024, 1);
+      }
+      for (const v of GROOVES) {
+        ctx.fillStyle = "#5a6070";
+        ctx.fillRect(0, v * 512 - 2.5, 1024, 5);
+      }
     }).tex,
+  );
+/** Bump: the grooves are cut into the steel (dark = lower). */
+const bouleBump = () =>
+  cached("bouleBump", () =>
+    canvasTexture(
+      1024,
+      512,
+      (ctx) => {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, 1024, 512);
+        for (const v of GROOVES) {
+          const g = ctx.createLinearGradient(0, v * 512 - 5, 0, v * 512 + 5);
+          g.addColorStop(0, "#ffffff");
+          g.addColorStop(0.35, "#202020");
+          g.addColorStop(0.65, "#202020");
+          g.addColorStop(1, "#ffffff");
+          ctx.fillStyle = g;
+          ctx.fillRect(0, v * 512 - 5, 1024, 10);
+        }
+      },
+      false,
+    ).tex,
+  );
+/** Roughness: polished (~0.25) with micro-scratches, rougher at the bottom of the grooves. */
+const bouleRough = () =>
+  cached("bouleRough", () =>
+    canvasTexture(
+      1024,
+      512,
+      (ctx) => {
+        ctx.fillStyle = "rgb(64,64,64)";
+        ctx.fillRect(0, 0, 1024, 512);
+        for (let i = 0; i < 900; i++) {
+          const x = rand(i * 5.1) * 1024;
+          const y = rand(i * 2.9) * 512;
+          ctx.strokeStyle = `rgba(${rand(i) > 0.5 ? "120,120,120" : "30,30,30"},0.35)`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 6 + rand(i * 7.7) * 30, y + (rand(i * 9.1) - 0.5) * 6);
+          ctx.stroke();
+        }
+        ctx.fillStyle = "rgb(150,150,150)";
+        for (const v of GROOVES) ctx.fillRect(0, v * 512 - 2, 1024, 4);
+      },
+      false,
+    ).tex,
   );
 
 /** Panel of the 3D bracket: rounded frame + accent block. */
@@ -407,12 +468,15 @@ export function Boule({ pos, radius = 0.5, rot = 0, cut, glow = 0 }: { pos: V3; 
   const { mat, uniform } = useMemo(() => {
     const u = { value: 2 };
     const m = new THREE.MeshStandardMaterial({
-      color: "#e2e6f2",
-      metalness: 0.95,
-      roughness: 0.18,
+      color: "#ffffff",
+      metalness: 1,
+      roughness: 1,
       map: bouleTex(),
-      envMapIntensity: 1.9,
-      emissive: new THREE.Color(C.amber),
+      roughnessMap: bouleRough(),
+      bumpMap: bouleBump(),
+      bumpScale: 1.2,
+      envMapIntensity: 1.6,
+      emissive: new THREE.Color(C.accent),
       emissiveIntensity: 0,
     });
     m.onBeforeCompile = (s) => {
@@ -430,7 +494,7 @@ export function Boule({ pos, radius = 0.5, rot = 0, cut, glow = 0 }: { pos: V3; 
   mat.emissiveIntensity = glow;
   return (
     <mesh position={pos} rotation={[0.3, rot, 0.2]} scale={radius} material={mat}>
-      <sphereGeometry args={[1, 48, 32]} />
+      <sphereGeometry args={[1, 96, 64]} />
     </mesh>
   );
 }
@@ -451,7 +515,7 @@ function Football({ pos, radius, rot, cut, rim }: { pos: V3; radius: number; rot
       uniforms: {
         uCenters: { value: centers },
         uCut: { value: 1 },
-        uEdge: { value: new THREE.Color(C.greenInk) },
+        uEdge: { value: new THREE.Color(C.cyanInk) },
         uRim: { value: new THREE.Color(rim) },
       },
       vertexShader: `varying vec3 vObj; varying vec3 vN; varying vec3 vV;
@@ -520,7 +584,7 @@ function Players({ on, t }: { on: ArrayLike<number>; t: number }) {
     const mat = new THREE.MeshBasicMaterial({ color: "#ffffff", toneMapped: false });
     const m = new THREE.InstancedMesh(geo, mat, 128);
     m.frustumCulled = false;
-    for (let i = 0; i < 128; i++) m.setColorAt(i, new THREE.Color(i % 4 < 2 ? C.amberInk : C.blueInk));
+    for (let i = 0; i < 128; i++) m.setColorAt(i, new THREE.Color(i % 4 < 2 ? C.accentInk : C.blueInk));
     return m;
   }, []);
   const mtx = new THREE.Matrix4();
@@ -544,7 +608,7 @@ export function Boulodrome({ lines, on, t, color = C.blueSoft, numbers = true }:
   return (
     <>
       <Bars bars={TERRAIN_BARS} bright={bright} color={color} />
-      {numbers ? <Labels items={NUMBER_ITEMS} lit={on} color={C.amberInk} size={1.9} flat /> : null}
+      {numbers ? <Labels items={NUMBER_ITEMS} lit={on} color={C.accentInk} size={1.9} flat /> : null}
       <Players on={on} t={t} />
     </>
   );
@@ -636,7 +700,7 @@ export function WorldScene({ t, mode, vertical }: { t: number; mode: "drop" | "t
       {mode === "drop" && t > impact && t < impact + 1.2 ? (
         <mesh position={[T12[0], 0.05, T12[2]]} rotation-x={-Math.PI / 2} scale={1 + (t - impact) * 3}>
           <circleGeometry args={[1, 48]} />
-          <meshBasicMaterial map={dotTex()} color={C.amberInk} transparent opacity={1 - (t - impact) / 1.2} blending={THREE.AdditiveBlending} toneMapped={false} depthWrite={false} />
+          <meshBasicMaterial map={dotTex()} color={C.accentInk} transparent opacity={1 - (t - impact) / 1.2} blending={THREE.AdditiveBlending} toneMapped={false} depthWrite={false} />
         </mesh>
       ) : null}
       <Dust3D t={t} center={mode === "drop" ? [T12[0], 0, T12[2]] : [0, 0, 0]} size={mode === "drop" ? [16, 5, 16] : [44, 10, 60]} />
@@ -735,7 +799,7 @@ export function BracketScene({ t, vertical }: { t: number; vertical: boolean }) 
     const mat = new THREE.PointsMaterial({
       size: 0.14,
       map: dotTex(),
-      color: "#ffe2a8",
+      color: "#cfe0ff",
       transparent: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
@@ -817,7 +881,7 @@ export function BracketScene({ t, vertical }: { t: number; vertical: boolean }) 
     return m;
   }, [bk]);
   const blue = new THREE.Color(C.blueSoft);
-  const amber = new THREE.Color(C.amber);
+  const amber = new THREE.Color(C.accent);
   bk.nodes.forEach((n, i) => {
     const col = blue.clone().lerp(amber, winPath.has(i) ? hl : 0).multiplyScalar(nodeOn[i] * 0.9);
     panelMesh.setColorAt(i, col);
@@ -858,14 +922,14 @@ export function BracketScene({ t, vertical }: { t: number; vertical: boolean }) 
     <Stage3D>
       <Cam pos={cam} look={look} fog={0.018} />
       <Floor />
-      <Bars bars={terrain} bright={[1, 1, 1, 1]} color={C.amber} />
+      <Bars bars={terrain} bright={[1, 1, 1, 1]} color={C.accent} />
       {bouleScale > 0.001
         ? BOULES.map((b, i) => <Boule key={i} pos={b.c} radius={b.r * bouleScale} rot={i + t * 0.2} glow={glow} />)
         : null}
       {bouleScale > 0.001 ? (
         <mesh position={COCHONNET} scale={0.13 * bouleScale}>
           <sphereGeometry args={[1, 24, 16]} />
-          <meshStandardMaterial color="#ff8a3d" roughness={0.5} emissive="#ff6a00" emissiveIntensity={0.3 + glow} />
+          <meshStandardMaterial color="#2b6bff" roughness={0.45} emissive="#1f5bff" emissiveIntensity={0.3 + glow} />
         </mesh>
       ) : null}
       <primitive object={points} />
@@ -912,7 +976,7 @@ export function MorphScene({ t, vertical }: { t: number; vertical: boolean }) {
   const radius = mix(0.5, 0.95, ramp(t, 1.6, 4.6, "inOut"));
   const lift = mix(0.5, 0.95, ramp(t, 1.6, 4.6, "inOut"));
   const ballPos: V3 = [0, lift, 0];
-  const accent = new THREE.Color(C.amber).lerp(new THREE.Color(C.green), m);
+  const accent = new THREE.Color(C.accent).lerp(new THREE.Color(C.cyan), m);
   const accentHex = `#${accent.getHexString()}`;
   const pGrow = new Float32Array(pitch.length);
   const pBright = new Float32Array(pitch.length);
@@ -932,14 +996,14 @@ export function MorphScene({ t, vertical }: { t: number; vertical: boolean }) {
     <Stage3D>
       <Cam pos={cam} look={[0, vertical ? 0.2 : 0.7, 0]} fog={0.02} />
       <Floor />
-      <Bars bars={petanque} bright={pet} color={C.amber} />
-      <Bars bars={pitch} bright={pBright} grow={pGrow} color={C.greenInk} />
+      <Bars bars={petanque} bright={pet} color={C.accent} />
+      <Bars bars={pitch} bright={pBright} grow={pGrow} color={C.cyanInk} />
       <Boule pos={ballPos} radius={radius} rot={t * 0.8} cut={cut} />
       <Football pos={ballPos} radius={radius * 1.002} rot={t * 0.8} cut={cut} rim={accentHex} />
       {m > 0.01 && m < 0.99 ? (
         <mesh position={[0, lift + cut * radius, 0]} rotation-x={-Math.PI / 2}>
           <ringGeometry args={[ringR * 0.98, ringR * 1.06, 96]} />
-          <meshBasicMaterial color={C.greenInk} blending={THREE.AdditiveBlending} toneMapped={false} transparent depthWrite={false} side={THREE.DoubleSide} />
+          <meshBasicMaterial color={C.cyanInk} blending={THREE.AdditiveBlending} toneMapped={false} transparent depthWrite={false} side={THREE.DoubleSide} />
         </mesh>
       ) : null}
       <mesh position={[0, 0.02, 0]} rotation-x={-Math.PI / 2} scale={radius * 3.2}>
@@ -1019,7 +1083,7 @@ export function FranceScene({ t, vertical }: { t: number; vertical: boolean }) {
     const st = 3.2 + rand(i * 5) * 3.2;
     const k = ramp(t, st, st + 0.4);
     const pulse = 1 + 0.25 * Math.sin(t * 3 + i);
-    const col = new THREE.Color(i % 4 === 3 ? C.greenInk : C.amberInk);
+    const col = new THREE.Color(i % 4 === 3 ? C.cyanInk : C.accentInk);
     mtx.makeScale(4.2 * k * pulse, 1, 4.2 * k * pulse).setPosition(p[0], 0.05, p[2]);
     dots.halo.setMatrixAt(i, mtx);
     dots.halo.setColorAt(i, col.clone().multiplyScalar(k));

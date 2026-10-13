@@ -45,7 +45,7 @@ function Opening() {
   return (
     <>
       <WorldScene t={t} mode="drop" vertical={vertical} />
-      <Caption words="Le jour du concours…" at={3.1} out={5.4} accent={C.amber} />
+      <Caption words="Le jour du concours…" at={3.1} out={5.4} accent={C.accent} />
       <Stats />
       <AbsoluteFill style={{ background: C.stage, opacity: 1 - ramp(t, 0, 0.6) }} />
     </>
@@ -89,10 +89,10 @@ function Stats() {
               filter: k < 1 ? `blur(${(1 - k) * 10}px)` : undefined,
             }}
           >
-            <span style={{ ...TITLE, ...NUM, fontSize: vertical ? 120 : 104, lineHeight: 0.95, color: i === 2 ? C.amber : C.ink, textShadow: "0 6px 30px rgba(7,12,36,0.9)", minWidth: vertical ? 150 : undefined }}>
+            <span style={{ ...TITLE, ...NUM, fontSize: vertical ? 120 : 104, lineHeight: 0.95, color: i === 2 ? C.accent : C.ink, textShadow: "0 6px 30px rgba(4,6,12,0.9)", minWidth: vertical ? 150 : undefined }}>
               {count}
             </span>
-            <span style={{ ...TITLE, fontSize: vertical ? 54 : 40, marginLeft: 12, color: C.inkSoft, textShadow: "0 4px 20px rgba(7,12,36,0.9)" }}>{label}</span>
+            <span style={{ ...TITLE, fontSize: vertical ? 54 : 40, marginLeft: 12, color: C.inkSoft, textShadow: "0 4px 20px rgba(4,6,12,0.9)" }}>{label}</span>
           </div>
         );
       })}
@@ -114,11 +114,11 @@ function Scan() {
   const scale = (vertical ? 1.06 : 0.84) * mix(0.35, 1, fly);
   return (
     <>
-      <Backdrop accent={C.amber} speed={1.6 - fly} />
+      <Backdrop accent={C.accent} speed={1.6 - fly} />
       <div style={{ position: "absolute", inset: 0, perspective: 1600 }}>
         <Phone
           scale={scale}
-          glow={C.amber}
+          glow={C.accent}
           style={{
             left: cx - 192,
             top: cy - 392 + float + (1 - fly) * 260,
@@ -133,7 +133,7 @@ function Scan() {
           ) : null}
         </Phone>
       </div>
-      <Caption words="Votre match en 10 secondes." at={0.8} place={vertical ? "top" : "left"} accent={C.amber} />
+      <Caption words="Votre match en 10 secondes." at={0.8} place={vertical ? "top" : "left"} accent={C.accent} />
       <div
         style={{
           position: "absolute",
@@ -164,7 +164,7 @@ function Bracket() {
   const { vertical } = useLayout();
   const chips: Array<[string, string, boolean]> = [
     ["Tirage automatique", C.blueInk, false],
-    ["Terrains attribués", C.amberInk, false],
+    ["Terrains attribués", C.accentInk, false],
     ["En direct", C.live, true],
   ];
   return (
@@ -226,7 +226,7 @@ function TiltedBoard({ t, children, x, y, scale, rotY, glitch = 0 }: { t: number
   return (
     <div style={{ position: "absolute", left: x, top: y + float, width: 760, height: 470, transformOrigin: "0 0", transform: `scale(${scale})` }}>
       <div style={{ position: "absolute", inset: 0, transform: `perspective(1400px) rotateY(${rotY}deg) rotateX(4deg)` }}>
-        <Panel width={760} height={470} glow={C.amber} style={{ filter: glitch > 0 ? `hue-rotate(${glitch * 90}deg) saturate(${1 + glitch})` : undefined }}>
+        <Panel width={760} height={470} glow={C.accent} style={{ filter: glitch > 0 ? `hue-rotate(${glitch * 90}deg) saturate(${1 + glitch})` : undefined }}>
           {children}
         </Panel>
         {slices.map((i) => {
@@ -258,7 +258,7 @@ function MiniPhone({ t, x, y, scale, at, title, big, sub, color, rot }: { t: num
   const shake = t > at && t < at + 0.5 ? Math.sin((t - at) * 70) * 4 : 0;
   return (
     <Phone scale={scale} glow={color} style={{ left: x - 192, top: y - 392 + Math.sin(t * 1.3 + x) * 6, transform: `rotate(${rot + shake * 0.3}deg)` }}>
-      <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 20%, #1c2a6e, ${C.stage} 70%)` }} />
+      <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 20%, #0f2470, ${C.stage} 70%)` }} />
       <div style={{ position: "absolute", top: 90, left: 0, right: 0, textAlign: "center", ...TITLE, fontSize: 92, ...NUM, color: C.ink }}>15:41</div>
       <div
         style={{
@@ -302,14 +302,14 @@ function ScoreTable() {
         { x: 1175, y: 330, rot: 7 },
       ];
   const notes = [
-    { title: "À vous !", big: "Terrain 4", sub: "15 h 55", color: C.amber },
+    { title: "À vous !", big: "Terrain 4", sub: "15 h 55", color: C.accent },
     { title: "Équipe 12", big: "Qualifiée", sub: "Tour 3", color: C.success },
     { title: "Équipe 31", big: "Terrain 18", sub: "Complémentaire", color: C.blueSoft },
   ];
   const src = vertical ? { x: 360, y: 560 } : { x: 600, y: 300 };
   return (
     <>
-      <Backdrop accent={C.amber} speed={0.6} />
+      <Backdrop accent={C.accent} speed={0.6} />
       <TiltedBoard t={t} x={vertical ? 33 : 40} y={vertical ? 330 : 50} scale={vertical ? 0.86 : 1} rotY={vertical ? 0 : 12}>
         <Board t={t} typing={[{ text: "12 13 7", from: 1.0, until: 2.7 }]} entries={entries} />
       </TiltedBoard>
@@ -319,7 +319,7 @@ function ScoreTable() {
           <MiniPhone t={t} {...p} scale={vertical ? 0.47 : 0.38} at={3.75 + i * 0.18} {...notes[i]} />
         </React.Fragment>
       ))}
-      <Caption words="Un score saisi, tout le monde est prévenu." at={0.4} accent={C.amber} />
+      <Caption words="Un score saisi, tout le monde est prévenu." at={0.4} accent={C.accent} />
     </>
   );
 }
@@ -397,8 +397,8 @@ function Morph() {
       <MorphScene t={t} vertical={vertical} />
       <Caption
         words={[
-          { text: "Pétanque,", color: C.amberInk },
-          { text: "football…", color: C.greenInk },
+          { text: "Pétanque,", color: C.accentInk },
+          { text: "football…", color: C.cyanInk },
           "et",
           "demain",
           "votre",
@@ -406,7 +406,7 @@ function Morph() {
         ]}
         at={0.5}
         stagger={0.28}
-        accent={mixColor(C.amber, C.green, m)}
+        accent={mixColor(C.accent, C.cyan, m)}
       />
     </>
   );
@@ -414,8 +414,8 @@ function Morph() {
 
 /* 55–65 s: the club builds its tournament, pays, and gets link, QR code and poster. */
 const FORM: Array<[string, string, string]> = [
-  ["Sport", "Pétanque", C.amber],
-  ["Format", "Doublettes · élimination", C.amberInk],
+  ["Sport", "Pétanque", C.accent],
+  ["Format", "Doublettes · élimination", C.accentInk],
   ["Date", "samedi 14 juin · 14 h", C.blueInk],
   ["Terrains", "32 · fin vers 21 h", C.blueInk],
   ["Inscriptions", "64 équipes · 10 €", C.success],
@@ -478,7 +478,7 @@ function ClubCreate() {
         })}
       </div>
       <div style={{ position: "absolute", left: L.btn.x, top: L.btn.y, width: L.btn.w, opacity: ramp(t, 3.0, 3.4) }}>
-        <Button label={paid > 0.5 ? "✓ Payé · publié" : "Payer et publier"} color={paid > 0.5 ? C.success : C.amber} big pressed={clamp01(1 - Math.abs(t - tap) / 0.2)} />
+        <Button label={paid > 0.5 ? "✓ Payé · publié" : "Payer et publier"} color={paid > 0.5 ? C.success : C.accent} big pressed={clamp01(1 - Math.abs(t - tap) / 0.2)} />
       </div>
       <Pointer path={[[3.6, L.btn.x + L.btn.w * 0.75, L.btn.y + 140], [4.4, L.btn.x + L.btn.w / 2, L.btn.y + 34], [5.1, L.btn.x + L.btn.w * 0.7, L.btn.y + 120]]} taps={[tap]} />
       {/* Light slot (the « printer ») */}
@@ -502,9 +502,9 @@ function ClubCreate() {
           return (
             <div key={i} style={{ position: "absolute", left: o.x, top: L.slotY - o.h * k - 8 * k, width: o.w, height: o.h }}>
               {i === 0 ? (
-                <Card accent={C.amber} style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", boxShadow: `0 0 40px ${C.amber}44` }}>
+                <Card accent={C.accent} style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", boxShadow: `0 0 40px ${C.accent}44` }}>
                   <div style={{ fontFamily: "Saira", fontSize: 18, color: C.inkSoft }}>Votre lien</div>
-                  <div style={{ ...TITLE, fontSize: vertical ? 34 : 32, color: C.amberInk }}>/c/7KQ2</div>
+                  <div style={{ ...TITLE, fontSize: vertical ? 34 : 32, color: C.accentInk }}>/c/7KQ2</div>
                   <div style={{ fontFamily: "Saira", fontSize: 16, color: C.ink }}>orgasport.fr/c/7KQ2</div>
                 </Card>
               ) : i === 1 ? (
@@ -528,8 +528,8 @@ function ClubCreate() {
 function Poster({ w, h }: { w: number; h: number }) {
   const s = w / 140;
   return (
-    <div style={{ width: w, height: h, background: "#f3f1ea", borderRadius: 4 * s, padding: 10 * s, boxShadow: `0 0 50px ${C.amber}55`, fontFamily: "Saira", color: C.cobalt, overflow: "hidden" }}>
-      <div style={{ height: 8 * s, background: C.amber, borderRadius: 2, marginBottom: 6 * s }} />
+    <div style={{ width: w, height: h, background: "#f3f1ea", borderRadius: 4 * s, padding: 10 * s, boxShadow: `0 0 50px ${C.accent}55`, fontFamily: "Saira", color: C.cobalt, overflow: "hidden" }}>
+      <div style={{ height: 8 * s, background: C.accent, borderRadius: 2, marginBottom: 6 * s }} />
       <div style={{ ...TITLE, fontSize: 17 * s, lineHeight: 1 }}>GRAND PRIX D'AUTOMNE</div>
       <div style={{ fontSize: 9 * s, fontWeight: 700, margin: `${4 * s}px 0` }}>Samedi 14 juin · 14 h · doublettes</div>
       <QR size={70 * s} seed={11} style={{ display: "block", margin: `${6 * s}px auto` }} />
@@ -562,7 +562,7 @@ function Finale() {
           at={5.3}
           size={vertical ? 50 : 44}
           align={vertical ? "center" : "left"}
-          style={{ marginTop: 18, maxWidth: vertical ? 600 : 520, textShadow: "0 4px 30px rgba(7,12,36,0.9)" }}
+          style={{ marginTop: 18, maxWidth: vertical ? 600 : 520, textShadow: "0 4px 30px rgba(4,6,12,0.9)" }}
         />
         <div style={{ marginTop: 26, opacity: ramp(t, 6.3, 6.8), transform: `translateY(${(1 - ramp(t, 6.3, 6.8)) * 16}px)` }}>
           <span style={{ ...TITLE, fontSize: vertical ? 36 : 30, padding: "10px 26px", borderRadius: 999, background: C.blue, color: "#fff", boxShadow: `0 0 40px ${C.blue}aa` }}>
