@@ -86,7 +86,7 @@ export function TeamStep({ form, update, error }: StepProps) {
                   addCoOrganizer();
                 }
               }}
-              className="min-h-12 min-w-0 flex-1 rounded-[var(--radius)] border-2 border-line bg-surface px-4 text-base text-ink placeholder:text-ink-soft/70 focus:border-accent focus:outline-none aria-[invalid]:border-danger"
+              className="min-h-12 min-w-0 flex-1 rounded-[var(--radius)] border-2 border-line bg-surface px-4 text-base text-ink placeholder:text-ink-soft/70 focus:border-accent aria-[invalid]:border-danger"
             />
             <Button variant="outline" onClick={addCoOrganizer} disabled={!email.trim()}>
               <Icon name="plus" size={20} />

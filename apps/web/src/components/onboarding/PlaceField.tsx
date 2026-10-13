@@ -86,6 +86,9 @@ export function PlaceField({
           aria-controls={listId}
           aria-autocomplete="list"
           autoComplete="off"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setOpen(false);
+          }}
           placeholder={placeholder}
           value={value.text}
           onChange={(e) => {
@@ -95,11 +98,19 @@ export function PlaceField({
             }
             onChange({ text: e.target.value });
           }}
-          className="min-h-14 w-full rounded-[var(--radius)] border-2 border-line bg-surface pl-11 pr-4 text-lg text-ink placeholder:text-ink-soft/70 focus:border-accent focus:outline-none"
+          className="min-h-14 w-full rounded-[var(--radius)] border-2 border-line bg-surface pl-11 pr-4 text-lg text-ink placeholder:text-ink-soft/70 focus:border-accent"
         />
       </div>
       {open && results.length > 0 && (
-        <ul id={listId} role="listbox" className="absolute top-full z-10 mt-1 grid w-full overflow-hidden rounded-[var(--radius)] border border-line bg-surface shadow-[var(--shadow-pop)]">
+        <ul
+          id={listId}
+          role="listbox"
+          onKeyDown={(e) => {
+            if (e.key !== "Escape") return;
+            setOpen(false);
+            document.getElementById(id)?.focus();
+          }}
+          className="absolute top-full z-10 mt-1 grid w-full overflow-hidden rounded-[var(--radius)] border border-line bg-surface shadow-[var(--shadow-pop)]">
           {results.map((p) => (
             <li key={`${p.label}-${p.lat}`} role="option" aria-selected={false}>
               <button type="button" onClick={() => pick(p)} className="flex min-h-12 w-full items-center gap-2 px-4 text-left hover:bg-surface-2">

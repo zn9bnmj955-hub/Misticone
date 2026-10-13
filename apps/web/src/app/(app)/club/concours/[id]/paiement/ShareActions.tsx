@@ -39,7 +39,7 @@ export function ShareActions({ url, title, text }: { url: string; title: string;
         readOnly
         value={url}
         onFocus={(e) => e.currentTarget.select()}
-        className="min-h-12 w-full min-w-0 rounded-[var(--radius)] border-2 border-line bg-surface-2 px-4 font-bold text-ink tabular focus:border-accent focus:outline-none"
+        className="min-h-12 w-full min-w-0 rounded-[var(--radius)] border-2 border-line bg-surface-2 px-4 font-bold text-ink tabular focus:border-accent"
       />
       <div className="flex flex-wrap gap-2">
         <Button onClick={copy} aria-live="polite">

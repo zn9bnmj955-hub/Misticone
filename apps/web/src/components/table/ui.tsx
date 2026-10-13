@@ -44,7 +44,7 @@ export function NumberInput(props: ComponentProps<"input">) {
       type="number"
       inputMode="numeric"
       min={0}
-      className="h-12 w-20 rounded-[var(--radius)] border-2 border-line bg-bg text-center text-xl font-black tabular text-ink focus:border-accent focus:outline-none"
+      className="h-12 w-20 rounded-[var(--radius)] border-2 border-line bg-bg text-center text-xl font-black tabular text-ink focus:border-accent"
       {...props}
     />
   );

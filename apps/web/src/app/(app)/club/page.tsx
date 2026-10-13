@@ -76,7 +76,7 @@ async function Dashboard() {
     <div className="grid gap-8">
       <Card className="flex flex-wrap items-center gap-4">
         <ClubLogo url={clubLogoUrl(club.logo_path)} name={club.name} alt={fmt(m.clubSpace.logoAlt, { club: club.name })} />
-        <div className="grid min-w-0 flex-1 gap-1">
+        <div className="grid min-w-0 flex-1 basis-48 gap-1">
           <p className="display text-3xl text-accent-ink">{club.name}</p>
           <Link href={`/clubs/${club.slug}`} className="inline-flex min-h-10 items-center gap-1.5 justify-self-start text-sm font-bold underline-offset-4 hover:underline">
             <Icon name="club" size={18} />

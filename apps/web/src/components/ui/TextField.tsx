@@ -18,7 +18,7 @@ export function TextField({
         id={id}
         aria-invalid={error ? true : undefined}
         aria-describedby={hint || error ? `${id}-desc` : undefined}
-        className="min-h-12 w-full rounded-[var(--radius)] border-2 border-line bg-surface px-4 text-base text-ink placeholder:text-ink-soft/70 focus:border-accent focus:outline-none aria-[invalid]:border-danger"
+        className="min-h-12 w-full rounded-[var(--radius)] border-2 border-line bg-surface px-4 text-base text-ink placeholder:text-ink-soft/70 focus:border-accent aria-[invalid]:border-danger"
         {...props}
       />
       {(hint || error) && (

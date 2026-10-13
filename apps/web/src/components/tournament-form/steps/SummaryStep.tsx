@@ -371,7 +371,7 @@ export function SummaryStep({
                 setPromoInput(e.target.value);
                 setPromoError(null);
               }}
-              className="min-h-12 min-w-0 flex-1 rounded-[var(--radius)] border-2 border-line bg-surface px-4 text-base uppercase text-ink placeholder:normal-case placeholder:text-ink-soft/70 focus:border-accent focus:outline-none aria-[invalid]:border-danger"
+              className="min-h-12 min-w-0 flex-1 rounded-[var(--radius)] border-2 border-line bg-surface px-4 text-base uppercase text-ink placeholder:normal-case placeholder:text-ink-soft/70 focus:border-accent aria-[invalid]:border-danger"
             />
             <Button type="submit" variant="outline" disabled={promoBusy || !promoInput.trim()}>
               {w.price.promoApply}

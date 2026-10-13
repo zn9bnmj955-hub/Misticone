@@ -32,7 +32,7 @@ export function Help({ id, error, hint }: { id: string; error?: string; hint?: R
 }
 
 const inputClass =
-  "w-full rounded-[var(--radius)] border-2 border-line bg-surface px-4 text-base text-ink placeholder:text-ink-soft/70 focus:border-accent focus:outline-none aria-[invalid]:border-danger";
+  "w-full rounded-[var(--radius)] border-2 border-line bg-surface px-4 text-base text-ink placeholder:text-ink-soft/70 focus:border-accent aria-[invalid]:border-danger";
 
 export function TextArea({
   id,
@@ -147,7 +147,7 @@ export function Stepper({
               commit(e.currentTarget.value);
             }
           }}
-          className="display h-12 w-24 rounded-[var(--radius)] border-2 border-line bg-surface text-center text-3xl tabular text-ink focus:border-accent focus:outline-none aria-[invalid]:border-danger"
+          className="display h-12 w-24 rounded-[var(--radius)] border-2 border-line bg-surface text-center text-3xl tabular text-ink focus:border-accent aria-[invalid]:border-danger"
         />
         <button
           type="button"

@@ -3,7 +3,7 @@ import { cn } from "@/components/ui/cn";
 
 /** Same look as TextField, for selects and text areas. */
 export const fieldClass =
-  "w-full rounded-[var(--radius)] border-2 border-line bg-surface px-4 text-base text-ink placeholder:text-ink-soft/70 focus:border-accent focus:outline-none";
+  "w-full rounded-[var(--radius)] border-2 border-line bg-surface px-4 text-base text-ink placeholder:text-ink-soft/70 focus:border-accent";
 
 export function FieldShell({ id, label, hint, children, className }: { id: string; label: string; hint?: string; children: ReactNode; className?: string }) {
   return (

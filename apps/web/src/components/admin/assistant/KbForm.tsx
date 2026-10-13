@@ -79,7 +79,7 @@ export function KbForm({ values, sports }: { values: KbValues; sports: { slug: s
           required
           aria-invalid={bodyError ? true : undefined}
           aria-describedby={`${id("body")}-desc ${id("body")}-count`}
-          className="min-h-40 w-full rounded-[var(--radius)] border-2 border-line bg-surface px-4 py-3 text-base text-ink focus:border-accent focus:outline-none aria-[invalid]:border-danger"
+          className="min-h-40 w-full rounded-[var(--radius)] border-2 border-line bg-surface px-4 py-3 text-base text-ink focus:border-accent aria-[invalid]:border-danger"
         />
         <p id={`${id("body")}-desc`} className={cn("text-sm", bodyError ? "text-danger" : "text-ink-soft")}>
           {bodyError ?? t.kb.bodyHint}
