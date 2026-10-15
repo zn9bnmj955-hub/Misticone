@@ -2,7 +2,9 @@ import { after, NextResponse, type NextRequest } from "next/server";
 import { isShortCode, normalizeShortCode } from "@orgasport/engine";
 import { getMessages } from "@/i18n";
 import { processDueDraws } from "@/lib/tournament/auto-draw";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { loadTournament } from "@/lib/tournament/load";
+import { createVersionedCache } from "@/lib/tournament/versioned-cache";
 import { escapeHtml } from "@/terrain/html";
 import { myTeamCookie } from "@/terrain/cookies";
 import { renderTerrainPage, VIEWS, type TerrainView } from "@/terrain/render";
@@ -16,6 +18,16 @@ const HTML_HEADERS = {
   "x-content-type-options": "nosniff",
   "referrer-policy": "same-origin",
 };
+
+/** One light query (state_version) per request; the full state is rebuilt once per version. */
+const loadPublic = createVersionedCache({
+  readVersion: async (code) => {
+    const { data, error } = await createAdminClient().from("tournaments").select("state_version").eq("short_code", code).neq("status", "draft").maybeSingle();
+    if (error) throw error;
+    return data?.state_version ?? null;
+  },
+  load: (code) => loadTournament(code),
+});
 
 function notFound(code: string): Response {
   const m = getMessages().findDraw;
@@ -49,11 +61,12 @@ export async function GET(request: NextRequest, { params }: Ctx) {
     return res;
   }
 
-  const loaded = await loadTournament(code);
+  const loaded = await loadPublic(code);
   if (!loaded) return notFound(code);
 
   const view = (VIEWS as string[]).includes(sp.get("vue") ?? "") ? (sp.get("vue") as TerrainView) : "tirage";
-  const mineRaw = Number(request.cookies.get(myTeamCookie(code))?.value);
+  const mineCookie = request.cookies.get(myTeamCookie(code))?.value;
+  const mineRaw = Number(mineCookie);
   const msgKey = sp.get("msg");
   const captain = getMessages().terrain.captain as Record<string, string>;
   const ERRORS = new Set(["badCode", "invalid", "notPlayable", "limited"]);
@@ -79,5 +92,9 @@ export async function GET(request: NextRequest, { params }: Ctx) {
   if (autoAt && Date.parse(autoAt) <= Date.now() && Object.keys(loaded.state.rounds).length === 0) {
     after(() => processDueDraws(code));
   }
-  return new Response(body, { headers: HTML_HEADERS });
+  // Live refreshes without a personal cookie are identical for everyone: a few seconds at the CDN absorb the
+  // simultaneous reloads after each score (the browser itself never keeps them: max-age=0).
+  const shared = sp.has("fragment") && !mineCookie && !msgKey;
+  const headers = shared ? { ...HTML_HEADERS, "cache-control": "public, max-age=0, s-maxage=4, stale-while-revalidate=4" } : HTML_HEADERS;
+  return new Response(body, { headers });
 }
