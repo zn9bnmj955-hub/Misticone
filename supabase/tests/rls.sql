@@ -305,5 +305,29 @@ begin
   perform pg_temp.reset();
 end $$;
 
+-- Live updates: anyone may listen to "tournament:CODE" (private channel), only the server may send.
+do $$
+declare who text;
+begin
+  if exists (select 1 from pg_policies where schemaname = 'realtime' and tablename = 'messages'
+             and cmd in ('INSERT', 'ALL', 'UPDATE')) then
+    raise exception 'a client write policy exists on realtime.messages';
+  end if;
+  foreach who in array array['anon', 'benevole@demo.orgasport.fr', 'club@demo.orgasport.fr'] loop
+    if who = 'anon' then perform pg_temp.as_anon(); else perform pg_temp.as_user(who); end if;
+    perform set_config('realtime.topic', 'tournament:7KQ2', true);
+    if not exists (select 1 from pg_policies where schemaname = 'realtime' and tablename = 'messages' and cmd = 'SELECT') then
+      raise exception 'nobody can listen to tournament updates';
+    end if;
+    begin
+      insert into realtime.messages (topic, extension, event, payload, private)
+        values ('tournament:7KQ2', 'broadcast', 'update', '{"version": 999999999}', true);
+      raise exception '% sent a fake tournament update', who;
+    exception when insufficient_privilege then null;
+    end;
+    perform pg_temp.reset();
+  end loop;
+end $$;
+
 \echo 'RLS checks passed'
 rollback;
