@@ -27,6 +27,7 @@ export const FIELD = {
   email: "cap_email",
   rules: "reglement",
   certify: "certif",
+  teammates: "coequipiers",
   me: "moi",
   honeypot: "site_web",
   turnstile: "cf-turnstile-response",
@@ -36,7 +37,7 @@ export const FIELD = {
 export function parseRegistrationForm(
   form: URLSearchParams,
   shape: TeamShape,
-): { input: RegistrationInput; values: FormValues; certified: boolean; honeypot: string; turnstileToken: string | null } {
+): { input: RegistrationInput; values: FormValues; certified: boolean; teammatesInformed: boolean; honeypot: string; turnstileToken: string | null } {
   const get = (k: string) => (form.get(k) ?? "").trim();
   const values: FormValues = {};
   for (const [k, v] of form.entries()) if (k !== FIELD.turnstile && k.length < 40) values[k] = v.slice(0, 200);
@@ -64,6 +65,7 @@ export function parseRegistrationForm(
     },
     values,
     certified: form.get(FIELD.certify) === "on",
+    teammatesInformed: form.get(FIELD.teammates) === "on",
     honeypot: get(FIELD.honeypot),
     turnstileToken: form.get(FIELD.turnstile),
   };
@@ -85,6 +87,7 @@ export function issueField(issue: RegistrationIssue): string {
     captain: FIELD.phone,
     acceptedRules: FIELD.rules,
     certify: FIELD.certify,
+    teammates: FIELD.teammates,
     players: "players",
   };
   return map[issue.path] ?? issue.path;
@@ -174,11 +177,17 @@ function field(opts: {
   </div>`;
 }
 
+/** The captain enters other people's data: they must have been told (GDPR art. 14). */
+export function hasTeammates(shape: TeamShape): boolean {
+  return !shape.individual && shape.players + shape.substitutes > 1;
+}
+
 function errorText(issue: RegistrationIssue | undefined, hint: string | null): string | null {
   if (!issue) return null;
   const e = getMessages().registration.errors;
   if (issue.code === "license") return hint ? fmt(e.license, { hint }) : e.licenseNoHint;
   if (issue.path === "certify") return e.certify;
+  if (issue.path === "teammates") return e.teammates;
   return e[issue.code];
 }
 
@@ -271,6 +280,17 @@ export function renderRegistrationPage(o: FormOpts): string {
     ${o.rulesPdfUrl ? html`<p><a href="${o.rulesPdfUrl}" target="_blank" rel="noopener">${r.form.rulesPdf}</a></p>` : ""}
     <label class="chk${err(FIELD.rules) ? " bad" : ""}"><input type="checkbox" name="${FIELD.rules}" required${v(FIELD.rules) === "on" ? raw(" checked") : ""}> ${r.form.rules}</label>
     ${err(FIELD.rules) ? html`<small class="ferr">${err(FIELD.rules)}</small>` : ""}
+    ${
+      hasTeammates(o.shape)
+        ? html`<label class="chk${err(FIELD.teammates) ? " bad" : ""}"><input type="checkbox" name="${FIELD.teammates}" required${v(FIELD.teammates) === "on" ? raw(" checked") : ""}> ${r.form.teammates}</label>${
+            err(FIELD.teammates) ? html`<small class="ferr">${err(FIELD.teammates)}</small>` : ""
+          }`
+        : ""
+    }
+    <p class="muted">${fmt(r.form.privacy, {
+      organizer: o.meta.club?.name ?? r.form.privacyOrganizer,
+      names: o.meta.name_display === "full" ? r.form.namesFull : r.form.namesInitials,
+    })} <a href="/legal/confidentialite">${r.form.privacyLink}</a></p>
     <div class="hp" aria-hidden="true"><label for="f_hp">${r.form.honeypot}</label><input id="f_hp" name="${FIELD.honeypot}" tabindex="-1" autocomplete="off"></div>
     ${turnstile}
     <p><button class="btn wide" type="submit">${o.shape.individual ? r.form.submitIndividual : r.form.submit}</button></p>

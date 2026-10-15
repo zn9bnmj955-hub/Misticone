@@ -33,6 +33,7 @@ test.describe("catalog and registration", () => {
     await page.locator('input[name="cap_nom"]').fill(`Léa ${last}`);
     await page.locator('input[name="cap_tel"]').fill("06 12 34 56 78");
     await page.locator('input[name="reglement"]').check();
+    await page.locator('input[name="coequipiers"]').check();
     await page.getByRole("button", { name: /Inscrire mon équipe/ }).click();
 
     await page.waitForURL(/\/inscription\/ok\?equipe=\d+/);

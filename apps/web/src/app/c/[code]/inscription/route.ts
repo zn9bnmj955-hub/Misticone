@@ -13,7 +13,7 @@ import { registerOnline, registrationWindow, teamShape, validateRegistration, ty
 import { turnstileSiteKey, verifyTurnstile } from "@/lib/turnstile";
 import { myTeamCookie, registrationCookie as regCookie } from "@/terrain/cookies";
 import { escapeHtml } from "@/terrain/html";
-import { FIELD, parseRegistrationForm, renderRegistrationPage, type FormValues } from "@/terrain/registration";
+import { FIELD, hasTeammates, parseRegistrationForm, renderRegistrationPage, type FormValues } from "@/terrain/registration";
 import { TERRAIN_CSS } from "@/terrain/styles.generated";
 
 type Ctx = { params: Promise<{ code: string }> };
@@ -144,6 +144,7 @@ export async function POST(request: NextRequest, { params }: Ctx) {
 
   const extra: RegistrationIssue[] = [];
   if (!shape.categories && loaded.meta.category !== "all" && !parsed.certified) extra.push({ path: "certify", code: "rules" });
+  if (hasTeammates(shape) && !parsed.teammatesInformed) extra.push({ path: "teammates", code: "rules" });
 
   const deviceToken = request.cookies.get(regCookie(code))?.value || randomBytes(32).toString("base64url");
   const input = { ...parsed.input, selfIsFirstPlayer: signedIn && parsed.input.selfIsFirstPlayer };

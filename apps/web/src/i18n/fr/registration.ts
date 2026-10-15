@@ -45,6 +45,13 @@ export const registration = {
     contactHint: "Au moins un des deux : téléphone ou email.",
     me: "Je joue dans cette équipe (joueur 1)",
     rules: "J'accepte le règlement du concours.",
+    teammates: "J'ai informé mes coéquipiers de cette inscription et de l'utilisation de leurs données.",
+    privacy:
+      "Ces informations sont traitées par {organizer}, organisateur du concours, avec OrgaSport comme prestataire technique, uniquement pour gérer l'inscription et le déroulement du concours. Sur la page publique, les noms des joueurs sont affichés {names}. Les contacts et numéros de licence sont conservés au plus 6 mois après le concours.",
+    privacyOrganizer: "le club",
+    namesFull: "en entier (prénom et nom)",
+    namesInitials: "avec les initiales seulement",
+    privacyLink: "Confidentialité et vos droits",
     readRules: "Lire le règlement",
     rulesPdf: "Règlement (PDF)",
     submit: "Inscrire mon équipe",
@@ -65,6 +72,7 @@ export const registration = {
     rules: "Vous devez accepter le règlement.",
     category: "Catégorie invalide.",
     certify: "Cochez la case pour confirmer la catégorie.",
+    teammates: "Cochez la case pour confirmer que vos coéquipiers sont informés.",
   },
   ok: {
     title: "C'est fait !",

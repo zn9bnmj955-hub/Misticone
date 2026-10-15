@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TeamShape } from "@/lib/tournament/registration-rules";
-import { FIELD, issueField, parseRegistrationForm, renderRegistrationPage } from "./registration";
+import { FIELD, hasTeammates, issueField, parseRegistrationForm, renderRegistrationPage } from "./registration";
 import { requireSport } from "@orgasport/sports";
 import type { TournamentMeta } from "@/lib/tournament/load";
 
@@ -98,5 +98,28 @@ describe("registration page", () => {
     });
     expect(page).toContain("Les inscriptions en ligne sont closes.");
     expect(page).not.toContain("<form");
+  });
+
+  it("informs players about their data and asks the captain to inform teammates", () => {
+    const opts = {
+      sport: requireSport("petanque"),
+      window: "open" as const,
+      values: {},
+      issues: [],
+      notice: null,
+      signedIn: false,
+      turnstileSiteKey: null,
+      rulesPdfUrl: null,
+    };
+    const page = renderRegistrationPage({ ...opts, meta: { ...meta, name_display: "full", club: { name: "Boule d'Or", slug: "bo" } }, shape });
+    expect(page).toContain("Boule d&#39;Or, organisateur du concours");
+    expect(page).toContain("en entier (prénom et nom)");
+    expect(page).toContain('href="/legal/confidentialite"');
+    expect(page).toContain(`name="${FIELD.teammates}"`);
+    const solo = renderRegistrationPage({ ...opts, meta, shape: { ...shape, players: 1, substitutes: 0, individual: true } });
+    expect(solo).toContain("avec les initiales seulement");
+    expect(solo).not.toContain(`name="${FIELD.teammates}"`);
+    expect(hasTeammates(shape)).toBe(true);
+    expect(issueField({ path: "teammates", code: "rules" })).toBe(FIELD.teammates);
   });
 });
