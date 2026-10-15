@@ -3,6 +3,7 @@ import { fmt, getMessages } from "@/i18n";
 import { formatDay, formatEuros, formatTime } from "@/lib/format";
 import type { TournamentMeta } from "@/lib/tournament/load";
 import type { RegistrationInput, RegistrationIssue, RegistrationWindow, TeamShape } from "@/lib/tournament/registration-rules";
+import { legalLinks } from "./legal";
 import { html, raw, type SafeHtml } from "./html";
 import { TERRAIN_CSS } from "./styles.generated";
 import { notifyBlock, notifyScriptTag, TERRAIN_HEAD_LINKS } from "./notify-script";
@@ -106,7 +107,7 @@ export function terrainDocument(opts: { title: string; sportToken: string; top?:
 ${opts.head ?? ""}
 </head>
 <body>
-<div class="wrap">${opts.top ?? ""}<main>${opts.body}</main></div>
+<div class="wrap">${opts.top ?? ""}<main>${opts.body}</main><footer class="foot no-print">${legalLinks()}</footer></div>
 </body>
 </html>`.value;
 }

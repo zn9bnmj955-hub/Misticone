@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import { formatDay, formatEuros, formatTime } from "@/lib/format";
 import type { TournamentMeta } from "@/lib/tournament/load";
 import { registrationWindow } from "@/lib/tournament/registration-rules";
+import { legalLinks } from "./legal";
 import { html, jsonForScript, raw, type SafeHtml } from "./html";
 import { TERRAIN_CSS } from "./styles.generated";
 import { LIVE_SCRIPT } from "./live-script";
@@ -424,6 +425,7 @@ ${raw(TERRAIN_HEAD_LINKS)}
     <a href="/c/${code}/affiche">${tm.poster}</a>
     <a href="/c/${code}/table">${tm.table}</a>
     <a href="/">${tm.poweredBy}</a>
+    ${legalLinks()}
   </footer>
 </div>
 ${found?.length === 1 && !["finished", "archived"].includes(t.meta.status) ? notifyScriptTag() : ""}

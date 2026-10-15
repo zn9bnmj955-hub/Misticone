@@ -97,6 +97,8 @@ describe("registration page", () => {
       rulesPdfUrl: null,
     });
     expect(page).toContain("Les inscriptions en ligne sont closes.");
+    expect(page).toContain('href="/legal/mentions-legales"');
+    expect(page).toContain('href="/legal/confidentialite"');
     expect(page).not.toContain("<form");
   });
 
