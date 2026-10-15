@@ -60,6 +60,18 @@ export function eligibleTeams(state: EngineState): Team[] {
   return pool.sort((a, b) => a.number - b.number);
 }
 
+/** Registered teams left out of the next draw because others were checked in and they were not. */
+export function teamsLeftOut(state: EngineState): Team[] {
+  const all = Object.values(state.teams);
+  if (!all.some((t) => t.status === "checked_in")) return [];
+  return all.filter((t) => t.status === "registered").sort((a, b) => a.number - b.number);
+}
+
+/** Status to restore when a forfeit is cancelled: checked in again if the team had been checked in. */
+export function statusBeforeForfeit(team: Team): "checked_in" | "registered" {
+  return team.checkedInAt ? "checked_in" : "registered";
+}
+
 export function teamsById(state: EngineState, ids: string[]): Team[] {
   return ids.map((id) => state.teams[id]).filter((t): t is Team => Boolean(t));
 }

@@ -461,6 +461,8 @@ export const fr = {
       swapHint: "Choisissez l'équipe à échanger avec {team}.",
       swapCancel: "Annuler l'échange",
       eligible: "{count} équipe(s) seront tirées.",
+      leftOut: "{count} équipe(s) inscrite(s) mais pas pointée(s) : elles ne seront pas tirées.",
+      leftOutHint: "Si elles sont là, pointez-les dans l'onglet Pointage avant de lancer le tirage.",
       none: "Pas encore de tirage.",
       auto: "Les tours suivants se tirent automatiquement dès qu'un tour est terminé.",
     },

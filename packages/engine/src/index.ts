@@ -14,6 +14,8 @@ export {
   isRoundComplete,
   teamMatches,
   eligibleTeams,
+  teamsLeftOut,
+  statusBeforeForfeit,
   winnerTeams,
   loserTeams,
   ACTIVE_ON_VENUE,

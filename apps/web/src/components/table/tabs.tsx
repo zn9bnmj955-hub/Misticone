@@ -6,6 +6,8 @@ import {
   matchesOfRound,
   queuePosition,
   roundsOf,
+  statusBeforeForfeit,
+  teamsLeftOut,
   venueQueue,
   type EngineState,
   type Match,
@@ -142,7 +144,7 @@ export function CheckInTab({ table, state, teamSize }: TabProps & { teamSize: nu
           </span>
         </span>
         {status === "forfeit" ? (
-          <Btn tone="ghost" onClick={() => table.dispatch({ type: "team.setStatus", teamId: team.id, status: "registered" })}>
+          <Btn tone="ghost" onClick={() => table.dispatch({ type: "team.setStatus", teamId: team.id, status: statusBeforeForfeit(team) })}>
             {t.cancelForfeit}
           </Btn>
         ) : (
@@ -220,6 +222,7 @@ export function DrawTab({ table, state }: TabProps) {
   const brackets: ("main" | "consolation")[] = ["main", "consolation"];
   const mainStarted = Object.values(state.rounds).some((r) => r.bracket === "main");
   const eligible = Object.values(state.teams).filter((x) => x.status === "checked_in").length || Object.values(state.teams).filter((x) => x.status === "registered").length;
+  const leftOut = mainStarted ? [] : teamsLeftOut(state);
 
   const teamButton = (match: Match, side: "A" | "B") => {
     const ids = side === "A" ? match.sideA : match.sideB;
@@ -262,6 +265,13 @@ export function DrawTab({ table, state }: TabProps) {
         )}
         {!mainStarted && <p className="self-center font-bold text-ink-soft">{fmt(t.eligible, { count: eligible })}</p>}
       </div>
+      {leftOut.length > 0 && (
+        <div role="status" className="rounded-[var(--radius)] border-2 border-warning/60 bg-warning/10 p-3">
+          <p className="font-bold">{fmt(t.leftOut, { count: leftOut.length })}</p>
+          <p className="text-ink-soft">{leftOut.map((x) => teams.get(x.id)?.label ?? `#${x.number}`).join(" · ")}</p>
+          <p className="text-sm text-ink-soft">{t.leftOutHint}</p>
+        </div>
+      )}
       {mainStarted && state.tournament.config.autoNextRound && <p className="text-sm text-ink-soft">{t.auto}</p>}
       {swapFrom && (
         <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius)] bg-accent-soft p-3 font-bold">

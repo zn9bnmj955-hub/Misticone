@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { applyCommand } from "./commands";
 import { EngineError } from "./errors";
-import { matchesOfRound, roundsOf } from "./queries";
+import { matchesOfRound, roundsOf, statusBeforeForfeit, teamsLeftOut } from "./queries";
 import { createIdGenerator } from "./rng";
 import { applyChanges, canInvert, conflictsWithLater, invertChanges } from "./tx";
 import { exec, makeState, playToEnd, resetOps } from "./test-helpers";
@@ -44,6 +44,23 @@ describe("check-in and on-site registration", () => {
     const drawn = new Set(Object.values(s.matches).flatMap((m) => [...m.sideA, ...m.sideB]));
     expect(drawn.has("team-006")).toBe(false);
     expect(drawn.size).toBe(5);
+  });
+  it("cancelling a forfeit brings a checked-in team back into the draw", () => {
+    let s = makeState({ teams: 6, config: noConsolation });
+    s = exec(s, { type: "team.setStatus", teamId: "team-006", status: "forfeit" });
+    expect(statusBeforeForfeit(s.teams["team-006"]!)).toBe("checked_in");
+    s = exec(s, { type: "team.setStatus", teamId: "team-006", status: statusBeforeForfeit(s.teams["team-006"]!) });
+    expect(teamsLeftOut(s)).toEqual([]);
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "x" });
+    expect(new Set(Object.values(s.matches).flatMap((m) => [...m.sideA, ...m.sideB])).has("team-006")).toBe(true);
+  });
+  it("lists registered teams left out of the draw, and restores never-checked teams as registered", () => {
+    let s = makeState({ teams: 4, teamStatus: "registered" });
+    expect(teamsLeftOut(s)).toEqual([]);
+    s = exec(s, { type: "team.setStatus", teamId: "team-001", status: "checked_in" });
+    expect(teamsLeftOut(s).map((t) => t.id)).toEqual(["team-002", "team-003", "team-004"]);
+    s = exec(s, { type: "team.setStatus", teamId: "team-004", status: "forfeit" });
+    expect(statusBeforeForfeit(s.teams["team-004"]!)).toBe("registered");
   });
 });
 

@@ -46,7 +46,7 @@ export function makeState(o: MakeStateOptions): EngineState {
       status: o.teamStatus ?? "checked_in",
       seed: o.seeds ? o.seeds(i) : null,
       bracket: "main",
-      checkedInAt: "2026-10-12T11:00:00.000Z",
+      checkedInAt: (o.teamStatus ?? "checked_in") === "checked_in" ? "2026-10-12T11:00:00.000Z" : null,
     };
   }
   const venues = o.venues ?? 100;
