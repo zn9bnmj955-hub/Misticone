@@ -10,6 +10,7 @@ import { parisDatePlus, parisToIso, validateForm } from "@/lib/tournament-form";
 import { checkStoredMedia } from "@/lib/tournament-form/media-check";
 import { quoteFor } from "./pricing";
 import { selectProvider } from "./provider";
+import { closeSessionForReplacement } from "./replace-session";
 import { getStripe } from "./stripe";
 import { checkoutCancelPath, paymentResultPath, simulationPath } from "./urls";
 
@@ -36,7 +37,8 @@ export type CheckoutError =
   | "no_plan"
   | "promo_invalid"
   | "provider_unavailable"
-  | "provider_error";
+  | "provider_error"
+  | "payment_processing";
 
 export type CheckoutResult =
   | { kind: "redirect"; url: string }
@@ -55,22 +57,28 @@ type Admin = ReturnType<typeof createAdminClient>;
  * Closes the checkouts still open for this tournament: starting a new
  * payment replaces them (the form or the price may have changed). Stripe
  * sessions are expired on Stripe's side too, so an old tab cannot be paid.
+ * A session that Stripe does not confirm as expired (already paid, payment
+ * being confirmed) is never replaced: returns "processing" so the club is
+ * not charged twice while the webhook is late.
  */
-async function expirePendingPayments(admin: Admin, tournamentId: string): Promise<void> {
+async function expirePendingPayments(admin: Admin, tournamentId: string): Promise<"ok" | "processing"> {
   const { data, error } = await admin
     .from("payments")
     .select("id, provider, stripe_checkout_session_id")
     .eq("tournament_id", tournamentId)
     .eq("status", "pending");
   if (error) throw error;
-  if (!data || data.length === 0) return;
+  if (!data || data.length === 0) return "ok";
   for (const p of data) {
     if (p.provider !== "stripe" || !p.stripe_checkout_session_id || !process.env.STRIPE_SECRET_KEY) continue;
-    try {
-      await getStripe().checkout.sessions.expire(p.stripe_checkout_session_id);
-    } catch (e) {
-      // Already completed or expired: the webhook decides what happened.
-      console.warn(`[checkout] could not expire Stripe session of payment ${p.id}`, e instanceof Error ? e.message : e);
+    const sessions = getStripe().checkout.sessions;
+    const outcome = await closeSessionForReplacement(
+      { retrieve: (id) => sessions.retrieve(id), expire: (id) => sessions.expire(id) },
+      p.stripe_checkout_session_id,
+    );
+    if (outcome === "processing") {
+      console.warn(`[checkout] payment ${p.id} is paid or being confirmed on Stripe: no new checkout`);
+      return "processing";
     }
   }
   const { error: updateError } = await admin
@@ -82,6 +90,7 @@ async function expirePendingPayments(admin: Admin, tournamentId: string): Promis
     )
     .eq("status", "pending");
   if (updateError) throw updateError;
+  return "ok";
 }
 
 export async function startCheckout(input: {
@@ -165,7 +174,7 @@ async function checkout(input: { tournamentId: string; userId: string; promoCode
   // One checkout at a time per tournament (unique index): replace the old one.
   let payment: { id: string } | null = null;
   for (let attempt = 0; attempt < 2 && !payment; attempt++) {
-    await expirePendingPayments(admin, tournament.id);
+    if ((await expirePendingPayments(admin, tournament.id)) === "processing") return fail("payment_processing");
     const { data, error: insertError } = await admin.from("payments").insert(row).select("id").single();
     if (data) payment = data;
     else if (insertError?.code !== UNIQUE_VIOLATION) throw insertError;

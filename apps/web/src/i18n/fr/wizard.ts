@@ -443,6 +443,7 @@ export const wizard = {
       promo_limited: "Trop d'essais de codes promo. Réessayez dans une heure.",
       provider_unavailable: "Le paiement en ligne n'est pas encore activé.",
       provider_error: "Le service de paiement ne répond pas. Réessayez dans un instant.",
+      payment_processing: "Paiement en cours de confirmation : le concours sera publié dès que Stripe l'aura validé. Inutile de payer à nouveau.",
       auth: "Votre session a expiré : reconnectez-vous.",
       save: "Le brouillon n'a pas pu être enregistré. Réessayez dans un instant.",
       invalid: "Demande invalide.",

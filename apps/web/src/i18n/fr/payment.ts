@@ -10,6 +10,7 @@ export const payment = {
     promo_invalid: "Ce code promo n'est pas valable.",
     provider_unavailable: "Le paiement en ligne n'est pas encore activé.",
     provider_error: "Le service de paiement ne répond pas. Réessayez dans un instant.",
+    payment_processing: "Paiement en cours de confirmation : le concours sera publié dès que Stripe l'aura validé. Inutile de payer à nouveau.",
   },
   /** Stripe Checkout line item. */
   stripe: {
