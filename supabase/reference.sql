@@ -9,9 +9,9 @@ insert into public.sports (slug, name, config, enabled, sort_order) values ('foo
   on conflict (slug) do update set name = excluded.name, config = excluded.config, sort_order = excluded.sort_order, updated_at = now();
 
 -- Starting prices (edit them in /admin/tarifs).
-insert into public.pricing_plans (code, label, description, price_cents, currency, max_teams, active, sort_order) values ('lien-concours', 'Lien concours', 'Prix de départ, à fixer dans l''administration.', 2900, 'eur', null, true, 10)
+insert into public.pricing_plans (code, label, description, price_cents, currency, max_teams, active, sort_order) values ('lien-concours', 'Lien concours', 'Paiement unique pour un concours : inscriptions en ligne, tirage, table de marque, affiche et résultats en direct.', 2900, 'eur', null, true, 10)
   on conflict (code) do nothing;
-insert into public.pricing_plans (code, label, description, price_cents, currency, max_teams, active, sort_order) values ('petit-concours', 'Petit concours (16 équipes max.)', 'Prix de départ pour les petits concours.', 1900, 'eur', 16, true, 20)
+insert into public.pricing_plans (code, label, description, price_cents, currency, max_teams, active, sort_order) values ('petit-concours', 'Petit concours (16 équipes max.)', 'Paiement unique pour un concours jusqu''à 16 équipes : inscriptions en ligne, tirage, table de marque, affiche et résultats en direct.', 1900, 'eur', 16, true, 20)
   on conflict (code) do nothing;
 
 -- Settings.

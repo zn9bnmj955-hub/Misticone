@@ -806,8 +806,8 @@ insert into public.announcements (id, club_id, sport_slug, title, body, publishe
   ('d3f74c55-3636-4ada-a38e-c708185ca3f0', '843e1286-fe8e-4486-8189-836f21d047ac', 'football', 'Inscriptions ouvertes pour le tournoi des fêtes', '8 équipes maximum, foot à 7. Premier arrivé, premier servi !', now() - interval '4320 minutes', '5050aade-77c4-4f16-896e-d282123cded3');
 
 insert into public.pricing_plans (id, code, label, description, price_cents, sort_order, max_teams, currency, active) values
-  ('f78e4309-d0dd-4dcd-9a66-de9024b88ebb', 'lien-concours', 'Lien concours', 'Prix de départ, à fixer dans l''administration.', 2900, 10, null, 'eur', true),
-  ('617f3fff-26cc-4d55-bde6-fbf65d9e0c8c', 'petit-concours', 'Petit concours (16 équipes max.)', 'Prix de départ pour les petits concours.', 1900, 20, 16, 'eur', true);
+  ('f78e4309-d0dd-4dcd-9a66-de9024b88ebb', 'lien-concours', 'Lien concours', 'Paiement unique pour un concours : inscriptions en ligne, tirage, table de marque, affiche et résultats en direct.', 2900, 10, null, 'eur', true),
+  ('617f3fff-26cc-4d55-bde6-fbf65d9e0c8c', 'petit-concours', 'Petit concours (16 équipes max.)', 'Paiement unique pour un concours jusqu''à 16 équipes : inscriptions en ligne, tirage, table de marque, affiche et résultats en direct.', 1900, 20, 16, 'eur', true);
 
 insert into public.promo_codes (id, code, description, percent_off, active) values
   ('7aae4261-9bb0-4e9e-a5ed-83fb9fad8429', 'BIENVENUE', 'Premier concours offert (démo)', 100, true),

@@ -18,14 +18,14 @@ export const PRICING_PLANS: PricingPlanSeed[] = [
   {
     code: "lien-concours",
     label: "Lien concours",
-    description: "Prix de départ, à fixer dans l'administration.",
+    description: "Paiement unique pour un concours : inscriptions en ligne, tirage, table de marque, affiche et résultats en direct.",
     price_cents: 2900,
     sort_order: 10,
   },
   {
     code: "petit-concours",
     label: "Petit concours (16 équipes max.)",
-    description: "Prix de départ pour les petits concours.",
+    description: "Paiement unique pour un concours jusqu'à 16 équipes : inscriptions en ligne, tirage, table de marque, affiche et résultats en direct.",
     price_cents: 1900,
     max_teams: 16,
     sort_order: 20,
