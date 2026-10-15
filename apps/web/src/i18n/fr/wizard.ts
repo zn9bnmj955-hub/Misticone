@@ -500,6 +500,7 @@ export const wizard = {
       consolationFromRound: "Choisissez un tour entre 1 et 10.",
       poolSize: "Poules de 3 à 8 {teamNoun}.",
       poolQualifiers: "Entre 1 et 4 qualifiés par poule.",
+      "poolQualifiers.too_few": "Une seule poule : prenez au moins 2 qualifiés pour jouer une phase finale.",
       timeLimitMinutes: "Limite de temps entre 5 et 600 minutes.",
       "timeLimitMinutes.not_applicable": "Pas de limite de temps pour ce sport.",
       durationMinutes: "Durée entre 1 et 600 minutes.",

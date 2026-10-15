@@ -168,6 +168,16 @@ describe("pools then final phase", () => {
     expect(s.tournament.status).toBe("finished");
   });
 
+  it("a single qualifier in all: the pool winner wins, no final to draw", () => {
+    for (const teams of [3, 4, 5]) {
+      resetOps();
+      const s = playToEnd(makeState({ teams, config: { format: "pools_then_bracket", pools: { size: 4, qualifiers: 1, system: "gsl" }, consolation: { enabled: false, losersOfRound: 1 } } }), `one${teams}`);
+      expect(poolLabels(s).length).toBe(1);
+      expect(roundsOf(s, "main", "final").length).toBe(0);
+      expect(s.tournament.status).toBe("finished");
+    }
+  });
+
   it("odd counts make pools of 3 played as round robin", () => {
     const s = playToEnd(makeState({ teams: 10, config: { format: "pools_then_bracket" } }), "odd");
     expect(poolLabels(s).length).toBe(3);

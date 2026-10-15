@@ -188,6 +188,11 @@ export function sportIssues(form: TournamentForm, sport: SportConfig, today: str
   const labels = new Set(venueLabelsOf(form));
   if (form.reservedLabels.some((l) => !labels.has(l))) add("reservedLabels", "unknown_venue");
   if (form.reservedLabels.length >= form.venueCount) add("reservedLabels", "all_reserved");
+  if (form.format === "pools_then_bracket") {
+    // Same split as the engine (poolSizes): a final needs at least two qualifiers.
+    const pools = form.maxTeams <= form.poolSize + 1 ? 1 : Math.ceil(form.maxTeams / form.poolSize);
+    if (pools * form.poolQualifiers < 2) add("poolQualifiers", "too_few");
+  }
   if ((form.format === "swiss" || form.format === "melee_rotation") && form.rounds == null) add("rounds", "required");
   if (sport.scoring.mode !== "points" && form.timeLimitMinutes != null) add("timeLimitMinutes", "not_applicable");
   if (sport.scoring.mode !== "time" && form.durationMinutes != null) add("durationMinutes", "not_applicable");

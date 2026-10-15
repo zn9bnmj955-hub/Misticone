@@ -466,7 +466,8 @@ export function canDrawNext(state: EngineState, bracket: Bracket): boolean {
       if (roundsOf(state, "main", "pool").length === 0) return eligibleTeams(state).length >= 3;
       if (roundsOf(state, "main", "final").length) return false;
       const labels = poolLabels(state);
-      return labels.length > 0 && labels.every((l) => isPoolComplete(state, l));
+      // A final needs two qualifiers still in: otherwise the pool winner wins.
+      return labels.length > 0 && labels.every((l) => isPoolComplete(state, l)) && qualifiers(state).filter((x) => stillIn(state)(x.id)).length >= 2;
     }
     case "round_robin":
       return roundsOf(state, "main", "league").length === 0 && eligibleTeams(state).length >= 2;

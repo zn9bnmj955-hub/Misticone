@@ -96,6 +96,15 @@ describe("validation", () => {
     expect(validateForm({ ...base, teamFormat: "melee-doublette", format: "melee_rotation", rounds: 4 }, getSport, today).ok).toBe(true);
   });
 
+  it("requires at least two qualifiers in all for the final phase", () => {
+    const pools = { ...base, format: "pools_then_bracket", poolSize: 4, poolQualifiers: 1 };
+    const res = validateForm({ ...pools, maxTeams: 5 }, getSport, today);
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.issues).toContainEqual({ path: "poolQualifiers", code: "too_few" });
+    expect(validateForm({ ...pools, maxTeams: 8 }, getSport, today).ok).toBe(true);
+    expect(validateForm({ ...pools, maxTeams: 5, poolQualifiers: 2 }, getSport, today).ok).toBe(true);
+  });
+
   it("rejects dates in the past and closings after the start", () => {
     const res = validateForm({ ...base, date: "2026-10-01", registrationClosesTime: "15:00" }, getSport, today);
     expect(res.ok).toBe(false);
