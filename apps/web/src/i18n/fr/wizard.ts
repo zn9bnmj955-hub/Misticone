@@ -493,6 +493,7 @@ export const wizard = {
       feePer: "Indiquez si le montant est par équipe ou par joueur.",
       prizeText: "Dotation trop longue (200 caractères maximum).",
       format: "Choisissez un format proposé pour ce sport.",
+      "format.team_format_mismatch": "Ce format ne va pas avec la formation choisie : une mêlée se joue en « mêlée tournante », des équipes inscrites dans un autre format.",
       rounds: "Entre 1 et 30 parties.",
       "rounds.required": "Indiquez le nombre de parties.",
       bracketMode: "Choisissez le type de tableau.",

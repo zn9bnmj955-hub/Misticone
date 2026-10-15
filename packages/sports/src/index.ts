@@ -1,4 +1,4 @@
-import { sportConfigSchema, type SportConfig } from "./schema";
+import { sportConfigSchema, type CompetitionFormat, type SportConfig } from "./schema";
 import { petanque } from "./sports/petanque";
 import { football } from "./sports/football";
 
@@ -29,6 +29,12 @@ export function requireSport(slug: string): SportConfig {
 
 export function enabledSports(): SportConfig[] {
   return SPORTS.filter((s) => s.enabled);
+}
+
+/** Competition formats allowed for a team format (the sport's list, narrowed by the team format). */
+export function competitionFormatsFor(sport: SportConfig, teamFormatId: string): CompetitionFormat[] {
+  const allowed = sport.teamFormats.find((f) => f.id === teamFormatId)?.competitionFormats;
+  return allowed ? sport.competitionFormats.filter((f) => allowed.includes(f)) : [...sport.competitionFormats];
 }
 
 export function isValidLicenseNumber(sport: SportConfig, value: string): boolean {

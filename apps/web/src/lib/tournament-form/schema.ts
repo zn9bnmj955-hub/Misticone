@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CATEGORIES, COMPETITION_FORMATS, RANKING_CRITERIA, type SportConfig } from "@orgasport/sports";
+import { CATEGORIES, COMPETITION_FORMATS, RANKING_CRITERIA, competitionFormatsFor, type SportConfig } from "@orgasport/sports";
 import { DATE_RE, TIME_RE, parisToIso } from "./time";
 
 /**
@@ -177,6 +177,7 @@ export function sportIssues(form: TournamentForm, sport: SportConfig, today: str
   if (!teamFormat) add("teamFormat", "unknown_team_format");
   else if (form.substitutes < teamFormat.substitutes.min || form.substitutes > teamFormat.substitutes.max) add("substitutes", "out_of_range");
   if (!sport.competitionFormats.includes(form.format)) add("format", "format_not_allowed");
+  else if (teamFormat && !competitionFormatsFor(sport, teamFormat.id).includes(form.format)) add("format", "team_format_mismatch");
   if (!sport.categories.includes(form.category)) add("category", "category_not_allowed");
   if (form.ranking.some((c) => !sport.ranking.criteria.includes(c))) add("ranking", "criterion_not_allowed");
   if (form.date < today) add("date", "in_past");

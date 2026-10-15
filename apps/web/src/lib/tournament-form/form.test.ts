@@ -84,6 +84,18 @@ describe("validation", () => {
     }
   });
 
+  it("rejects a mêlée played as a knockout and teams played as a mêlée", () => {
+    for (const bad of [
+      { teamFormat: "melee-doublette", format: "single_elimination" },
+      { teamFormat: "doublette", format: "melee_rotation", rounds: 4 },
+    ]) {
+      const res = validateForm({ ...base, ...bad }, getSport, today);
+      expect(res.ok).toBe(false);
+      if (!res.ok) expect(res.issues).toContainEqual({ path: "format", code: "team_format_mismatch" });
+    }
+    expect(validateForm({ ...base, teamFormat: "melee-doublette", format: "melee_rotation", rounds: 4 }, getSport, today).ok).toBe(true);
+  });
+
   it("rejects dates in the past and closings after the start", () => {
     const res = validateForm({ ...base, date: "2026-10-01", registrationClosesTime: "15:00" }, getSport, today);
     expect(res.ok).toBe(false);

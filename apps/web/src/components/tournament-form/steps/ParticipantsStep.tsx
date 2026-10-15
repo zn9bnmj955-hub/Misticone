@@ -1,7 +1,8 @@
 "use client";
+import { competitionFormatsFor } from "@orgasport/sports";
 import { fmt, getMessages } from "@/i18n";
 import { ChoiceCard } from "@/components/ui/ChoiceCard";
-import type { TournamentForm } from "@/lib/tournament-form";
+import { defaultRounds, type TournamentForm } from "@/lib/tournament-form";
 import { categoryLabel } from "../display";
 import { Choice, Group, Help, Stepper, Toggle } from "../fields";
 import { fid, type StepProps } from "./types";
@@ -23,9 +24,13 @@ export function ParticipantsStep({ form, sport, update, error }: StepProps) {
               title={f.label}
               text={f.individualRegistration ? p.individual : fmt(p.players, { count: f.players })}
               selected={form.teamFormat === f.id}
-              onSelect={() =>
-                update({ teamFormat: f.id, substitutes: Math.min(f.substitutes.max, Math.max(f.substitutes.min, form.substitutes)) })
-              }
+              onSelect={() => {
+                const substitutes = Math.min(f.substitutes.max, Math.max(f.substitutes.min, form.substitutes));
+                // A drawn mêlée only fits the mêlée format, registered teams the others.
+                const formats = competitionFormatsFor(sport, f.id);
+                const format = formats.includes(form.format) ? form.format : formats.includes(sport.defaults.competitionFormat) ? sport.defaults.competitionFormat : formats[0]!;
+                update(format === form.format ? { teamFormat: f.id, substitutes } : { teamFormat: f.id, substitutes, format, rounds: defaultRounds(format, form.maxTeams) });
+              }}
             />
           ))}
         </div>

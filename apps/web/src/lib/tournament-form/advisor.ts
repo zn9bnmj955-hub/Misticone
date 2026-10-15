@@ -1,4 +1,4 @@
-import type { SportConfig } from "@orgasport/sports";
+import { competitionFormatsFor, type SportConfig } from "@orgasport/sports";
 import { defaultRounds } from "./defaults";
 import { planFor } from "./build";
 import type { TournamentForm } from "./schema";
@@ -23,10 +23,10 @@ export type FormatAdvice = {
 const LATE_END = "21:00";
 
 export function suggestFormat(form: TournamentForm, sport: SportConfig, expectedTeams = form.maxTeams): FormatAdvice {
-  const allowed = new Set(sport.competitionFormats);
+  const allowed = new Set(competitionFormatsFor(sport, form.teamFormat));
   const teams = Math.max(2, expectedTeams);
   const reasons: FormatAdvice["reasons"] = [];
-  const pick = (...candidates: TournamentForm["format"][]) => candidates.find((f) => allowed.has(f)) ?? sport.defaults.competitionFormat;
+  const pick = (...candidates: TournamentForm["format"][]) => candidates.find((f) => allowed.has(f)) ?? (allowed.has(sport.defaults.competitionFormat) ? sport.defaults.competitionFormat : [...allowed][0]!);
 
   let format: TournamentForm["format"];
   if (teams <= 6) {

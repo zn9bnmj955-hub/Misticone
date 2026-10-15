@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   SPORTS,
+  competitionFormatsFor,
   formatTemplate,
   getSport,
   isValidLicenseNumber,
@@ -8,6 +9,8 @@ import {
   sportConfigSchema,
 } from "./index";
 import { petanque } from "./sports/petanque";
+
+const s0 = () => requireSport("petanque");
 
 describe("sport registry", () => {
   it("validates every built-in sport", () => {
@@ -20,6 +23,23 @@ describe("sport registry", () => {
       expect(s.teamFormats.map((f) => f.id)).toContain(s.defaults.teamFormat);
       expect(s.competitionFormats).toContain(s.defaults.competitionFormat);
       expect(s.categories).toContain(s.defaults.category);
+    }
+  });
+
+  it("keeps team formats inside the sport's competition formats", () => {
+    for (const s of SPORTS) for (const f of s.teamFormats) {
+      expect(competitionFormatsFor(s, f.id).length).toBeGreaterThan(0);
+      for (const c of f.competitionFormats ?? []) expect(s.competitionFormats).toContain(c);
+    }
+    expect(competitionFormatsFor(s0(), s0().defaults.teamFormat)).toContain(s0().defaults.competitionFormat);
+  });
+
+  it("plays a drawn mêlée only as a mêlée, and registered teams never as one", () => {
+    const sport = requireSport("petanque");
+    for (const f of sport.teamFormats) {
+      const formats = competitionFormatsFor(sport, f.id);
+      if (f.individualRegistration) expect(formats).toEqual(["melee_rotation"]);
+      else expect(formats).not.toContain("melee_rotation");
     }
   });
 

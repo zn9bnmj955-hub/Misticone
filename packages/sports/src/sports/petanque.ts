@@ -1,5 +1,8 @@
 import type { SportConfigInput } from "../schema";
 
+/** Registered teams: every format except the mêlée (which draws the teams). */
+const FIXED_TEAMS: SportConfigInput["competitionFormats"] = ["single_elimination", "pools_then_bracket", "swiss", "round_robin"];
+
 export const petanque: SportConfigInput = {
   slug: "petanque",
   name: "Pétanque",
@@ -14,15 +17,16 @@ export const petanque: SportConfigInput = {
   },
   teamNoun: { singular: "équipe", plural: "équipes" },
   teamFormats: [
-    { id: "tete-a-tete", label: "Tête-à-tête", players: 1, substitutes: { min: 0, max: 0 } },
-    { id: "doublette", label: "Doublette", players: 2, substitutes: { min: 0, max: 0 } },
-    { id: "triplette", label: "Triplette", players: 3, substitutes: { min: 0, max: 1 } },
+    { id: "tete-a-tete", label: "Tête-à-tête", players: 1, substitutes: { min: 0, max: 0 }, competitionFormats: FIXED_TEAMS },
+    { id: "doublette", label: "Doublette", players: 2, substitutes: { min: 0, max: 0 }, competitionFormats: FIXED_TEAMS },
+    { id: "triplette", label: "Triplette", players: 3, substitutes: { min: 0, max: 1 }, competitionFormats: FIXED_TEAMS },
     {
       id: "melee-doublette",
       label: "Mêlée (doublettes tirées)",
       players: 2,
       substitutes: { min: 0, max: 0 },
       individualRegistration: true,
+      competitionFormats: ["melee_rotation"],
     },
     {
       id: "melee-triplette",
@@ -30,6 +34,7 @@ export const petanque: SportConfigInput = {
       players: 3,
       substitutes: { min: 0, max: 0 },
       individualRegistration: true,
+      competitionFormats: ["melee_rotation"],
     },
   ],
   competitionFormats: [

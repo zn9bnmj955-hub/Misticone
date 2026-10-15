@@ -40,6 +40,12 @@ const teamFormatSchema = z.object({
   substitutes: z.object({ min: z.number().int().min(0), max: z.number().int().min(0) }),
   /** Mêlée: players register alone and teams are drawn. */
   individualRegistration: z.boolean().default(false),
+  /**
+   * Competition formats this team format can be played in (subset of the
+   * sport's list). Omitted = all of them. A drawn mêlée (individual
+   * registration) only works with a format that draws the teams.
+   */
+  competitionFormats: z.array(z.enum(COMPETITION_FORMATS)).min(1).optional(),
 });
 
 const scoringSchema = z.discriminatedUnion("mode", [

@@ -1,5 +1,6 @@
 "use client";
 import { defaultForfeitScore } from "@orgasport/engine";
+import { competitionFormatsFor } from "@orgasport/sports";
 import { Icon } from "@orgasport/ui";
 import { fmt, getMessages } from "@/i18n";
 import { ChoiceCard } from "@/components/ui/ChoiceCard";
@@ -31,7 +32,7 @@ export function DrawStep({ form, sport, update, error }: StepProps) {
     <div className="grid gap-8">
       <Group title={t.format}>
         <div className="grid gap-3" role="radiogroup" aria-label={t.format} aria-describedby={`${fid("format")}-desc`}>
-          {sport.competitionFormats.map((f) => (
+          {competitionFormatsFor(sport, form.teamFormat).map((f) => (
             <ChoiceCard
               key={f}
               title={formatLabel(f)}
