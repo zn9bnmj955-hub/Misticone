@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
  * is a signed cookie limited to one tournament and revocable at any time.
  */
 export type StaffActor =
-  | { kind: "account"; userId: string; staffId: string | null; label: string }
+  | { kind: "account"; userId: string; staffId: string | null; label: string; canManageAccess: boolean }
   | { kind: "pin"; staffId: string; label: string };
 
 export const pinCookieName = (code: string) => `os_pin_${code}`;
@@ -59,6 +59,15 @@ async function readPinSession(code: string, tournamentId: string): Promise<strin
   }
 }
 
+async function isClubOrPlatformAdmin(supabase: Awaited<ReturnType<typeof createClient>>, tournamentId: string): Promise<boolean> {
+  const { data: platform } = await supabase.rpc("is_platform_admin");
+  if (platform) return true;
+  const { data: t } = await supabase.from("tournaments").select("club_id").eq("id", tournamentId).maybeSingle();
+  if (!t?.club_id) return false;
+  const { data: clubAdmin } = await supabase.rpc("is_club_admin", { p_club: t.club_id });
+  return Boolean(clubAdmin);
+}
+
 export async function getStaffActor(tournament: { id: string; short_code: string | null }): Promise<StaffActor | null> {
   // 1. Signed-in organizer.
   const supabase = await createClient();
@@ -69,9 +78,12 @@ export async function getStaffActor(tournament: { id: string; short_code: string
     if (allowed) {
       const [{ data: profile }, { data: staff }] = await Promise.all([
         supabase.from("profiles").select("display_name").eq("id", userId).maybeSingle(),
-        supabase.from("tournament_staff").select("id").eq("tournament_id", tournament.id).eq("user_id", userId).is("revoked_at", null).maybeSingle(),
+        supabase.from("tournament_staff").select("id, role").eq("tournament_id", tournament.id).eq("user_id", userId).is("revoked_at", null).maybeSingle(),
       ]);
-      return { kind: "account", userId, staffId: staff?.id ?? null, label: profile?.display_name || (data?.claims?.email as string) || "Organisateur" };
+      // Creating or revoking access is reserved to the organizer, a club admin or a platform admin
+      // (no staff row means access came from the club or the platform).
+      const canManageAccess = !staff || staff.role === "organizer" || (await isClubOrPlatformAdmin(supabase, tournament.id));
+      return { kind: "account", userId, staffId: staff?.id ?? null, label: profile?.display_name || (data?.claims?.email as string) || "Organisateur", canManageAccess };
     }
   }
   // 2. Volunteer with a PIN.

@@ -813,6 +813,9 @@ isOneToOne: false
 "can_manage_tournament":
 { Args: { "p_tournament": string }; Returns: boolean
                            },
+"can_see_tournament_private":
+{ Args: { "p_tournament": string }; Returns: boolean
+                           },
 "catalog_tournaments":
 { Args: { "p"?: Json }; Returns: {
               "active_teams": number,"address": string,"category": string,"city": string,"club_name": string,"club_slug": string,"distance_km": number,"eligibility": Database["public"]['Enums']["eligibility"],"fee_cents": number,"fee_per": string,"format": string,"id": string,"lat": number,"lng": number,"max_teams": number,"name": string,"postcode": string,"prize_text": string,"registration_closes_at": string,"registration_mode": Database["public"]['Enums']["registration_mode"],"short_code": string,"sport_slug": string,"starts_at": string,"status": Database["public"]['Enums']["tournament_status"],"team_format": string,"waitlist_teams": number

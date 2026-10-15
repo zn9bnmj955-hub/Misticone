@@ -9,7 +9,7 @@ export async function DELETE(_request: NextRequest, { params }: Ctx) {
   const { code, id } = await params;
   const access = await requireStaff(code);
   if (!access.ok) return access.response;
-  if (access.actor.kind !== "account") return json({ error: { code: "FORBIDDEN" } }, 403);
+  if (access.actor.kind !== "account" || !access.actor.canManageAccess) return json({ error: { code: "FORBIDDEN" } }, 403);
   await createAdminClient()
     .from("tournament_staff")
     .update({ revoked_at: new Date().toISOString() })

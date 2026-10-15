@@ -28,7 +28,7 @@ export interface TableTournament {
 
 export interface Snapshot {
   version: number;
-  actor: { kind: "account" | "pin"; label: string };
+  actor: { kind: "account" | "pin"; label: string; canManageAccess?: boolean };
   tournament: TableTournament;
   state: EngineState;
 }

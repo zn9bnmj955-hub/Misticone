@@ -10,7 +10,7 @@ export async function GET(_request: NextRequest, { params }: Ctx) {
   const { code } = await params;
   const access = await requireStaff(code);
   if (!access.ok) return access.response;
-  if (access.actor.kind !== "account") return json({ error: { code: "FORBIDDEN" } }, 403);
+  if (access.actor.kind !== "account" || !access.actor.canManageAccess) return json({ error: { code: "FORBIDDEN" } }, 403);
   const { data } = await createAdminClient()
     .from("tournament_staff")
     .select("id, role, label, user_id, created_at, revoked_at, pin_hash")
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest, { params }: Ctx) {
   const { code } = await params;
   const access = await requireStaff(code);
   if (!access.ok) return access.response;
-  if (access.actor.kind !== "account") return json({ error: { code: "FORBIDDEN" } }, 403);
+  if (access.actor.kind !== "account" || !access.actor.canManageAccess) return json({ error: { code: "FORBIDDEN" } }, 403);
   const body = createSchema.safeParse(await request.json().catch(() => null));
   if (!body.success) return json({ error: { code: "BAD_REQUEST" } }, 400);
   const digits = new Uint32Array(1);

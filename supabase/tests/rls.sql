@@ -267,5 +267,43 @@ do $$ begin
 end $$;
 select pg_temp.reset();
 
+-- Tournament data is written by the server only: a referee or a club admin cannot bypass the engine.
+do $$
+declare
+  tid uuid := (select id from public.tournaments where short_code = '7KQ2');
+  vol uuid := (select id from auth.users where email = 'benevole@demo.orgasport.fr');
+  n int;
+begin
+  update public.club_members set role = 'member' where user_id = vol;
+  insert into public.tournament_staff (tournament_id, user_id, role, label) values (tid, vol, 'referee', 'Arbitre test');
+  perform pg_temp.as_user('benevole@demo.orgasport.fr');
+  update public.tournament_staff set revoked_at = null, role = 'organizer' where tournament_id = tid;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'a referee edited staff rows'; end if;
+  update public.matches set score_a = 13, score_b = 0 where tournament_id = tid;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'a referee wrote raw scores'; end if;
+  begin
+    insert into public.teams (tournament_id, number, name) values (tid, 999, 'Intrus');
+    raise exception 'a referee inserted a team';
+  exception when insufficient_privilege then null;
+  end;
+  if (select count(*) from public.registrations where tournament_id = tid and user_id is distinct from vol) <> 0 then raise exception 'a referee read contacts'; end if;
+  if exists (select 1 from public.players_private pp join public.players p on p.id = pp.player_id
+             join public.teams t on t.id = p.team_id where t.tournament_id = tid and p.user_id is distinct from vol) then
+    raise exception 'a referee read licences';
+  end if;
+  perform pg_temp.reset();
+  perform pg_temp.as_user('club@demo.orgasport.fr');
+  if (select count(*) from public.registrations where tournament_id = tid) = 0 then raise exception 'club admin should read contacts'; end if;
+  update public.matches set score_a = 13, score_b = 0 where tournament_id = tid;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'a club admin wrote raw scores'; end if;
+  delete from public.tournament_staff where tournament_id = tid;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'a club admin deleted staff rows directly'; end if;
+  perform pg_temp.reset();
+end $$;
+
 \echo 'RLS checks passed'
 rollback;

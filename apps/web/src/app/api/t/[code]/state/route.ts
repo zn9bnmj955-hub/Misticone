@@ -14,7 +14,11 @@ export async function GET(_request: NextRequest, { params }: Ctx) {
   const { meta, state, version } = loaded;
   return json({
     version,
-    actor: { kind: access.actor.kind, label: access.actor.label },
+    actor: {
+      kind: access.actor.kind,
+      label: access.actor.label,
+      canManageAccess: access.actor.kind === "account" && access.actor.canManageAccess,
+    },
     tournament: {
       id: meta.id,
       code: meta.short_code,
