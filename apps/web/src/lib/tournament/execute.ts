@@ -53,7 +53,7 @@ export async function broadcastUpdate(code: string, version: number): Promise<vo
     await fetch(`${env.supabaseUrl}/realtime/v1/api/broadcast`, {
       method: "POST",
       headers: { "content-type": "application/json", apikey: key, authorization: `Bearer ${key}` },
-      body: JSON.stringify({ messages: [{ topic: `tournament:${code}`, event: "update", payload: { version }, private: false }] }),
+      body: JSON.stringify({ messages: [{ topic: `tournament:${code}`, event: "update", payload: { version }, private: true }] }),
       signal: AbortSignal.timeout(2000),
     });
   } catch {

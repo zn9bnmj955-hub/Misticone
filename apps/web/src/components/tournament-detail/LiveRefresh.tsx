@@ -31,7 +31,7 @@ export function LiveRefresh({ code, intervalMs = 30_000 }: { code: string; inter
       .then(({ getBrowserClient }) => {
         if (cancelled) return;
         const supabase = getBrowserClient();
-        const channel = supabase.channel(`tournament:${code}`).on("broadcast", { event: "update" }, soon).subscribe();
+        const channel = supabase.channel(`tournament:${code}`, { config: { private: true } }).on("broadcast", { event: "update" }, soon).subscribe();
         unsubscribe = () => void supabase.removeChannel(channel);
       })
       .catch(() => {

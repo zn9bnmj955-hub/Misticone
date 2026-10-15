@@ -221,7 +221,7 @@ export function useScoringTable(code: string) {
     const supabase = getBrowserClient();
     let timer: ReturnType<typeof setTimeout> | null = null;
     const channel = supabase
-      .channel(`tournament:${code}`)
+      .channel(`tournament:${code}`, { config: { private: true } })
       .on("broadcast", { event: "update" }, (msg) => {
         const v = (msg.payload as { version?: number })?.version ?? 0;
         if (snapRef.current && v <= snapRef.current.version) return;
