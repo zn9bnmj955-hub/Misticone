@@ -559,6 +559,7 @@ export const fr = {
       DRAW_NOT_ALLOWED: "Un match nul n'est pas possible ici.",
       TIEBREAK_REQUIRED: "Égalité : indiquez le résultat des tirs au but.",
       NEXT_MATCH_PLAYED: "Le match suivant est déjà joué : annulez-le d'abord (Historique).",
+      NEXT_ROUND_DRAWN: "La suite est déjà tirée avec l'ancien résultat : annulez d'abord le tour suivant (Historique), puis corrigez ce forfait.",
       FINAL_PHASE_DRAWN: "Le tableau final est déjà tiré : annulez ce tirage avant de corriger les poules.",
       VENUE_BUSY: "Ce terrain est occupé.",
       VENUE_UNAVAILABLE: "Ce terrain est fermé.",

@@ -562,6 +562,21 @@ export function swapInLaterMatches(tx: Transaction, m: Match, oldWinners: string
   }
 }
 
+/**
+ * A correction to or from « forfait des deux équipes » changes how many teams
+ * go through: nothing can be swapped. Refused while what came after already
+ * used the old result (next round of a new-draw bracket, consolation, other
+ * phase). A fixed tree is handled by its own propagation.
+ */
+export function assertNothingDrawnAfter(state: EngineState, m: Match): void {
+  const round = state.rounds[m.roundId]!;
+  const nextRoundDrawn =
+    round.phase === "elimination" &&
+    !isFixedTree(state, round) &&
+    Object.values(state.rounds).some((r) => r.bracket === round.bracket && r.phase === round.phase && r.number > round.number);
+  if (nextRoundDrawn || laterMatchesWith(state, m, [...m.sideA, ...m.sideB]).length) fail("NEXT_ROUND_DRAWN");
+}
+
 export function qualificationSnapshot(state: EngineState): string {
   if (state.tournament.config.format !== "pools_then_bracket") return "";
   return qualifiers(state)

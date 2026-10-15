@@ -228,6 +228,32 @@ describe("keeping control: corrections", () => {
     expect(consTeams).toContain(oldWinner);
     expect(consTeams).not.toContain(oldLoser);
   });
+  it("new draw mode: a double forfeit cannot be corrected once the next round is drawn (both ways)", () => {
+    // Double forfeit -> real score: the winner would be missing from round 2.
+    let s = makeState({ teams: 6, config: { bracketMode: "redraw", ...noConsolation } });
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "x" });
+    const r1 = r1Matches(s);
+    s = exec(s, { type: "match.forfeit", matchId: r1[0]!.id, side: "both" });
+    for (const m of r1.slice(1)) s = exec(s, { type: "match.score", matchId: m.id, scoreA: 13, scoreB: 3 });
+    expect(roundsOf(s, "main").length).toBe(2);
+    expect(code(() => exec(s, { type: "match.score", matchId: r1[0]!.id, scoreA: 13, scoreB: 5 }))).toBe("NEXT_ROUND_DRAWN");
+    // Real score -> double forfeit: the forfeited winner would stay qualified.
+    resetOps();
+    s = makeState({ teams: 8, config: { bracketMode: "redraw", ...noConsolation } });
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "x" });
+    const r1b = r1Matches(s);
+    for (const m of r1b) s = exec(s, { type: "match.score", matchId: m.id, scoreA: 13, scoreB: 4 });
+    expect(roundsOf(s, "main").length).toBe(2);
+    expect(code(() => exec(s, { type: "match.forfeit", matchId: r1b[0]!.id, side: "both" }))).toBe("NEXT_ROUND_DRAWN");
+  });
+  it("a double forfeit can still be corrected before anything is drawn after it", () => {
+    let s = makeState({ teams: 8, config: { bracketMode: "redraw", ...noConsolation } });
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "x" });
+    const m = r1Matches(s)[0]!;
+    s = exec(s, { type: "match.forfeit", matchId: m.id, side: "both" });
+    s = exec(s, { type: "match.score", matchId: m.id, scoreA: 13, scoreB: 5 });
+    expect(s.matches[m.id]!.winner).toBe("A");
+  });
   it("reopening a result puts the match back in play", () => {
     let s = makeState({ teams: 4, config: { bracketMode: "fixed", ...noConsolation } });
     s = exec(s, { type: "round.draw", bracket: "main", seed: "x" });

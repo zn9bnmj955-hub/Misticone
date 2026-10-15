@@ -11,6 +11,7 @@ import {
   qualificationSnapshot,
   refreshRounds,
   swapInLaterMatches,
+  assertNothingDrawnAfter,
   type DrawContext,
 } from "./formats";
 import { ACTIVE_ON_VENUE, hasResult, isFinished, loserTeams, matchesOfRound, roundsOf, winnerTeams } from "./queries";
@@ -95,6 +96,7 @@ function applyResult(tx: Transaction, ctx: EngineContext, matchId: string, r: Re
   const finalDrawn = roundsOf(tx.state, "main", "final").length > 0;
 
   if (winnerChanged) {
+    if (m.winner === null || r.winner === null) assertNothingDrawnAfter(tx.state, m);
     if (isFixedTree(tx.state, round)) unpropagateFixed(tx, m.id, ctx);
     swapInLaterMatches(tx, tx.state.matches[m.id]!, winnerTeams(m), loserTeams(m));
   }
