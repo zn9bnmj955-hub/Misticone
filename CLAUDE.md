@@ -5,6 +5,25 @@ SaaS de gestion de concours sportifs. Un club achète un « lien concours » (`/
 > État : **les 8 phases du plan sont terminées** (socle, moteur + lien concours, espace clubs + paiement, catalogue + inscription en ligne, fil + notifications, assistant IA, vidéos, finitions). Mise en ligne : `docs/DEPLOIEMENT.md`.
 > Plan validé : `docs/PLAN.md`. Direction visuelle : **C « Direct »**, couleurs **bleu et noir** (choix du propriétaire), vitrine futuriste (scène 3D nocturne, néons bleus). Démo : `docs/DEMO.md`.
 
+## Organisation du travail (perfectionnement)
+La session principale est le **Directeur de projet**. Le propriétaire ne parle qu'à lui.
+- Le Directeur **ne code pas** : il fait travailler les chefs de pôle et les agents (`.claude/agents/`), puis fait des comptes rendus courts, en français simple.
+- Lire d'abord tout le projet pour comprendre ce qui existe. **Ne pas tout réécrire** : on perfectionne.
+- Avant toute modification : une branche git de travail (`perfectionnement`) ; **un commit par correction**. La branche est ensuite reportée sur la branche distante du projet.
+- **Jamais** de changement de technologie ou d'architecture sans l'accord du propriétaire.
+- Hébergement : **offres gratuites uniquement**.
+- Après chaque lot de corrections : `pnpm -r test`, `pnpm test:db`, `pnpm test:e2e` passent et le site démarre (`pnpm build` + page d'accueil qui répond).
+- Phase 1 **AUDIT** : chaque auditeur inspecte sans rien modifier et rend un rapport ; chaque chef trie son pôle en critique / important / amélioration ; le Directeur présente une liste unique priorisée et **attend l'accord**.
+- Phase 2 **CORRECTIONS** : par lots, en commençant par les critiques. Un agent corrige, le testeur vérifie, le chef valide, le Directeur fait le point avant le lot suivant.
+
+Organigramme :
+```
+Directeur de projet (session principale)
+├── chef-produit      → expert-regles-concours, designer-ux
+├── chef-technique    → relecteur-code, expert-securite, testeur, expert-performance
+└── chef-business     → expert-paiement, juriste-rgpd, marketing
+```
+
 ## Priorités (en cas de conflit, dans cet ordre)
 1. Vitesse et clarté le jour du concours : un joueur trouve son prochain match en < 10 s.
 2. Automatisation maximale, mais l'organisateur peut **tout** corriger (historique + annulation).
