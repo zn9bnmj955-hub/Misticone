@@ -143,29 +143,31 @@ export function CheckInTab({ table, state, teamSize }: TabProps & { teamSize: nu
             {team.club ?? ""} {state.teamSecrets[team.id] ? `· ${t.code} ${state.teamSecrets[team.id]!.code}` : ""}
           </span>
         </span>
-        {status === "forfeit" ? (
-          <Btn tone="ghost" onClick={() => table.dispatch({ type: "team.setStatus", teamId: team.id, status: statusBeforeForfeit(team) })}>
-            {t.cancelForfeit}
-          </Btn>
-        ) : (
-          <>
-            {late && (
-              <Btn tone="primary" onClick={() => table.dispatch({ type: "team.lateEntry", teamId: team.id })}>
-                {t.late}
+        <span className="flex w-full flex-wrap justify-end gap-2 md:w-auto">
+          {status === "forfeit" ? (
+            <Btn tone="ghost" onClick={() => table.dispatch({ type: "team.setStatus", teamId: team.id, status: statusBeforeForfeit(team) })}>
+              {t.cancelForfeit}
+            </Btn>
+          ) : (
+            <>
+              {late && (
+                <Btn tone="primary" onClick={() => table.dispatch({ type: "team.lateEntry", teamId: team.id })}>
+                  {t.late}
+                </Btn>
+              )}
+              <Btn
+                tone={status === "checked_in" ? "primary" : "default"}
+                aria-pressed={status === "checked_in"}
+                onClick={() => table.dispatch({ type: "team.setStatus", teamId: team.id, status: status === "checked_in" ? "registered" : "checked_in" })}
+              >
+                {status === "checked_in" ? `✓ ${t.present}` : t.present}
               </Btn>
-            )}
-            <Btn
-              tone={status === "checked_in" ? "primary" : "default"}
-              aria-pressed={status === "checked_in"}
-              onClick={() => table.dispatch({ type: "team.setStatus", teamId: team.id, status: status === "checked_in" ? "registered" : "checked_in" })}
-            >
-              {status === "checked_in" ? `✓ ${t.present}` : t.present}
-            </Btn>
-            <Btn tone="danger" onClick={() => table.dispatch({ type: "team.setStatus", teamId: team.id, status: "forfeit" })}>
-              {t.forfeit}
-            </Btn>
-          </>
-        )}
+              <Btn tone="danger" onClick={() => table.dispatch({ type: "team.setStatus", teamId: team.id, status: "forfeit" })}>
+                {t.forfeit}
+              </Btn>
+            </>
+          )}
+        </span>
       </li>
     );
   };

@@ -265,3 +265,13 @@ test("automatic draw at the scheduled time", async ({ request }) => {
   const again = await request.get("/api/cron/tick", { headers: { authorization: CRON } });
   expect(((await again.json()) as { drawn: string[] }).drawn).toEqual([]);
 });
+
+test("table de marque sur téléphone : au pointage, le nom des équipes reste lisible", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 760 });
+  await pinLogin(page);
+  await page.getByRole("tab", { name: "Pointage" }).or(page.getByRole("button", { name: "Pointage" })).first().click();
+  const name = page.locator("li span.truncate.text-lg").first();
+  await expect(name).toBeVisible();
+  const box = await name.boundingBox();
+  expect(box!.width).toBeGreaterThan(200);
+});
