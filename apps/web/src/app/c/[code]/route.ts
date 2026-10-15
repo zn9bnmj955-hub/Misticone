@@ -7,6 +7,7 @@ import { loadTournament } from "@/lib/tournament/load";
 import { createVersionedCache } from "@/lib/tournament/versioned-cache";
 import { escapeHtml } from "@/terrain/html";
 import { myTeamCookie } from "@/terrain/cookies";
+import { terrainCacheHeaders } from "@/terrain/cache-headers";
 import { renderTerrainPage, VIEWS, type TerrainView } from "@/terrain/render";
 import { TERRAIN_CSS } from "@/terrain/styles.generated";
 
@@ -92,9 +93,7 @@ export async function GET(request: NextRequest, { params }: Ctx) {
   if (autoAt && Date.parse(autoAt) <= Date.now() && Object.keys(loaded.state.rounds).length === 0) {
     after(() => processDueDraws(code));
   }
-  // Live refreshes without a personal cookie are identical for everyone: a few seconds at the CDN absorb the
-  // simultaneous reloads after each score (the browser itself never keeps them: max-age=0).
-  const shared = sp.has("fragment") && !mineCookie && !msgKey;
-  const headers = shared ? { ...HTML_HEADERS, "cache-control": "public, max-age=0, s-maxage=4, stale-while-revalidate=4" } : HTML_HEADERS;
+  // Live refreshes (?fragment=1) without a team cookie are shared a few seconds at the CDN, keyed on that cookie.
+  const headers = { ...HTML_HEADERS, ...terrainCacheHeaders({ code, fragment: sp.has("fragment"), mine: Boolean(mineCookie), message: Boolean(msgKey) }) };
   return new Response(body, { headers });
 }

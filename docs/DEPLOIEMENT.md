@@ -213,6 +213,20 @@ Pour les arrêter : `select cron.unschedule('orgasport-tick');` et `select cron.
 - [ ] Facturation Netlify : l'offre gratuite fonctionne avec des « crédits » mensuels ; le site
       est mis en pause s'ils sont épuisés. Surveillez **Usage** les premières semaines et
       passez à l'offre payante si besoin.
+- [ ] Cache des pages concours (rafraîchissements `?fragment=1`) : remplacez `CODE` par le code d'un concours
+      publié et `SITE` par l'adresse du site, puis vérifiez dans un terminal :
+      1. sans cookie, deux appels à moins de 4 s d'écart :
+         `curl -sI "https://SITE/c/CODE?fragment=1" | grep -i -E "cache-status|cache-control|vary"`
+         → le 2ᵉ indique `"Netlify Edge"; hit` dans `Cache-Status` ;
+      2. avec le cookie d'équipe, juste après :
+         `curl -sI -H "Cookie: os_t_CODE=3" "https://SITE/c/CODE?fragment=1" | grep -i -E "cache-status|cache-control"`
+         → jamais `hit`, et `Cache-Control: no-store`.
+      Si le 2ᵉ appel renvoie `hit` : supprimer le cache de 4 s (`s-maxage`) dans
+      `apps/web/src/terrain/cache-headers.ts` et redéployer.
+- [ ] Refaire la mesure de charge avec 2 000 téléphones sur un concours de 512 équipes
+      (`/c/CODE?fragment=1`, 2 000 requêtes simultanées, attente médiane et maximale) sur le site en ligne :
+      avant correction, en local, la médiane était de 5,1 s et le maximum de 18,9 s. Objectif : médiane < 2 s,
+      maximum < 10 s. À faire sur un concours de test (jamais un vrai concours en cours).
 
 ## Mettre à jour le site ensuite
 
