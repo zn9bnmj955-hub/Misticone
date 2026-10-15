@@ -62,6 +62,20 @@ test.describe("catalog and registration", () => {
     await context.close();
   });
 
+  test("the server refuses a team registration when teammates are not confirmed as informed", async ({ request, baseURL }) => {
+    const code = await openTournament(request);
+    const form = await (await request.get(`/c/${code}/inscription`)).text();
+    expect(form).toContain('name="coequipiers"');
+    expect(form).toContain('href="/legal/confidentialite"');
+    expect(form).toContain('href="/legal/mentions-legales"');
+    const res = await request.post(`/c/${code}/inscription`, {
+      headers: { Origin: baseURL ?? "http://localhost:3000" },
+      form: { p0_prenom: "Zoé", p0_nom: "Test", p1_prenom: "Max", p1_nom: "Test", cap_nom: "Zoé Test", cap_tel: "06 12 34 56 78", reglement: "on" },
+    });
+    expect(res.status()).toBe(422);
+    expect(await res.text()).toContain("Cochez la case pour confirmer que vos coéquipiers sont informés.");
+  });
+
   test("catalog filters work from the URL", async ({ page }) => {
     const code = await openTournament(page.request);
     await page.goto("/concours?places=1");
