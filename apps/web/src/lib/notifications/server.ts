@@ -6,6 +6,7 @@ import { fmt, getMessages } from "@/i18n";
 import { sendEmail } from "@/lib/email";
 import { formatDay, formatTime } from "@/lib/format";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { chunk, fetchAllRows, must } from "@/lib/supabase/paginate";
 import { isoToParis, parisDatePlus } from "@/lib/tournament-form/time";
 import { loadTournament } from "@/lib/tournament/load";
 import { buildTeamViews, sideText } from "@/terrain/view-model";
@@ -54,11 +55,26 @@ async function recipients(tournamentId: string, teamIds: string[], withCaptainEm
   const admin = createAdminClient();
   const out = new Map<string, TeamRecipients>(teamIds.map((id) => [id, { subs: new Map(), emails: new Set() }]));
   if (teamIds.length === 0) return out;
-  const [targets, players, regs] = await Promise.all([
-    admin.from("push_targets").select("team_id, push_subscriptions (id, endpoint, p256dh, auth)").eq("tournament_id", tournamentId).in("team_id", teamIds),
-    admin.from("players").select("team_id, user_id").in("team_id", teamIds).not("user_id", "is", null),
-    admin.from("registrations").select("team_id, user_id, captain_email").in("team_id", teamIds),
+  // Read by tournament (paginated) rather than `.in(all team ids)`: beyond ~200 teams the URL is too long (414).
+  const wanted = new Set(teamIds);
+  const [allTargets, allPlayers, allRegs] = await Promise.all([
+    fetchAllRows((from, to) =>
+      admin.from("push_targets").select("id, team_id, push_subscriptions (id, endpoint, p256dh, auth)").eq("tournament_id", tournamentId).order("id").range(from, to),
+    ),
+    fetchAllRows((from, to) =>
+      admin
+        .from("players")
+        .select("id, team_id, user_id, teams!inner(tournament_id)")
+        .eq("teams.tournament_id", tournamentId)
+        .not("user_id", "is", null)
+        .order("id")
+        .range(from, to),
+    ),
+    fetchAllRows((from, to) => admin.from("registrations").select("id, team_id, user_id, captain_email").eq("tournament_id", tournamentId).order("id").range(from, to)),
   ]);
+  const targets = { data: allTargets.filter((t) => t.team_id && wanted.has(t.team_id)) };
+  const players = { data: allPlayers.filter((p) => wanted.has(p.team_id)) };
+  const regs = { data: allRegs.filter((r) => wanted.has(r.team_id)) };
   for (const t of targets.data ?? []) {
     const s = t.push_subscriptions as unknown as Sub | null;
     if (s && t.team_id) out.get(t.team_id)?.subs.set(s.id, s);
@@ -73,10 +89,13 @@ async function recipients(tournamentId: string, teamIds: string[], withCaptainEm
   for (const r of regs.data ?? []) addUser(r.team_id, r.user_id);
   const userIds = [...new Set([...usersByTeam.values()].flatMap((s) => [...s]))];
   if (userIds.length) {
-    const [subs, profiles] = await Promise.all([
-      admin.from("push_subscriptions").select("id, endpoint, p256dh, auth, user_id").in("user_id", userIds),
-      admin.from("profiles").select("id, notifications_opt_in").in("id", userIds),
+    const parts = chunk(userIds);
+    const [subLists, profileLists] = await Promise.all([
+      Promise.all(parts.map(async (ids) => must(await admin.from("push_subscriptions").select("id, endpoint, p256dh, auth, user_id").in("user_id", ids)) ?? [])),
+      Promise.all(parts.map(async (ids) => must(await admin.from("profiles").select("id, notifications_opt_in").in("id", ids)) ?? [])),
     ]);
+    const subs = { data: subLists.flat() };
+    const profiles = { data: profileLists.flat() };
     const optIn = new Set((profiles.data ?? []).filter((p) => p.notifications_opt_in).map((p) => p.id));
     const subsByUser = new Map<string, Sub[]>();
     for (const s of subs.data ?? []) {

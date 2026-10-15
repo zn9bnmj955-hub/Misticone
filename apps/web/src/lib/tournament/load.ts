@@ -3,6 +3,7 @@ import { resolveConfig, rulesFromSport, type EngineState } from "@orgasport/engi
 import { getSport, type SportConfig } from "@orgasport/sports";
 import { rowsToEngineState, type Tables } from "@orgasport/db";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchAllRows } from "@/lib/supabase/paginate";
 
 export type TournamentMeta = Pick<
   Tables<"tournaments">,
@@ -60,42 +61,64 @@ const META_COLUMNS =
  */
 export async function loadTournament(code: string, opts: { secrets?: boolean } = {}): Promise<LoadedTournament | null> {
   const admin = createAdminClient();
-  const { data: row } = await admin.from("tournaments").select(META_COLUMNS).eq("short_code", code).neq("status", "draft").maybeSingle();
+  const { data: row, error } = await admin.from("tournaments").select(META_COLUMNS).eq("short_code", code).neq("status", "draft").maybeSingle();
+  if (error) throw error;
   if (!row) return null;
   const sport = getSport(row.sport_slug);
   if (!sport) return null;
   const tid = row.id;
 
-  const [teams, venues, rounds, matches, secrets, registrations] = await Promise.all([
-    admin.from("teams").select("id, number, name, club_name, status, seed, bracket, checked_in_at").eq("tournament_id", tid),
-    admin.from("venues").select("id, label, position, reserved_for_finals, available").eq("tournament_id", tid),
-    admin.from("rounds").select("id, bracket, phase, number, status, seed, drawn_at").eq("tournament_id", tid),
-    admin
-      .from("matches")
-      .select(
-        "id, round_id, position, pool, team_a_id, team_b_id, side_a, side_b, venue_id, scheduled_at, started_at, ended_at, queued_at, score_a, score_b, tiebreak_a, tiebreak_b, winner_side, status",
-      )
-      .eq("tournament_id", tid),
-    opts.secrets ? admin.from("team_secrets").select("team_id, code, teams!inner(tournament_id)").eq("teams.tournament_id", tid) : Promise.resolve({ data: [] }),
-    admin.from("registrations").select("id, team_id, source").eq("tournament_id", tid),
+  // Every list is paginated (max_rows = 1000) in a stable order and every error
+  // is thrown: the engine must never compute on an incomplete state.
+  const [teams, venues, rounds, matches, secrets, registrations, players] = await Promise.all([
+    fetchAllRows((from, to) =>
+      admin.from("teams").select("id, number, name, club_name, status, seed, bracket, checked_in_at").eq("tournament_id", tid).order("id").range(from, to),
+    ),
+    fetchAllRows((from, to) =>
+      admin.from("venues").select("id, label, position, reserved_for_finals, available").eq("tournament_id", tid).order("id").range(from, to),
+    ),
+    fetchAllRows((from, to) =>
+      admin.from("rounds").select("id, bracket, phase, number, status, seed, drawn_at").eq("tournament_id", tid).order("id").range(from, to),
+    ),
+    fetchAllRows((from, to) =>
+      admin
+        .from("matches")
+        .select(
+          "id, round_id, position, pool, team_a_id, team_b_id, side_a, side_b, venue_id, scheduled_at, started_at, ended_at, queued_at, score_a, score_b, tiebreak_a, tiebreak_b, winner_side, status",
+        )
+        .eq("tournament_id", tid)
+        .order("id")
+        .range(from, to),
+    ),
+    opts.secrets
+      ? fetchAllRows((from, to) =>
+          admin.from("team_secrets").select("team_id, code, teams!inner(tournament_id)").eq("teams.tournament_id", tid).order("team_id").range(from, to),
+        )
+      : Promise.resolve([]),
+    fetchAllRows((from, to) => admin.from("registrations").select("id, team_id, source").eq("tournament_id", tid).order("id").range(from, to)),
+    // Joined on the tournament (not `.in(team ids)`: beyond ~200 teams the URL is too long → 414).
+    fetchAllRows((from, to) =>
+      admin
+        .from("players")
+        .select("id, team_id, first_name, last_name, position, teams!inner(tournament_id)")
+        .eq("teams.tournament_id", tid)
+        .order("id")
+        .range(from, to),
+    ),
   ]);
-  const teamIds = (teams.data ?? []).map((t) => t.id);
-  const players = teamIds.length
-    ? await admin.from("players").select("id, team_id, first_name, last_name, position").in("team_id", teamIds)
-    : { data: [] };
 
   const { clubs, ...rest } = row as typeof row & { clubs: { name: string; slug: string } | null };
   const meta: TournamentMeta = { ...rest, club: clubs };
   const state = rowsToEngineState(
     {
       tournament: { id: tid, status: row.status, starts_at: row.starts_at, max_teams: row.max_teams },
-      teams: teams.data ?? [],
-      players: players.data ?? [],
-      venues: venues.data ?? [],
-      rounds: rounds.data ?? [],
-      matches: matches.data ?? [],
-      teamSecrets: (secrets.data ?? []) as Record<string, unknown>[],
-      registrations: registrations.data ?? [],
+      teams,
+      players: players.map(({ teams: _team, ...p }) => p),
+      venues,
+      rounds,
+      matches,
+      teamSecrets: secrets as Record<string, unknown>[],
+      registrations,
     },
     rulesFromSport(sport, row.team_format, row.config),
     resolveConfig(row.config, sport),
