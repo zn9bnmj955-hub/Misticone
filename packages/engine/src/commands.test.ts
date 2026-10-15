@@ -62,6 +62,13 @@ describe("check-in and on-site registration", () => {
     s = exec(s, { type: "team.setStatus", teamId: "team-004", status: "forfeit" });
     expect(statusBeforeForfeit(s.teams["team-004"]!)).toBe("registered");
   });
+  it("a team checked in then un-checked before its forfeit is restored as registered, not checked in", () => {
+    let s = makeState({ teams: 4, teamStatus: "registered" });
+    s = exec(s, { type: "team.setStatus", teamId: "team-002", status: "checked_in" });
+    s = exec(s, { type: "team.setStatus", teamId: "team-002", status: "registered" });
+    s = exec(s, { type: "team.setStatus", teamId: "team-002", status: "forfeit" });
+    expect(statusBeforeForfeit(s.teams["team-002"]!)).toBe("registered");
+  });
 });
 
 describe("forfeits", () => {
