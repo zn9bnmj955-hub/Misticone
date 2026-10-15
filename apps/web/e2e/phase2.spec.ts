@@ -197,11 +197,12 @@ test.describe("scoring table", () => {
 
 test("captains enter the score, the opponent confirms", async ({ page, request }) => {
   // Switch the live tournament to captain scoring (organizer setting).
-  const t = await request.get(`${SUPABASE}/rest/v1/tournaments?short_code=eq.7KQ2&select=id,config`, { headers: { apikey: SECRET, authorization: `Bearer ${SECRET}` } });
-  const [row] = (await t.json()) as { id: string; config: Record<string, unknown> }[];
+  const t = await request.get(`${SUPABASE}/rest/v1/tournaments?short_code=eq.7KQ2&select=id,config,state_version`, { headers: { apikey: SECRET, authorization: `Bearer ${SECRET}` } });
+  const [row] = (await t.json()) as { id: string; config: Record<string, unknown>; state_version: number }[];
+  // Bump the version too: the public page rebuilds the tournament once per state_version.
   await request.patch(`${SUPABASE}/rest/v1/tournaments?id=eq.${row!.id}`, {
     headers: { apikey: SECRET, authorization: `Bearer ${SECRET}`, "content-type": "application/json" },
-    data: { config: { ...row!.config, scoreEntry: "captains" } },
+    data: { config: { ...row!.config, scoreEntry: "captains" }, state_version: row!.state_version + 1 },
   });
   const { state } = await staffState(request);
   const match = Object.values(state.matches).find((m) => m.status === "playing")!;
