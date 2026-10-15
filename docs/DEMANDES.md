@@ -19,3 +19,19 @@ Reçues le 15/10/2026. Chaque point sera découpé par le chef-realisation et va
 10. **Lien à usage unique** : une fois le concours terminé, impossible de le réutiliser.
 11. **Code PIN des bénévoles** : pas compris → à expliquer (et à simplifier si besoin).
 12. **Assistant IA** : IA de sport **et** questions sur le site autorisées ; informations du site ; **règlements à jour de tous les sports**.
+
+## Compléments (15/10, soir)
+
+13. **Résultats conservés au moins 2 semaines** après la fin du concours, puis suppression.
+14. **Concours sur 2 jours** possibles (tours répartis sur deux journées).
+15. **Présentation des tirages de pétanque** (modèle : `docs/references/tirage-resultats-tours.jpg` et `tirage-cadrage.jpg`,
+    site resultats-ppf.com) :
+    - une section par tour, la plus récente en haut : FINALE, 1/2 FINALE, 1/4 de finale, 8e, 16e, … puis **Cadrage** ;
+    - chaque section est un tableau simple : **Terrain** | **Équipe** | **Équipe** | **Score** ;
+    - chaque équipe = les noms des joueurs (un par ligne, NOM Prénom en majuscules) + entre parenthèses le n° et le nom du club
+      (ou « N.H. ») ;
+    - l'équipe **perdante est grisée** ; score « ** » tant que la partie n'est pas jouée ;
+    - **Cadrage** : quand le nombre d'équipes n'est pas une puissance de 2, une partie de cadrage ramène au nombre rond ; les
+      équipes qualifiées sans jouer sont face à « **Office** » (grisé) ;
+    - en haut : lien « Résultats par équipes » et rappel « Ctrl+F pour chercher, F5 pour actualiser » (page très simple, lisible
+      sur un vieil ordinateur).
