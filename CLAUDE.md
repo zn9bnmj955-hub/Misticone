@@ -21,8 +21,11 @@ Organigramme :
 Directeur de projet (session principale)
 ├── chef-produit      → expert-regles-concours, designer-ux
 ├── chef-technique    → relecteur-code, expert-securite, testeur, expert-performance
-└── chef-business     → expert-paiement, juriste-rgpd, marketing
+├── chef-business     → expert-paiement, juriste-rgpd, marketing
+└── chef-realisation  → developpeur-web, developpeur-serveur, integrateur-deploiement
 ```
+Les auditeurs corrigent ce qu'ils trouvent ; le **pôle réalisation** construit ce qui reste à faire et les demandes du propriétaire
+(le chef découpe en tâches, un développeur code, le testeur vérifie, le chef valide).
 
 ## Priorités (en cas de conflit, dans cet ordre)
 1. Vitesse et clarté le jour du concours : un joueur trouve son prochain match en < 10 s.
