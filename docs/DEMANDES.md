@@ -35,3 +35,12 @@ Reçues le 15/10/2026. Chaque point sera découpé par le chef-realisation et va
       équipes qualifiées sans jouer sont face à « **Office** » (grisé) ;
     - en haut : lien « Résultats par équipes » et rappel « Ctrl+F pour chercher, F5 pour actualiser » (page très simple, lisible
       sur un vieil ordinateur).
+
+## Précisions du propriétaire (16/10)
+
+16. **Cadrage** : à placer **après les poules** (ramener les qualifiés à une puissance de 2) ; pour un **petit concours sans
+    poules**, le cadrage se fait **après la 1re ou la 2e partie** (choix de l'organisateur à la création).
+17. **« N.H. »** (non homogène) = équipe dont les joueurs viennent de **clubs différents** ; sinon afficher « (n° de club/NOM DU CLUB) ».
+18. **Concours B** : avec les **perdants du 1er tour**, ou les **non-qualifiés des poules** ; le **C** sur le même principe à partir du B.
+    À la pétanque le B est souvent **payant** (inscription en plus) mais cela dépend des concours : **tout est une option** proposée à la
+    création du concours (B oui/non, C oui/non, origine des équipes, droit d'inscription).
