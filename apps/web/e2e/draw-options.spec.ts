@@ -26,6 +26,9 @@ test("draw step: cadrage, concours B and C, 2 days (phone)", async ({ page }, in
   await expect(page.getByRole("radio", { name: /Après la 1re partie/ })).toBeChecked();
   await expect(page.getByRole("switch", { name: /Concours B/ })).toBeChecked();
   await expect(page.getByRole("radio", { name: /^Automatique/ })).toBeChecked();
+  // C, B fee and 2 days are folded behind "Plus d'options" (F3).
+  await expect(page.getByRole("switch", { name: /Concours C/ })).toHaveCount(0);
+  await page.getByRole("button", { name: /Plus d'options/ }).click();
   await expect(page.getByRole("switch", { name: /Concours C/ })).not.toBeChecked();
   await expect(page.getByRole("radio", { name: "Sur 1 jour" })).toBeChecked();
   await expect(page.getByLabel("Droit d'inscription au B (€)")).toHaveCount(0);
@@ -33,12 +36,18 @@ test("draw step: cadrage, concours B and C, 2 days (phone)", async ({ page }, in
   // B on sign-up with a fee, C, pause before the 1/8.
   await page.getByRole("radio", { name: /^Sur inscription/ }).check({ force: true });
   await page.getByLabel("Droit d'inscription au B (€)").fill("5");
-  await page.getByRole("switch", { name: /Concours C/ }).check({ force: true });
-  await page.getByRole("radio", { name: "Pause avant les 1/8" }).check({ force: true });
+  await page.locator("label", { has: page.getByRole("switch", { name: /Concours C/ }) }).click();
+  const saved = page.waitForResponse((r) => r.request().method() === "POST" && r.url().includes("/modifier"), { timeout: 15_000 });
+  await page.locator("label", { has: page.getByRole("radio", { name: "Pause avant les 1/8" }) }).click();
   await expect(page.getByRole("radio", { name: "Pause après les poules" })).toHaveCount(0);
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
+
+  // Options already used stay open when the screen comes back.
+  await saved;
+  await page.reload();
+  await expect(page.getByRole("switch", { name: /Concours C/ })).toBeChecked({ timeout: 15_000 });
   await page.screenshot({ path: info.outputPath("draw-step-phone.png"), fullPage: true });
 
   // The summary repeats the choices.

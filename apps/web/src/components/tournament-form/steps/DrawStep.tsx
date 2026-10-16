@@ -4,6 +4,7 @@ import { competitionFormatsFor } from "@orgasport/sports";
 import { Icon } from "@orgasport/ui";
 import { fmt, getMessages } from "@/i18n";
 import { ChoiceCard } from "@/components/ui/ChoiceCard";
+import { cn } from "@/components/ui/cn";
 import { useState } from "react";
 import { TextField } from "@/components/ui/TextField";
 import { consolationCImpossible, defaultRounds, expectedConsolationTeams, type TournamentForm } from "@/lib/tournament-form";
@@ -28,6 +29,11 @@ export function DrawStep({ form, sport, update, error, vars }: StepProps) {
   // The B fee text is kept while typing ("5," is not a number yet).
   const [feeText, setFeeText] = useState<string | null>(null);
   const feeInvalid = feeText !== null && parseEuros(feeText) === null;
+  // Advanced options (C, B fee, 2 days) stay folded unless already used or wrong.
+  const advancedUsed = form.consolationC || form.consolationFeeCents > 0 || form.pause !== "none";
+  const advancedError = Boolean(error("pause") || error("consolationFeeCents"));
+  const [moreOpen, setMoreOpen] = useState(advancedUsed);
+  const more = moreOpen || advancedError;
   const pauseOptions: { value: TournamentForm["pause"]; label: string }[] = [
     { value: "none", label: t.pauseNone },
     ...(form.format === "pools_then_bracket" ? [{ value: "afterPools" as const, label: t.pauseAfterPools }] : []),
@@ -115,59 +121,80 @@ export function DrawStep({ form, sport, update, error, vars }: StepProps) {
             onChange={(consolation) => update({ consolation })}
           />
           {form.consolation && (
-            <>
-              <Choice<TournamentForm["consolationEntry"]>
-                label={t.consolationEntry}
-                wide
-                value={form.consolationEntry}
-                options={[
-                  { value: "auto", label: t.consolationAuto, text: t.consolationAutoText },
-                  { value: "opt_in", label: t.consolationOptIn, text: t.consolationOptInText },
-                ]}
-                onChange={(consolationEntry) => update({ consolationEntry })}
-                error={error("consolationEntry")}
-              />
-              {form.consolationEntry === "opt_in" && (
-                <TextField
-                  id={fid("consolationFeeCents")}
-                  label={t.consolationFee}
-                  inputMode="decimal"
-                  autoComplete="off"
-                  className="sm:max-w-48"
-                  value={feeText ?? eurosInput(form.consolationFeeCents)}
-                  hint={t.consolationFeeHint}
-                  error={feeInvalid ? w.issues.byPath.consolationFeeCents : error("consolationFeeCents")}
-                  onFocus={() => setFeeText(eurosInput(form.consolationFeeCents))}
-                  onChange={(e) => {
-                    setFeeText(e.target.value);
-                    const cents = parseEuros(e.target.value);
-                    if (cents !== null) update({ consolationFeeCents: cents });
-                  }}
-                  onBlur={() => setFeeText(null)}
-                />
-              )}
-              <Toggle label={t.consolationC} text={t.consolationCText} checked={form.consolationC} onChange={(consolationC) => update({ consolationC })} />
-              {consolationCImpossible(form) && (
-                <p role="status" className="flex items-start gap-2 rounded-[var(--radius)] border-2 border-warning px-4 py-3 text-sm font-bold">
-                  <Icon name="info" size={20} className="shrink-0" />
-                  {fmt(t.consolationCImpossible, { teams: expectedConsolationTeams(form, form.maxTeams), teamNoun: vars.teamNoun ?? "" })}
-                </p>
-              )}
-            </>
+            <Choice<TournamentForm["consolationEntry"]>
+              label={t.consolationEntry}
+              wide
+              value={form.consolationEntry}
+              options={[
+                { value: "auto", label: t.consolationAuto, text: t.consolationAutoText },
+                { value: "opt_in", label: t.consolationOptIn, text: t.consolationOptInText },
+              ]}
+              onChange={(consolationEntry) => update({ consolationEntry })}
+              error={error("consolationEntry")}
+            />
           )}
         </Group>
       )}
 
       {elimination && (
-        <Group title={t.pause} text={t.pauseText}>
-          <Choice<TournamentForm["pause"]>
-            label={t.pause}
-            value={form.pause}
-            options={pauseOptions}
-            onChange={(pause) => update({ pause })}
-            error={error("pause")}
-          />
-        </Group>
+        <div className="grid gap-6">
+          <button
+            type="button"
+            aria-expanded={more}
+            aria-controls="draw-more-options"
+            onClick={() => setMoreOpen(!more)}
+            className="flex min-h-12 items-center justify-between gap-3 rounded-[var(--radius)] border-2 border-line bg-surface px-4 py-2 text-left hover:border-ink-soft"
+          >
+            <span className="grid">
+              <span className="font-black">{more ? t.lessOptions : t.moreOptions}</span>
+              {!more && <span className="text-sm text-ink-soft">{t.moreOptionsText}</span>}
+            </span>
+            <Icon name="arrowRight" size={20} className={cn("shrink-0", more ? "-rotate-90" : "rotate-90")} />
+          </button>
+          {more && (
+            <div id="draw-more-options" className="grid gap-8">
+              {form.consolation && (
+                <Group title={t.moreConsolation}>
+                  {form.consolationEntry === "opt_in" && (
+                    <TextField
+                      id={fid("consolationFeeCents")}
+                      label={t.consolationFee}
+                      inputMode="decimal"
+                      autoComplete="off"
+                      className="sm:max-w-48"
+                      value={feeText ?? eurosInput(form.consolationFeeCents)}
+                      hint={t.consolationFeeHint}
+                      error={feeInvalid ? w.issues.byPath.consolationFeeCents : error("consolationFeeCents")}
+                      onFocus={() => setFeeText(eurosInput(form.consolationFeeCents))}
+                      onChange={(e) => {
+                        setFeeText(e.target.value);
+                        const cents = parseEuros(e.target.value);
+                        if (cents !== null) update({ consolationFeeCents: cents });
+                      }}
+                      onBlur={() => setFeeText(null)}
+                    />
+                  )}
+                  <Toggle label={t.consolationC} text={t.consolationCText} checked={form.consolationC} onChange={(consolationC) => update({ consolationC })} />
+                  {consolationCImpossible(form) && (
+                    <p role="status" className="flex items-start gap-2 rounded-[var(--radius)] border-2 border-warning px-4 py-3 text-sm font-bold">
+                      <Icon name="info" size={20} className="shrink-0" />
+                      {fmt(t.consolationCImpossible, { teams: expectedConsolationTeams(form, form.maxTeams), teamNoun: vars.teamNoun ?? "" })}
+                    </p>
+                  )}
+                </Group>
+              )}
+              <Group title={t.pause} text={t.pauseText}>
+                <Choice<TournamentForm["pause"]>
+                  label={t.pause}
+                  value={form.pause}
+                  options={pauseOptions}
+                  onChange={(pause) => update({ pause })}
+                  error={error("pause")}
+                />
+              </Group>
+            </div>
+          )}
+        </div>
       )}
 
       {form.format === "pools_then_bracket" && (
