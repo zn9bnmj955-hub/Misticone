@@ -1,6 +1,8 @@
 /**
- * Generates supabase/seed.sql: sports, a demo club, demo accounts and four
- * tournaments (3 pétanque, 1 football). Run with `pnpm --filter @orgasport/db seed:gen`.
+ * Generates supabase/seed.sql: sports, a demo club, demo accounts and six
+ * pétanque tournaments (upcoming, live with a cadrage and a B, finished with a
+ * cadrage and a C, paused on a two-day tournament, upcoming in pools).
+ * Run with `pnpm --filter @orgasport/db seed:gen`.
  *
  * Dates are SQL expressions relative to now(), so the "live" tournament is
  * always live whenever the database is reset.
@@ -12,11 +14,16 @@ import {
   applyCommand,
   createIdGenerator,
   defaultTournamentConfig,
+  pausedAt,
+  roundLabel,
   rulesFromSport,
   teamScoreCode,
   type Command,
   type EngineState,
+  affiliationOf,
+  teamClubFrom,
   type Match,
+  type PlayerClub,
   type TournamentConfig,
 } from "@orgasport/engine";
 import { entityToRow } from "../src/engine-mapping";
@@ -100,16 +107,16 @@ const LAST = [
   "Morin", "Mathieu", "Clément", "Gauthier", "Dumont", "Lopez", "Fontaine", "Chevalier", "Robin", "Masson",
   "Benali", "Haddad", "Ferrari", "Rossi", "Marchetti", "Santoni", "Giordano", "Pellegrin", "Olivier", "Barbier",
 ];
-const PETANQUE_CLUBS = [
-  "AS Les Platanes",
-  "La Boule Aubagnaise",
-  "Pétanque Gémenosienne",
-  "Les Cigales de Cassis",
-  "Boule Joyeuse de Roquevaire",
-  "Amicale Bouliste de Cuges",
-  "La Ciotat Pétanque Club",
-  null,
-] as const;
+/** Fictional clubs (number + name): public data shown on the draw sheets, « (n°/CLUB) ». */
+const PETANQUE_CLUBS: readonly PlayerClub[] = [
+  { number: "0130421", name: "AS LES PLATANES" },
+  { number: "0130102", name: "LA BOULE AUBAGNAISE" },
+  { number: "0130233", name: "PETANQUE GEMENOSIENNE" },
+  { number: "0130310", name: "LES CIGALES DE CASSIS" },
+  { number: "0130457", name: "BOULE JOYEUSE DE ROQUEVAIRE" },
+  { number: "0130518", name: "AMICALE BOULISTE DE CUGES" },
+  { number: "0130644", name: "LA CIOTAT PETANQUE CLUB" },
+];
 
 let phoneCounter = 0;
 const fictionalPhone = () => {
@@ -167,7 +174,7 @@ insert("public.clubs", [
     slug: club.slug,
     name: club.name,
     kind: "association",
-    sports: raw("array['petanque','football']"),
+    sports: raw("array['petanque']"),
     federation: "FFPJP",
     affiliation_number: "13-0421",
     address: "Boulodrome des Platanes, 12 allée des Joueurs",
@@ -180,13 +187,13 @@ insert("public.clubs", [
     contact_email: "contact@as-les-platanes.example",
     contact_phone: fictionalPhone(),
     description:
-      "Association fictive de démonstration : pétanque toute l'année sous les platanes, tournoi de foot à 7 pendant les fêtes.",
+      "Association fictive de démonstration : pétanque toute l'année sous les platanes, concours en nocturne l'été.",
     created_by: users.club.id,
   },
 ]);
 insert("public.club_members", [{ club_id: club.id, user_id: users.volunteer.id, role: "member" }]);
 
-out.push(`update public.profiles set display_name = ${lit(users.club.name)}, sports = array['petanque','football'],
+out.push(`update public.profiles set display_name = ${lit(users.club.name)}, sports = array['petanque'],
   city = 'Aubagne', postcode = '13400', lat = ${AUBAGNE.lat}, lng = ${AUBAGNE.lng}, active_club_id = ${lit(club.id)},
   onboarded_at = now() where id = ${lit(users.club.id)};
 update public.profiles set display_name = ${lit(users.player.name)}, sports = array['petanque'], level = 'leisure',
@@ -230,7 +237,7 @@ const engineStates: EngineState[] = [];
 function makeEngineTeams(
   count: number,
   size: number,
-  opts: { clubNames?: readonly (string | null)[]; teamNames?: string[]; status: "registered" | "checked_in"; demoPlayerAt?: number; checkedInAt?: string },
+  opts: { status: "registered" | "checked_in"; demoPlayerAt?: number; checkedInAt?: string; absent?: number[] },
 ): Pick<EngineState, "teams" | "players" | "teamSecrets" | "registrations"> {
   const teams: EngineState["teams"] = {};
   const players: EngineState["players"] = {};
@@ -238,28 +245,43 @@ function makeEngineTeams(
   const registrations: EngineState["registrations"] = {};
   for (let n = 1; n <= count; n++) {
     const id = uuid();
+    // Players' clubs: mostly one club per team, some « N.H. » teams (two clubs), a few unknown.
+    const kind = opts.demoPlayerAt === n ? "club" : ((r) => (r < 0.6 ? "club" : r < 0.85 ? "nh" : "none"))(rand());
+    const teamClub = opts.demoPlayerAt === n ? PETANQUE_CLUBS[0]! : pick(PETANQUE_CLUBS);
+    const clubs: (PlayerClub | null)[] = Array.from({ length: size }, (_, i) => {
+      if (kind === "none") return null;
+      if (kind === "club" || i === 0) return teamClub;
+      // N.H.: the second player always comes from another club.
+      const others = PETANQUE_CLUBS.filter((c) => c.number !== teamClub.number);
+      return i === 1 ? pick(others) : pick(PETANQUE_CLUBS);
+    });
+    // Absent at check-in: left out of the draw (the cadrage absorbs the gap).
+    const absent = opts.absent?.includes(n) ?? false;
     teams[id] = {
       id,
       number: n,
-      name: opts.teamNames ? opts.teamNames[n - 1]! : null,
-      club: opts.teamNames ? opts.teamNames[n - 1]! : pick(opts.clubNames ?? PETANQUE_CLUBS),
-      status: opts.status,
+      name: null,
+      club: teamClubFrom(affiliationOf(clubs), null),
+      status: absent ? "forfeit" : opts.status,
       seed: null,
       bracket: "main",
-      checkedInAt: opts.status === "checked_in" ? (opts.checkedInAt ?? at(-180)) : null,
+      checkedInAt: opts.status === "checked_in" && !absent ? (opts.checkedInAt ?? at(-180)) : null,
     };
     let captain = "";
     let captainEmail = "";
     for (let p = 1; p <= size; p++) {
       const isDemo = opts.demoPlayerAt === n && p === 1;
       const first = isDemo ? "Karim" : pick(FIRST);
-      const last = isDemo ? "Benali" : pick(LAST);
+      const picked = pick(LAST);
+      // The demo player's partner is always « Morin » (the demo looks up « Benali / Morin »).
+      const last = isDemo ? "Benali" : opts.demoPlayerAt === n && p === 2 ? "Morin" : picked;
       const pid = uuid();
       if (p === 1) {
         captain = `${first} ${last}`;
         captainEmail = `${slugify(first)}.${slugify(last)}@example.com`;
       }
-      players[pid] = { id: pid, teamId: id, firstName: first, lastName: last, position: p };
+      const club = clubs[p - 1];
+      players[pid] = { id: pid, teamId: id, firstName: first, lastName: last, position: p, ...(club ? { club } : {}) };
       if (isDemo) {
         playerUserIds.set(pid, users.player.id);
         licenseRows.push({ player_id: pid, license_number: "13084512" });
@@ -289,7 +311,6 @@ function run(state: EngineState, cmd: Command, minutes: number): EngineState {
 }
 
 const petanqueSport = requireSport("petanque");
-const footballSport = requireSport("football");
 
 const tournaments: Record<string, Val>[] = [];
 const common = {
@@ -359,9 +380,16 @@ engineStates.push(
   engineState(t1, "published", null, 64, petanqueSport, "doublette", t1Config, makeEngineTeams(23, 2, { status: "registered" }), makeVenuesState(32, 2)),
 );
 
-// 2. Live pétanque: 32 doublettes, round 2 in progress (code 7KQ2) ----------
+// 2. Live pétanque: 32 doublettes, 3 absent at check-in, so 29 play the 1st game
+//    (14 parties + 1 exempt 13-7); the 15 winners play the cadrage (7 parties +
+//    1 « Office ») while the B takes the 14 losers (code 7KQ2) ------------------
 const t2 = uuid();
-const t2Config: TournamentConfig = { ...defaultTournamentConfig(petanqueSport), bracketMode: "redraw", consolation: { ...defaultTournamentConfig(petanqueSport).consolation, enabled: true, losersOfRound: 1 } };
+const t2Config: TournamentConfig = {
+  ...defaultTournamentConfig(petanqueSport),
+  bracketMode: "redraw",
+  cadrage: { afterRound: 1 },
+  consolation: { ...defaultTournamentConfig(petanqueSport).consolation, enabled: true, source: "losers_round_1", entry: "auto" },
+};
 tournaments.push({
   id: t2,
   ...common,
@@ -381,14 +409,14 @@ tournaments.push({
   fee_per: "team",
   prize_text: "Mises + 200 €",
   welcome_message: "Bon concours à tous ! Les résultats sont à rendre à la table de marque.",
-  rules_text: "Règlement FFPJP. Parties en 13 points. Complémentaire pour les perdants du 1er tour.",
+  rules_text: "Règlement FFPJP. Parties en 13 points. Cadrage après la 1re partie. Concours B pour les perdants de la 1re partie.",
   config: raw(`'${JSON.stringify(t2Config)}'::jsonb`),
   draw_seed: "saint-michel-2026",
   published_at: ago(60 * 24 * 14),
 });
 {
   const venues = makeVenuesState(14, 1, [...Array.from({ length: 13 }, (_, i) => String(i + 1)), "Honneur"]);
-  const parts = makeEngineTeams(32, 2, { status: "checked_in", demoPlayerAt: 14, checkedInAt: at(-175) });
+  const parts = makeEngineTeams(32, 2, { status: "checked_in", demoPlayerAt: 14, checkedInAt: at(-175), absent: [7, 19, 27] });
   const demoTeam = Object.values(parts.teams).find((t) => t.number === 14)!.id;
   let s = engineState(t2, "check_in", at(-150), 32, petanqueSport, "doublette", t2Config, parts, venues);
   s = run(s, { type: "round.draw", bracket: "main", seed: "saint-michel-2026" }, -150);
@@ -403,12 +431,14 @@ tournaments.push({
     const side = m.sideA.includes(demoTeam) ? "A" : m.sideB.includes(demoTeam) ? "B" : rand() < 0.5 ? "A" : "B";
     s = run(s, { type: "match.score", matchId: m.id, ...scoreFor(s, side) }, clock);
   }
-  // Round 2 and consolation round 1 were drawn automatically.
+  // The cadrage (round 2) and the B's 1st game were drawn automatically.
   const inRound = (bracket: "main" | "consolation", n: number) =>
     Object.values(s.matches)
       .filter((m) => roundOf(m).bracket === bracket && roundOf(m).number === n)
       .sort((a, b) => a.position - b.position);
+  if (roundLabel(s, s.rounds[inRound("main", 2)[0]!.roundId]!).key !== "cadrage") throw new Error("7KQ2: round 2 should be the cadrage");
   const demoMatch = () => inRound("main", 2).find((m) => [...m.sideA, ...m.sideB].includes(demoTeam))!;
+  if (demoMatch().status === "bye") throw new Error("7KQ2: the demo team must play the cadrage, not be « Office »");
   let played = 0;
   for (const m of inRound("main", 2)) {
     if (m.id === demoMatch().id || s.matches[m.id]!.status !== "ready") continue;
@@ -473,49 +503,140 @@ tournaments.push({
   engineStates.push(s);
 }
 
-// 4. Football: 8 teams, foot à 7, upcoming ----------------------------------
+
+/** Plays every match that can be played (earliest first) until none is left. */
+function playAll(s: EngineState, clockStart: number, guardMax = 400): EngineState {
+  let clock = clockStart;
+  for (let guard = 0; guard < guardMax; guard++) {
+    const m = Object.values(s.matches)
+      .filter((x) => x.status === "ready")
+      .sort((a, b) => (a.scheduledAt ?? "").localeCompare(b.scheduledAt ?? ""))[0];
+    if (!m) break;
+    clock = Math.max(clock + 2, Math.round((Date.parse(m.scheduledAt!) - VIRTUAL_NOW) / 60_000) + int(35, 60));
+    s = run(s, { type: "match.score", matchId: m.id, ...scoreFor(s, rand() < 0.5 ? "A" : "B") }, clock);
+  }
+  return s;
+}
+
+// 4. Finished pétanque with a cadrage, a B and a C (code C4DR) ------------------
+//    20 doublettes: 10 winners → cadrage 2 parties + 6 d'office; B (10 losers):
+//    5 parties then cadrage 1 partie + 3 d'office; C (5 losers of the B): 2 parties
+//    + 1 exempt, then cadrage 1 partie + 1 d'office.
+const t5 = uuid();
+const t5Config: TournamentConfig = {
+  ...defaultTournamentConfig(petanqueSport),
+  bracketMode: "redraw",
+  cadrage: { afterRound: 1 },
+  consolation: { ...defaultTournamentConfig(petanqueSport).consolation, enabled: true, source: "losers_round_1", entry: "auto" },
+  consolationC: { enabled: true, entry: "auto", feeCents: null },
+};
+tournaments.push({
+  id: t5,
+  ...common,
+  sport_slug: "petanque",
+  short_code: "C4DR",
+  name: "Challenge de l'Huveaune",
+  status: "check_in",
+  starts_at: raw("now() - interval '2 days'"),
+  registration_closes_at: raw("now() - interval '3 days'"),
+  checkin_closes_at: raw("now() - interval '2 days 15 minutes'"),
+  team_format: "doublette",
+  category: "all",
+  eligibility: "open",
+  max_teams: 32,
+  name_display: "full",
+  fee_cents: 1000,
+  fee_per: "team",
+  prize_text: "Mises + 250 €",
+  rules_text: "Règlement FFPJP. Parties en 13 points. Cadrage après la 1re partie, concours B et C.",
+  config: raw(`'${JSON.stringify(t5Config)}'::jsonb`),
+  draw_seed: "huveaune-2026",
+  published_at: raw("now() - interval '15 days'"),
+});
+{
+  const start = -60 * 24 * 2;
+  let s = engineState(t5, "check_in", at(start), 32, petanqueSport, "doublette", t5Config, makeEngineTeams(20, 2, { status: "checked_in", checkedInAt: at(start - 20) }), makeVenuesState(12, 1));
+  s = run(s, { type: "round.draw", bracket: "main", seed: "huveaune-2026" }, start);
+  s = playAll(s, start);
+  if (s.tournament.status !== "finished") throw new Error("C4DR should be finished");
+  for (const b of ["main", "consolation", "consolation_c"] as const) {
+    if (!Object.values(s.rounds).some((r) => r.bracket === b && roundLabel(s, r).key === "cadrage")) throw new Error(`C4DR: no cadrage in ${b}`);
+  }
+  engineStates.push(s);
+}
+
+// 5. Two-day pétanque, paused before the quarter-finals (code 2J7P) -------------
+//    24 doublettes: 12 winners → cadrage 4 parties + 4 d'office → 8 left: day 2
+//    starts with the 1/4 de finale. The B pauses with the A.
+const t6 = uuid();
+const t6Config: TournamentConfig = {
+  ...defaultTournamentConfig(petanqueSport),
+  bracketMode: "redraw",
+  cadrage: { afterRound: 1 },
+  consolation: { ...defaultTournamentConfig(petanqueSport).consolation, enabled: true, source: "losers_round_1", entry: "auto" },
+  pause: { before: { remaining: 8 } },
+};
+tournaments.push({
+  id: t6,
+  ...common,
+  sport_slug: "petanque",
+  short_code: "2J7P",
+  name: "National des Platanes (2 jours)",
+  status: "check_in",
+  starts_at: raw("now() - interval '1 day'"),
+  registration_closes_at: raw("now() - interval '2 days'"),
+  checkin_closes_at: raw("now() - interval '1 day 15 minutes'"),
+  team_format: "doublette",
+  category: "all",
+  eligibility: "open",
+  max_teams: 32,
+  name_display: "full",
+  fee_cents: 1500,
+  fee_per: "team",
+  prize_text: "Mises + 600 €",
+  welcome_message: "Concours sur deux jours : reprise demain matin à partir des 1/4 de finale.",
+  rules_text: "Règlement FFPJP. Parties en 13 points. Pause après le cadrage, reprise le 2e jour.",
+  config: raw(`'${JSON.stringify(t6Config)}'::jsonb`),
+  draw_seed: "national-2026",
+  published_at: raw("now() - interval '25 days'"),
+});
+{
+  const start = -60 * 24;
+  let s = engineState(t6, "check_in", at(start), 32, petanqueSport, "doublette", t6Config, makeEngineTeams(24, 2, { status: "checked_in", checkedInAt: at(start - 20) }), makeVenuesState(12, 1));
+  s = run(s, { type: "round.draw", bracket: "main", seed: "national-2026" }, start);
+  s = playAll(s, start);
+  if (s.tournament.status !== "live" || !pausedAt(s)) throw new Error("2J7P should be live and paused");
+  engineStates.push(s);
+}
+
+// 6. Upcoming pétanque in pools (code PQ8P): used by the automatic draw test ----
 const t4 = uuid();
-const t4Config = defaultTournamentConfig(footballSport);
+const t4Config: TournamentConfig = { ...defaultTournamentConfig(petanqueSport), format: "pools_then_bracket", consolation: { ...defaultTournamentConfig(petanqueSport).consolation, source: "pool_non_qualified" } };
 tournaments.push({
   id: t4,
   ...common,
-  address: "Stade municipal des Platanes, chemin du Stade",
-  parking: "Parking du stade.",
-  sport_slug: "football",
-  short_code: "FT8S",
-  name: "Tournoi des fêtes des Platanes",
+  sport_slug: "petanque",
+  short_code: "PQ8P",
+  name: "Triplettes en poules des Platanes",
   status: "published",
-  starts_at: inDays(20, 9),
-  registration_closes_at: inDays(18, 20),
-  checkin_closes_at: inDays(20, 8.5),
-  team_format: "foot-7",
-  category: "seniors",
+  starts_at: inDays(20, 14),
+  registration_closes_at: inDays(19, 20),
+  checkin_closes_at: inDays(20, 13.5),
+  team_format: "triplette",
+  category: "all",
   eligibility: "open",
-  max_teams: 8,
-  name_display: "full",
-  fee_cents: 5000,
+  max_teams: 16,
+  name_display: "initials",
+  fee_cents: 1500,
   fee_per: "team",
-  prize_text: "Coupe et médailles, repas offert aux finalistes",
-  rules_text: "Foot à 7, matchs de 2 × 10 minutes. Protège-tibias obligatoires.",
+  prize_text: "Mises + 200 €",
+  rules_text: "Poules de 4 en 3 parties, 2 qualifiés par poule, puis phase finale.",
   config: raw(`'${JSON.stringify(t4Config)}'::jsonb`),
   draw_seed: null,
   published_at: ago(60 * 24 * 3),
 });
 engineStates.push(
-  engineState(
-    t4,
-    "published",
-    null,
-    8,
-    footballSport,
-    "foot-7",
-    t4Config,
-    makeEngineTeams(8, 9, {
-      status: "registered",
-      teamNames: ["AS Les Platanes", "FC Gémenos Vétérans", "US Roquevaire", "Cassis FC", "SC La Ciotat", "Entente Cuges", "Auriol Sports", "Carnoux FC"],
-    }),
-    makeVenuesState(2, 0, ["A", "B"]),
-  ),
+  engineState(t4, "published", null, 16, petanqueSport, "triplette", t4Config, makeEngineTeams(8, 3, { status: "registered" }), makeVenuesState(8)),
 );
 
 // Final status of each tournament comes from the engine (live / finished).
@@ -557,7 +678,7 @@ insert("public.matches", rowsOf("matches", "match").map(sqlRow));
 // Staff: the club owner organizes everything; a volunteer has a PIN on 7KQ2.
 insert(
   "public.tournament_staff",
-  [t1, t2, t3, t4].map((tid) => ({
+  [t1, t2, t3, t4, t5, t6].map((tid) => ({
     id: uuid(),
     tournament_id: tid,
     user_id: users.club.id,
@@ -594,9 +715,9 @@ insert("public.announcements", [
   {
     id: uuid(),
     club_id: club.id,
-    sport_slug: "football",
-    title: "Inscriptions ouvertes pour le tournoi des fêtes",
-    body: "8 équipes maximum, foot à 7. Premier arrivé, premier servi !",
+    sport_slug: "petanque",
+    title: "Concours sur deux jours : le National des Platanes",
+    body: "Cadrage après la 1re partie, concours B pour les perdants. Reprise le 2e jour à partir des 1/4 de finale.",
     published_at: ago(60 * 24 * 3),
     created_by: users.club.id,
   },
