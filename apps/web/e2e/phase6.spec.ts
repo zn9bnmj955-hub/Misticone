@@ -17,13 +17,23 @@ async function signIn(page: Page, email: string) {
 test.describe("assistant", () => {
   test("a guest asks a starter question and gets a streamed answer with suggestions", async ({ page }) => {
     await page.goto("/assistant");
-    await page.getByRole("list", { name: "Exemples de questions" }).getByRole("button", { name: "La règle du but à 13" }).click();
+    await page.getByRole("list", { name: "Exemples de questions" }).getByRole("button", { name: "Que dit le règlement sur le but ?" }).click();
 
     const conversation = page.getByRole("list", { name: "Conversation avec l'assistant" });
-    await expect(conversation).toContainText("La règle du but à 13");
+    await expect(conversation).toContainText("Que dit le règlement sur le but ?");
     await expect(conversation).toHaveAttribute("aria-busy", "false", { timeout: 30_000 });
     await expect(conversation.getByRole("listitem").last()).toContainText(/\S{20,}|13/);
     await expect(page.getByRole("list", { name: "Questions suggérées" }).getByRole("button").first()).toBeVisible();
+  });
+
+  test("an off-topic question is refused politely, with sport and site suggestions", async ({ page }) => {
+    await page.goto("/assistant");
+    await page.getByLabel("Votre question").fill("Pour qui voter à l'élection présidentielle ?");
+    await page.getByRole("button", { name: "Envoyer" }).click();
+    const conversation = page.getByRole("list", { name: "Conversation avec l'assistant" });
+    await expect(conversation).toHaveAttribute("aria-busy", "false", { timeout: 30_000 });
+    await expect(conversation.getByRole("listitem").last()).toContainText("questions de sport et sur le site OrgaSport");
+    await expect(page.getByRole("list", { name: "Questions suggérées" }).getByRole("button", { name: "Comment marche le PIN des bénévoles ?" })).toBeVisible();
   });
 
   test("the admin sees usage, adds a knowledge document, finds it, then deletes it", async ({ page }) => {
