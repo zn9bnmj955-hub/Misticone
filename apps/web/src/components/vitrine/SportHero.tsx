@@ -210,6 +210,9 @@ export type SportChipsLabels = { eyebrow: string; chips: string; hint: string };
 
 export function SportChips({ labels, className }: { labels: SportChipsLabels; className?: string }) {
   const { sports, active, choose, mode } = useHero();
+  const hint = <p className={cn("text-sm text-ink-soft", mode !== "3d" && "invisible")}>{labels.hint}</p>;
+  // A single sport offered (pétanque only): no sport to choose, only the drag hint.
+  if (sports.length < 2) return <div className={cn("grid justify-items-center text-center", className)}>{hint}</div>;
   return (
     <div className={cn("grid justify-items-center gap-2 text-center", className)}>
       <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">{labels.eyebrow}</p>
@@ -235,7 +238,7 @@ export function SportChips({ labels, className }: { labels: SportChipsLabels; cl
           );
         })}
       </div>
-      <p className={cn("text-sm text-ink-soft", mode !== "3d" && "invisible")}>{labels.hint}</p>
+      {hint}
     </div>
   );
 }

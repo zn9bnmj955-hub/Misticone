@@ -1,6 +1,6 @@
 /**
  * Texts of the landing « waouh » hero: expressive title, the sport stage with
- * the 3D ball (pétanque ball that turns into a football) and its sport chips.
+ * the 3D ball and its sport chips (hidden while a single sport is offered).
  */
 export const landing3d = {
   /** The hero title, split so the end can be highlighted (same text as landing.heroTitle). */
