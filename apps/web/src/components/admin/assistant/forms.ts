@@ -19,7 +19,7 @@ export const SETTINGS_FIELDS = [
 ] as const;
 export type SettingsField = (typeof SETTINGS_FIELDS)[number];
 
-export const KB_FIELDS = ["title", "sport", "sourceUrl", "body"] as const;
+export const KB_FIELDS = ["title", "sport", "sourceUrl", "kind", "versionDate", "reviewedAt", "body"] as const;
 export type KbField = (typeof KB_FIELDS)[number];
 
 export type FieldErrors<F extends string> = Partial<Record<F, string>>;
@@ -128,6 +128,19 @@ export function countParagraphs(body: string): number {
 
 export const KB_BODY_MAX = 50_000;
 
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+/** "2026-10-16" (what <input type="date"> posts) and a real calendar day. */
+export function isIsoDate(v: string): boolean {
+  const m = ISO_DATE.exec(v);
+  if (!m) return false;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return d.getUTCFullYear() === Number(m[1]) && d.getUTCMonth() === Number(m[2]) - 1 && d.getUTCDate() === Number(m[3]);
+}
+const optionalDate = z
+  .string()
+  .trim()
+  .refine((v) => v === "" || isIsoDate(v));
+
 const kbSchema = z.object({
   title: z.string().trim().min(2).max(200),
   sport: z.string(),
@@ -136,24 +149,85 @@ const kbSchema = z.object({
     .trim()
     .max(500)
     .refine((v) => v === "" || (/^https?:\/\//i.test(v) && URL.canParse(v))),
+  kind: z.enum(["help", "rules"]),
+  versionDate: optionalDate,
+  reviewedAt: optionalDate,
   body: z.string().trim().min(1).max(KB_BODY_MAX),
 });
-const KB_ERROR: Record<KbField, string> = { title: "title", sport: "sport", sourceUrl: "url", body: "body" };
+const KB_ERROR: Record<KbField, string> = {
+  title: "title",
+  sport: "sport",
+  sourceUrl: "url",
+  kind: "kind",
+  versionDate: "date",
+  reviewedAt: "date",
+  body: "body",
+};
 
-export type KbDocumentInput = { title: string; sport_slug: string | null; source_url: string | null; body: string; published: boolean };
+export type KbKind = "help" | "rules";
+export type KbDocumentInput = {
+  title: string;
+  sport_slug: string | null;
+  source_url: string | null;
+  kind: KbKind;
+  version_date: string | null;
+  reviewed_at: string | null;
+  body: string;
+  published: boolean;
+};
 
+/**
+ * A rulebook sheet ("rules") needs its source, the date of the version it
+ * summarises and the date of its last review (the assistant cites
+ * « règlement en vigueur au … », the admin is warned after 12 months).
+ */
 export function parseKbForm(input: Record<KbField, string>, published: boolean, sports: readonly string[]): Parsed<KbDocumentInput, KbField> {
   const errors: FieldErrors<KbField> = {};
   const parsed = kbSchema.safeParse(input);
   if (!parsed.success) for (const issue of parsed.error.issues) errors[issue.path[0] as KbField] ??= KB_ERROR[issue.path[0] as KbField];
   if (input.sport !== "" && !sports.includes(input.sport)) errors.sport = "sport";
+  if (input.kind === "rules") {
+    if (input.sourceUrl.trim() === "") errors.sourceUrl ??= "rulesSource";
+    if (input.versionDate.trim() === "") errors.versionDate ??= "rulesDate";
+    if (input.reviewedAt.trim() === "") errors.reviewedAt ??= "rulesDate";
+  }
   if (!parsed.success || Object.keys(errors).length > 0) return { ok: false, errors };
   const v = parsed.data;
   return {
     ok: true,
-    // Windows line endings would hide the blank lines from the paragraph split.
-    value: { title: v.title, sport_slug: v.sport || null, source_url: v.sourceUrl || null, body: v.body.replace(/\r\n?/g, "\n"), published },
+    value: {
+      title: v.title,
+      sport_slug: v.sport || null,
+      source_url: v.sourceUrl || null,
+      kind: v.kind,
+      version_date: v.versionDate || null,
+      reviewed_at: v.reviewedAt || null,
+      // Windows line endings would hide the blank lines from the paragraph split.
+      body: v.body.replace(/\r\n?/g, "\n"),
+      published,
+    },
   };
+}
+
+/** Today in Paris, as "2026-10-16". */
+export function parisToday(nowMs: number): string {
+  return new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Europe/Paris" }).format(nowMs);
+}
+
+/**
+ * Rulebook sheets not reviewed for 12 months (or never): the admin page shows
+ * an alert so their summary is checked against the official text again.
+ */
+export function staleRules<T extends { kind: string; reviewed_at: string | null }>(docs: readonly T[], nowMs: number): T[] {
+  const today = parisToday(nowMs);
+  return docs.filter((d) => {
+    if (d.kind !== "rules") return false;
+    const m = d.reviewed_at ? ISO_DATE.exec(d.reviewed_at.slice(0, 10)) : null;
+    if (!m) return true;
+    // Same day one year later (29 February → 1 March).
+    const due = new Date(Date.UTC(Number(m[1]) + 1, Number(m[2]) - 1, Number(m[3]))).toISOString().slice(0, 10);
+    return today >= due;
+  });
 }
 
 /** The « Tester une question » box: a question of 2 to 200 characters, optionally one sport. */

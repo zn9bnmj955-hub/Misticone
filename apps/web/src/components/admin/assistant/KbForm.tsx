@@ -12,7 +12,17 @@ import { ResultLine, errorText } from "./result";
 const t = getMessages().adminAssistant;
 
 export type KbValues = Record<KbField, string> & { id: string; published: boolean };
-export const EMPTY_KB: KbValues = { id: "", title: "", sport: "", sourceUrl: "", body: "", published: true };
+export const EMPTY_KB: KbValues = {
+  id: "",
+  title: "",
+  sport: "",
+  sourceUrl: "",
+  kind: "help",
+  versionDate: "",
+  reviewedAt: "",
+  body: "",
+  published: true,
+};
 
 const paragraphsText = (n: number) => (n === 1 ? t.kb.paragraphsLiveOne : fmt(t.kb.paragraphsLive, { count: n }));
 
@@ -62,6 +72,30 @@ export function KbForm({ values, sports }: { values: KbValues; sports: { slug: s
           defaultValue={v("sourceUrl")}
           error={err("sourceUrl")}
           maxLength={500}
+        />
+      </div>
+      <div className="grid items-start gap-4 sm:grid-cols-3">
+        <SelectField id={id("kind")} name="kind" label={t.kb.kind} defaultValue={v("kind")} error={err("kind")} key={`kind-${v("kind")}`}>
+          <option value="help">{t.kb.kindHelp}</option>
+          <option value="rules">{t.kb.kindRules}</option>
+        </SelectField>
+        <TextField
+          id={id("versionDate")}
+          name="versionDate"
+          type="date"
+          label={t.kb.versionDate}
+          hint={t.kb.versionDateHint}
+          defaultValue={v("versionDate")}
+          error={err("versionDate")}
+        />
+        <TextField
+          id={id("reviewedAt")}
+          name="reviewedAt"
+          type="date"
+          label={t.kb.reviewedAt}
+          hint={t.kb.reviewedAtHint}
+          defaultValue={v("reviewedAt")}
+          error={err("reviewedAt")}
         />
       </div>
       <div className="grid gap-1.5">

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Section, Skeleton } from "@/components/ui/Section";
 import { Disclosure } from "@/components/admin/fields";
-import { decimalInput } from "@/components/admin/assistant/forms";
+import { decimalInput, staleRules } from "@/components/admin/assistant/forms";
 import { EMPTY_KB, KbForm } from "@/components/admin/assistant/KbForm";
 import { KbSearchBox } from "@/components/admin/assistant/KbSearchBox";
 import { SettingsForm, type SettingsValues } from "@/components/admin/assistant/SettingsForm";
@@ -17,7 +17,7 @@ import { DEFAULT_PRICES } from "@/lib/assistant/pricing";
 import { DEFAULT_MODEL, assistantConfigured, getAiSettings, type AiSettings } from "@/lib/assistant/settings";
 import { requireAdmin } from "@/lib/data/admin";
 import { getAiUsageReport } from "@/lib/data/ai-usage";
-import { formatDay, formatTime } from "@/lib/format";
+import { formatDay, formatLongDate, formatTime } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { deleteKbDocument, setKbPublished } from "./actions";
 
@@ -66,10 +66,12 @@ async function listDocuments() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("kb_documents")
-    .select("id, title, sport_slug, source_url, body, published, updated_at, kb_chunks (count)")
+    .select("id, title, sport_slug, source_url, kind, version_date, reviewed_at, body, published, updated_at, kb_chunks (count)")
     .order("updated_at", { ascending: false });
   if (error) throw error;
-  return data ?? [];
+  const docs = data ?? [];
+  // Rulebook sheets not reviewed for 12 months: alert at the top of the page.
+  return { docs, stale: staleRules(docs, Date.now()) };
 }
 
 function JumpLinks() {
@@ -91,7 +93,7 @@ function JumpLinks() {
 
 async function AssistantAdmin() {
   await requireAdmin();
-  const [stored, effective, report, docs] = await Promise.all([
+  const [stored, effective, report, { docs, stale }] = await Promise.all([
     storedSettings(),
     getAiSettings(),
     getAiUsageReport(),
@@ -112,6 +114,7 @@ async function AssistantAdmin() {
   const budgetEur = isNum(stored["ai.monthly_budget_eur"]) ? stored["ai.monthly_budget_eur"] : effective.monthlyBudgetEur;
   const used = new Set(docs.map((d) => d.sport_slug));
   const sports = SPORTS.filter((s) => s.enabled || used.has(s.slug)).map((s) => ({ slug: s.slug, name: s.name }));
+  const staleIds = new Set(stale.map((d) => d.id));
 
   return (
     <div className="grid gap-8">
@@ -119,6 +122,22 @@ async function AssistantAdmin() {
         <p>{t.intro}</p>
         <JumpLinks />
       </div>
+
+      {stale.length > 0 && (
+        <Card className="grid gap-2 border-warning" role="alert" aria-labelledby="admin-ai-stale">
+          <h3 id="admin-ai-stale" className="font-bold">
+            {t.kb.staleTitle}
+          </h3>
+          <p className="text-sm">{t.kb.staleText}</p>
+          <ul className="list-disc pl-5 text-sm">
+            {stale.map((d) => (
+              <li key={d.id}>
+                {d.title} ({d.reviewed_at ? fmt(t.kb.reviewedBadge, { date: formatLongDate(d.reviewed_at) }) : t.kb.neverReviewed})
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <Card className="grid gap-2" aria-labelledby="admin-ai-status">
         <h3 id="admin-ai-status" className="sr-only">
@@ -184,6 +203,17 @@ async function AssistantAdmin() {
                         {sport && <Icon name={sport.icon} size={14} />}
                         {sport?.name ?? t.kb.allSports}
                       </Badge>
+                      {d.kind === "rules" && (
+                        <Badge tone="neutral">
+                          {d.version_date ? fmt(t.kb.rulesBadge, { date: formatLongDate(d.version_date) }) : t.kb.kindRules}
+                        </Badge>
+                      )}
+                      {staleIds.has(d.id) && <Badge tone="warning">{t.kb.toReview}</Badge>}
+                      {d.kind === "rules" && (
+                        <span className="text-ink-soft">
+                          {d.reviewed_at ? fmt(t.kb.reviewedBadge, { date: formatLongDate(d.reviewed_at) }) : t.kb.neverReviewed}
+                        </span>
+                      )}
                       <span className="text-ink-soft tabular">
                         {count === 1 ? t.kb.paragraphsOne : fmt(t.kb.paragraphs, { count })} ·{" "}
                         {fmt(t.kb.updated, { date: `${formatDay(d.updated_at)} ${formatTime(d.updated_at)}` })}
@@ -196,6 +226,9 @@ async function AssistantAdmin() {
                           title: d.title,
                           sport: d.sport_slug ?? "",
                           sourceUrl: d.source_url ?? "",
+                          kind: d.kind,
+                          versionDate: d.version_date ?? "",
+                          reviewedAt: d.reviewed_at ?? "",
                           body: d.body,
                           published: d.published,
                         }}
