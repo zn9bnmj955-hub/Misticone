@@ -22,6 +22,15 @@ describe("teamAffiliation and N.H.", () => {
     expect(Object.values(s.players).every((x) => x.club?.number === "0340901")).toBe(true);
   });
 
+  it("same club typed once with its number and once by name only stays one club (not N.H.)", () => {
+    resetOps();
+    const s = exec(makeState({ teams: 0 }), { type: "team.create", players: [p("A", { number: "", name: "boule du cap agde" }), p("B", AGDE)] });
+    expect(teamAffiliation(s, created(s).id)).toEqual({ kind: "club", ...AGDE });
+    // Two different numbers stay N.H., even with the same name.
+    const t = exec(s, { type: "team.create", players: [p("C", AGDE), p("D", { number: "0340999", name: "BOULE DU CAP AGDE" })] });
+    expect(teamAffiliation(t, created(t).id)).toEqual({ kind: "nh" });
+  });
+
   it("2 different clubs give N.H. and no club on the team", () => {
     resetOps();
     const s = exec(makeState({ teams: 0 }), { type: "team.create", club: "Saisi", players: [p("A", AGDE), p("B", SETE)] });

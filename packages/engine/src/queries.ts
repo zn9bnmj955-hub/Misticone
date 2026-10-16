@@ -187,8 +187,9 @@ export function roundLabel(state: EngineState, round: Round): RoundLabel {
 /** A team's club as shown next to its name: one club, « N.H. » (non homogène) or nothing known. */
 export type TeamAffiliation = { kind: "club"; number: string; name: string } | { kind: "nh" } | { kind: "none" };
 
-/** Same club when the numbers match (or, without numbers, the names). */
-const clubKey = (c: PlayerClub) => (c.number.trim() ? `n:${c.number.trim()}` : `c:${c.name.trim().toUpperCase()}`);
+/** Same club when the numbers match; when one of them has no number, when the names match. */
+const sameClub = (a: PlayerClub, b: PlayerClub) =>
+  a.number.trim() && b.number.trim() ? a.number.trim() === b.number.trim() : a.name.trim().toUpperCase() === b.name.trim().toUpperCase();
 const hasClub = (c: PlayerClub | null | undefined): c is PlayerClub => Boolean(c && (c.number.trim() || c.name.trim()));
 
 /**
@@ -198,9 +199,12 @@ const hasClub = (c: PlayerClub | null | undefined): c is PlayerClub => Boolean(c
  */
 export function affiliationOf(clubs: (PlayerClub | null | undefined)[]): TeamAffiliation {
   const known = clubs.filter(hasClub);
-  if (new Set(known.map(clubKey)).size >= 2) return { kind: "nh" };
+  if (known.some((a, i) => known.some((b, j) => j > i && !sameClub(a, b)))) return { kind: "nh" };
   if (known.length === 0 || known.length < clubs.length) return { kind: "none" };
-  return { kind: "club", number: known[0]!.number.trim(), name: known[0]!.name.trim() };
+  // Most complete record: the one with a number, else the first.
+  const ref = known.find((c) => c.number.trim()) ?? known[0]!;
+  const name = ref.name.trim() || (known.find((c) => c.name.trim())?.name.trim() ?? "");
+  return { kind: "club", number: ref.number.trim(), name };
 }
 
 export function teamAffiliation(state: EngineState, teamId: string): TeamAffiliation {
