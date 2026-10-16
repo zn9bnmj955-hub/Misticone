@@ -36,7 +36,20 @@ const listeners = new Set<() => void>();
 
 const newId = () => `${Date.now().toString(36)}-${(seq++).toString(36)}`;
 
+/**
+ * Reads the conversation saved in the tab, once. Done before the first read
+ * AND before the first change: a click replayed by React during hydration can
+ * send a question before anything read the store, and loading afterwards
+ * would replace the answer being written.
+ */
+function ensureLoaded() {
+  if (loaded) return;
+  loaded = true;
+  state = { ...EMPTY, ...loadConversation() };
+}
+
 function set(patch: Partial<ChatState>, persist = false) {
+  ensureLoaded();
   state = { ...state, ...patch };
   if (persist) saveConversation({ messages: state.messages, quota: state.quota });
   for (const l of listeners) l();
@@ -56,10 +69,7 @@ export const chatStore = {
     return () => listeners.delete(listener);
   },
   getSnapshot(): ChatState {
-    if (!loaded) {
-      loaded = true;
-      state = { ...EMPTY, ...loadConversation() };
-    }
+    ensureLoaded();
     return state;
   },
   getServerSnapshot(): ChatState {
@@ -67,6 +77,7 @@ export const chatStore = {
   },
 
   async send(question: string, page?: string) {
+    ensureLoaded();
     const q = question.trim().slice(0, MAX_CHARS);
     if (!q || state.busy) return;
     const user: ChatMessage = { id: newId(), role: "user", content: q };
@@ -100,6 +111,7 @@ export const chatStore = {
 
   /** Asks the last question again after a failure. */
   retry(page?: string) {
+    ensureLoaded();
     if (state.busy) return;
     const i = state.messages.findLastIndex((m) => m.role === "user");
     if (i === -1) return;
