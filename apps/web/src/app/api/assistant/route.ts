@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     // from the knowledge base only, never pretending to be the AI.
     if (!assistantConfigured()) {
       const kb = await runTool("knowledge_search", { query: question }, toolCtx);
-      const results = (JSON.parse(kb.content) as { results?: { title: string; text: string }[] }).results ?? [];
+      const results = (JSON.parse(kb.content) as { results?: { title: string; text: string; cite?: string }[] }).results ?? [];
       if (results.length === 0) emit({ type: "text", text: m.fallbackNothing });
       else {
         emit({ type: "text", text: `${m.fallbackIntro}\n\n` });
@@ -109,7 +109,9 @@ export async function POST(request: NextRequest) {
         for (const r of results.slice(0, 2)) {
           const heading = r.title === lastTitle ? "" : `**${r.title}**\n`;
           lastTitle = r.title;
-          emit({ type: "text", text: `${heading}${r.text.replace(/^.*? — /, "")}\n\n` });
+          // A rulebook sheet always says which version it summarises.
+          const cite = r.cite ? `${r.cite}\n\n` : "";
+          emit({ type: "text", text: `${heading}${r.text.replace(/^.*? — /, "")}\n\n${cite}` });
         }
       }
       emit({ type: "done", suggestions: m.fallbackSuggestions });

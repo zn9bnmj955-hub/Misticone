@@ -3,10 +3,10 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { isShortCode, normalizeShortCode } from "@orgasport/engine";
 import { enabledSports, getSport } from "@orgasport/sports";
-import { getMessages } from "@/i18n";
+import { fmt, getMessages } from "@/i18n";
 import { listCatalog, toCatalogQuery, type CatalogFilters } from "@/lib/data/catalog";
 import { getMyNextMatch } from "@/lib/data/tournaments";
-import { formatDay, formatEuros, formatTime } from "@/lib/format";
+import { formatDay, formatEuros, formatLongDate, formatTime } from "@/lib/format";
 import { createPublicClient } from "@/lib/supabase/public";
 import { defaultForm, suggestFormat } from "@/lib/tournament-form";
 import { loadTournament } from "@/lib/tournament/load";
@@ -111,7 +111,7 @@ export function toolDefinitions(): Anthropic.Tool[] {
     {
       name: "knowledge_search",
       description:
-        "Cherche dans la base de connaissances OrgaSport (règlements officiels résumés, FAQ du site : s'inscrire, acheter un lien concours, table de marque). À utiliser AVANT tes connaissances générales pour toute question de règle ou d'utilisation du site.",
+        "Cherche dans la base de connaissances OrgaSport : fiches de règlement (résumé du règlement officiel, avec sa source et sa date) et fiches d'aide du site (fonctions, inscription, lien concours, table de marque, PIN des bénévoles, cadrage et Office, N.H., concours B et C, 2 jours, clôture et suppression des résultats). À utiliser AVANT tes connaissances générales pour toute question de règle ou d'utilisation du site. Un résultat de règlement porte un champ « cite » : reprends-le tel quel dans ta réponse.",
       input_schema: {
         type: "object",
         properties: { query: { type: "string" }, sport: { type: "string", enum: sports } },
@@ -291,7 +291,24 @@ async function knowledgeSearch(input: z.infer<typeof kbInput>) {
     p_limit: 5,
   });
   if (error) return { error: "recherche_indisponible" };
-  return { results: (data ?? []).map((r) => ({ title: r.title, text: r.content.slice(0, 1500), source: r.source_url })) };
+  return {
+    results: (data ?? []).map((r) => {
+      const cite = rulesCitation(r);
+      return { title: r.title, text: r.content.slice(0, 1500), source: r.source_url ?? null, kind: r.kind, ...(cite ? { cite } : {}) };
+    }),
+  };
+}
+
+/**
+ * « Règlement en vigueur au 16 octobre 2026 (source : …) » for a rulebook
+ * sheet, null for a help sheet. The assistant repeats it word for word, and
+ * the fallback answer (no API key) prints it under the paragraph.
+ */
+export function rulesCitation(r: { kind?: string | null; version_date?: string | null; source_url?: string | null }): string | null {
+  if (r.kind !== "rules" || !r.version_date) return null;
+  const m = getMessages().assistantUi;
+  const date = formatLongDate(r.version_date);
+  return r.source_url ? fmt(m.rulesCitation, { date, source: r.source_url }) : fmt(m.rulesCitationNoSource, { date });
 }
 
 const SCHEMAS = {
