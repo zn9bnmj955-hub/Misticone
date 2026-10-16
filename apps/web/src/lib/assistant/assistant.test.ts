@@ -59,6 +59,14 @@ describe("scope: sport and the site are allowed", () => {
     expect(assistantUi.offTopic).toMatch(/sport/);
     expect(assistantUi.offTopicSuggestions.length).toBeGreaterThan(0);
   });
+  it("a sport or club question using an ambiguous word (santé, président) is never refused", () => {
+    expect(questionScope("Le président de l'association peut-il annuler ?")).not.toBe("off_topic");
+    expect(questionScope("Comment s'échauffer ? je pense à ma santé")).not.toBe("off_topic");
+    expect(questionScope("Mal au dos après une journée de pointage, que faire pour ma santé ?")).not.toBe("off_topic");
+    expect(questionScope("Que disent les règlements fédéraux ?")).toBe("in_scope");
+    // Still refused: clearly unrelated health question.
+    expect(questionScope("Quel médicament contre la migraine ?")).toBe("off_topic");
+  });
   it("a short follow-up is left to the model", () => {
     expect(questionScope("Et pourquoi ?")).toBe("unclear");
   });
