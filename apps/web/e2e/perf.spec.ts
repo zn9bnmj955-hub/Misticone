@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test";
  * poor network); the showcase never downloads a video before a click.
  */
 
-const TERRAIN_PAGES = ["/c/7KQ2", "/c/7KQ2?equipe=1", "/c/7KQ2?vue=classement", "/c/GP3M/inscription", "/c/FT8S"];
+const TERRAIN_PAGES = ["/c/7KQ2", "/c/7KQ2?equipe=1", "/c/7KQ2?vue=classement", "/c/GP3M/inscription", "/c/C4DR", "/c/2J7P"];
 
 test.describe("speed budgets", () => {
   for (const url of TERRAIN_PAGES) {

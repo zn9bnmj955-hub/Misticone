@@ -47,7 +47,7 @@ test.describe("public tournament page", () => {
     await expect(card.locator(".v").first()).toHaveText("12");
     // Other tabs work too (plain links).
     await page.getByRole("link", { name: "Tableau" }).click();
-    await expect(page.getByRole("heading", { name: "1/8 de finale" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Cadrage" })).toBeVisible();
     await context.close();
   });
 
@@ -249,7 +249,7 @@ test("the last draw viewed stays readable without network", async ({ page, conte
 
 test("automatic draw at the scheduled time", async ({ request }) => {
   const headers = { apikey: SECRET, authorization: `Bearer ${SECRET}`, "content-type": "application/json" };
-  const t = await request.get(`${SUPABASE}/rest/v1/tournaments?short_code=eq.FT8S&select=id,config`, { headers });
+  const t = await request.get(`${SUPABASE}/rest/v1/tournaments?short_code=eq.PQ8P&select=id,config`, { headers });
   const [row] = (await t.json()) as { id: string; config: Record<string, unknown> }[];
   await request.patch(`${SUPABASE}/rest/v1/tournaments?id=eq.${row!.id}`, {
     headers,
@@ -258,8 +258,8 @@ test("automatic draw at the scheduled time", async ({ request }) => {
   const denied = await request.get("/api/cron/tick");
   expect(denied.status()).toBe(401);
   const tick = await request.get("/api/cron/tick", { headers: { authorization: CRON } });
-  expect(((await tick.json()) as { drawn: string[] }).drawn).toContain("FT8S");
-  const page = await request.get("/c/FT8S");
+  expect(((await tick.json()) as { drawn: string[] }).drawn).toContain("PQ8P");
+  const page = await request.get("/c/PQ8P");
   const html = await page.text();
   expect(html).toContain("Poules · partie 1");
   // A second tick does nothing more.

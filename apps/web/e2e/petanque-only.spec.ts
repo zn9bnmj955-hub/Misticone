@@ -46,8 +46,8 @@ test.describe("pétanque only", () => {
     await expect(page.getByRole("group", { name: "Filtrer par sport" })).toHaveCount(0);
   });
 
-  test("« all sports » (no sport cookie) hides the football tournament still in the database", async ({ page, baseURL }) => {
-    // FT8S (football, « Tournoi des fêtes des Platanes ») is still in the demo data until P2:
+  test("« all sports » (no sport cookie) lists no football tournament", async ({ page, baseURL }) => {
+    // The demo data is pétanque only since P2 (FT8S, « Tournoi des fêtes des Platanes », is gone);
     // with no sport chosen, the catalog and the feed must only list the sports offered.
     const url = baseURL ?? "http://localhost:3000";
     await page.context().addCookies([{ name: "os_sport", value: "all", url }]);
