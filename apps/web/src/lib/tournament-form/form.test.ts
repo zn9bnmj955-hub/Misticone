@@ -160,6 +160,8 @@ describe("planning and publication", () => {
     };
     const pub = buildPublication(form, sport, { organizerUserId: "u1", pins: ["123456"], pinLabel: (n) => `Bénévole ${n}` });
     expect(pub.fields.starts_at).toBe(parisToIso(form.date, form.startTime));
+    // No end time is ever estimated: the column stays null.
+    expect(pub.fields).not.toHaveProperty("estimated_end_at");
     expect(pub.venues).toEqual([
       { label: "1", position: 1, reserved: false },
       { label: "2", position: 2, reserved: false },

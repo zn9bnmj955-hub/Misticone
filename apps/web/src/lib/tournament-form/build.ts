@@ -37,7 +37,7 @@ export function storedConfig(form: TournamentForm, sport: SportConfig): Tourname
   };
 }
 
-/** Venues needed, delayed games and estimated end, from the engine's planner. */
+/** Venues needed and delayed games, from the engine's planner (its times are never shown). */
 export function planFor(form: TournamentForm, sport: SportConfig, teams = form.maxTeams): Plan {
   const config = storedConfig(form, sport);
   const free = Math.max(1, form.venueCount - form.reservedLabels.length);
@@ -81,7 +81,6 @@ export function buildPublication(
   opts: { organizerUserId: string | null; pins: string[]; pinLabel: (n: number) => string },
 ): Publication {
   const startsAt = parisToIso(form.date, form.startTime);
-  const plan = planFor(form, sport);
   const reserved = new Set(form.reservedLabels);
   const fields = {
     name: form.name,
@@ -89,7 +88,6 @@ export function buildPublication(
     starts_at: startsAt,
     registration_closes_at: parisToIso(form.date, form.registrationClosesTime),
     checkin_closes_at: parisToIso(form.date, form.checkInClosesTime),
-    estimated_end_at: plan.end,
     address: form.address,
     postcode: form.postcode || null,
     city: form.city,
