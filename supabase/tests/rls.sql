@@ -501,5 +501,36 @@ begin
   perform pg_temp.reset();
 end $$;
 
+-- A2: dated knowledge base. The public search finds the « cadrage » and « PIN »
+-- help sheets, returns rulebook sheets with their dates, and a rulebook sheet
+-- cannot be saved without its dates; a non-admin cannot edit a sheet.
+do $$
+declare
+  r record;
+  n int;
+begin
+  perform pg_temp.as_anon();
+  if not exists (select 1 from public.kb_search('comment marche le cadrage', 'petanque', 5) where title ilike '%cadrage%' and kind = 'help') then
+    raise exception 'kb_search does not find the cadrage help sheet';
+  end if;
+  if not exists (select 1 from public.kb_search('comment marche le PIN des bénévoles', null, 5) where title ilike '%PIN%') then
+    raise exception 'kb_search does not find the PIN help sheet';
+  end if;
+  select * into r from public.kb_search('règlement but nul mesure', 'petanque', 10) where kind = 'rules' limit 1;
+  if r is null or r.version_date is null or r.reviewed_at is null or r.source_url is null then
+    raise exception 'a rulebook sheet is returned without its source or dates';
+  end if;
+  update public.kb_documents set kind = 'help' where kind = 'rules';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'anon edited a knowledge sheet'; end if;
+  perform pg_temp.reset();
+
+  begin
+    insert into public.kb_documents (title, body, kind, published) values ('Règlement sans date', 'texte', 'rules', false);
+    raise exception 'a rulebook sheet was saved without dates';
+  exception when check_violation then null;
+  end;
+end $$;
+
 \echo 'RLS checks passed'
 rollback;
