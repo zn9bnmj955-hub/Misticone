@@ -30,7 +30,7 @@ dans la composition (`<Audio>`), puis relancer le rendu.
 | 0:00 | 0:08 | Voici comment créer, payer et utiliser votre lien concours. | Votre lien concours, pas à pas |
 | 0:08 | 0:22 | Dans votre espace club, touchez « Créer un concours », puis choisissez le sport. | 1. Créer le concours |
 | 0:22 | 0:40 | Chaque réponse a une valeur par défaut adaptée au sport. Votre brouillon s'enregistre tout seul. | Tout est prérempli. Le brouillon s'enregistre tout seul. |
-| 0:40 | 0:55 | OrgaSport calcule les terrains nécessaires et l'heure de fin. Pas sûr du format ? « Aide-moi à choisir ». | 2. Les terrains et l'heure de fin sont calculés |
+| 0:40 | 0:55 | OrgaSport calcule les terrains nécessaires au premier tour. Pas sûr du format ? « Aide-moi à choisir ». | 2. Les terrains nécessaires sont calculés |
 | 0:55 | 1:12 | Vérifiez le récapitulatif, puis payez en toute sécurité. Aucune donnée bancaire ne passe par OrgaSport. | 3. Paiement sécurisé par Stripe |
 | 1:12 | 1:25 | Dès le paiement confirmé, votre concours est publié : lien, QR code et affiche sont prêts. | 4. Lien, QR code et affiche, tout de suite |
 | 1:25 | 1:40 | Le jour du concours, pointez les équipes présentes et lancez le tirage. | 5. Le jour J : pointage et tirage |

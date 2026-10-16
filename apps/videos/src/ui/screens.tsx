@@ -627,7 +627,7 @@ export function Wizard({ t, taps }: { t: number; taps: number[] }) {
   );
 }
 
-/** Terrains step: needs, staggered games, estimated end; « Aide-moi à choisir ». */
+/** Terrains step: needs and staggered games (never an end time); « Aide-moi à choisir ». */
 export function TerrainsStep({ t, help }: { t: number; help: number }) {
   const value = t < 1.6 ? "32" : t < 2.4 ? "" : typed("20", t, 2.4, 6);
   const line = (at: number) => ({ opacity: ramp(t, at, at + 0.4), transform: `translateY(${(1 - ramp(t, at, at + 0.4)) * 10}px)` });
@@ -638,8 +638,7 @@ export function TerrainsStep({ t, help }: { t: number; help: number }) {
       <Field label="Terrains disponibles" value={<>{value}<Caret on={t > 1.5 && t < 4} /></>} focus={t > 1.5 && t < 4} />
       <Card accent={`${C.accent}66`} style={{ background: `${C.accent}12` }}>
         <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 6, ...line(3.6) }}>64 doublettes : 32 terrains nécessaires.</div>
-        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 6, color: C.accentInk, ...line(4.6) }}>Vous en avez 20 : 12 parties en décalé.</div>
-        <div style={{ fontSize: 17, fontWeight: 700, ...line(5.6) }}>Fin estimée vers 21 h.</div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: C.accentInk, ...line(4.6) }}>Vous en avez 20 : 12 parties attendront qu'une place se libère.</div>
       </Card>
       <div style={{ marginTop: 16 }}>
         <Button label="✦ Aide-moi à choisir" color={C.surface2} ink={C.ink} pressed={press(t, help)} style={{ border: `2px solid ${C.blueSoft}` }} />
@@ -667,7 +666,7 @@ export function TerrainsStep({ t, help }: { t: number; help: number }) {
           </div>
           <Chip label="Élimination" active />
           <Chip label="+ complémentaire" active accent={C.blueSoft} />
-          <div style={{ fontSize: 14, color: C.inkSoft, marginTop: 6 }}>Fin estimée : 20 h 45</div>
+          <div style={{ fontSize: 14, color: C.inkSoft, marginTop: 6 }}>32 terrains pour jouer le 1er tour d'un coup</div>
         </div>
       ) : null}
       <BottomButton label="Continuer" />
@@ -687,7 +686,7 @@ export function Recap({ t, pay }: { t: number; pay: number }) {
           ["Format", "Élimination + complémentaire"],
           ["Date", "samedi 14 juin · 14 h"],
           ["Équipes", "64 maximum"],
-          ["Terrains", "20 · fin vers 21 h"],
+          ["Terrains", "20 · 32 nécessaires au 1er tour"],
         ].map(([a, b]) => (
           <div key={a} style={{ display: "flex", justifyContent: "space-between", fontSize: 15.5, padding: "5px 0", borderBottom: `1px solid ${C.line}` }}>
             <span style={{ color: C.inkSoft }}>{a}</span>

@@ -261,7 +261,7 @@ function Steps() {
   // 3. Terrains: the neon field lights up (3D world) + the figures.
   fly("need", 43.7, 54.3, L(P(330, 430, 0, 0, -8), P(360, 450, 0, 0, 0)), <InfoCard v={v} w={W(500, 620)} icon="▦" title="32 terrains nécessaires" sub="64 doublettes" />);
   fly("have", 44.7, 54.3, L(P(330, 535, 0, 0, -8), P(360, 580, 0, 0, 0)), <InfoCard v={v} w={W(500, 620)} color={C.cyan} icon="◫" title="20 disponibles" sub="12 parties en décalé" />);
-  fly("end", 45.7, 54.3, L(P(330, 640, 0, 0, -8), P(360, 710, 0, 0, 0)), <InfoCard v={v} w={W(500, 620)} icon="◷" title="Fin estimée vers 21 h" />);
+  fly("end", 45.7, 54.3, L(P(330, 640, 0, 0, -8), P(360, 710, 0, 0, 0)), <InfoCard v={v} w={W(500, 620)} icon="✦" title="« Aide-moi à choisir »" sub="le bon format en un clic" />);
 
   // 4. Recap and payment: price, then a 3D bank card that goes into a padlock.
   const promo = ramp(T, 58.8, 59.2);

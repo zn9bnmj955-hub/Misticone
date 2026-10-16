@@ -417,7 +417,7 @@ const FORM: Array<[string, string, string]> = [
   ["Sport", "Pétanque", C.accent],
   ["Format", "Doublettes · élimination", C.accentInk],
   ["Date", "samedi 14 juin · 14 h", C.blueInk],
-  ["Terrains", "32 · fin vers 21 h", C.blueInk],
+  ["Terrains", "32 au 1er tour", C.blueInk],
   ["Inscriptions", "64 équipes · 10 €", C.success],
 ];
 

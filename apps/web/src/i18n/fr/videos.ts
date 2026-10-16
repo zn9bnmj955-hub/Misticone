@@ -37,12 +37,12 @@ export const videos = {
   },
   tutorial: {
     title: "Acheter et utiliser son lien concours",
-    text: "Le tutoriel pas à pas : création du concours, terrains et heure de fin, paiement sécurisé, publication, puis le jour J à la table de marque.",
+    text: "Le tutoriel pas à pas : création du concours, terrains nécessaires, paiement sécurisé, publication, puis le jour J à la table de marque.",
     duration: "2 min 30",
     chapters: [
       { at: 8, label: "Créer le concours" },
       { at: 22, label: "Un formulaire déjà rempli" },
-      { at: 40, label: "Terrains et heure de fin" },
+      { at: 40, label: "Terrains nécessaires" },
       { at: 55, label: "Paiement sécurisé" },
       { at: 72, label: "Lien, QR code et affiche" },
       { at: 85, label: "Pointage et tirage" },
@@ -53,7 +53,7 @@ export const videos = {
       "Voici comment créer, payer et utiliser votre lien concours.",
       "Dans votre espace club, touchez « Créer un concours », puis choisissez le sport.",
       "Chaque réponse a une valeur par défaut adaptée au sport. Votre brouillon s'enregistre tout seul.",
-      "OrgaSport calcule les terrains nécessaires et l'heure de fin. Pas sûr du format ? « Aide-moi à choisir ».",
+      "OrgaSport calcule les terrains nécessaires au premier tour. Pas sûr du format ? « Aide-moi à choisir ».",
       "Vérifiez le récapitulatif, puis payez en toute sécurité. Aucune donnée bancaire ne passe par OrgaSport.",
       "Dès le paiement confirmé, votre concours est publié : lien, QR code et affiche sont prêts.",
       "Le jour du concours, pointez les équipes présentes et lancez le tirage.",
