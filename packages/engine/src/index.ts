@@ -25,6 +25,7 @@ export {
   type RoundLabel,
   teamAffiliation,
   affiliationOf,
+  teamClubFrom,
   type TeamAffiliation,
 } from "./queries";
 export { stageOf, isFinalPhaseMatch, isFixedTree, compareRounds, teamsInRound, type Stage } from "./bracket";
