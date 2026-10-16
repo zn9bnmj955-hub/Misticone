@@ -2,7 +2,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { buildTeamViews, roundLabel, type TeamView } from "@/terrain/view-model";
 import { getMessages } from "@/i18n";
-import type { EngineState, Round } from "@orgasport/engine";
+import { roundLabel as engineRoundLabel, type EngineState, type Round } from "@orgasport/engine";
 import { cn } from "@/components/ui/cn";
 
 /** Small building blocks of the scoring table: big, keyboard friendly. */
@@ -65,6 +65,10 @@ export function sideName(teams: Map<string, TeamView>, side: string[]): string {
     .join(" & ");
 }
 
+/** « Cadrage », « Quarts de finale »…, prefixed « Concours B · » / « Concours C · » outside the A. */
 export function roundName(state: EngineState, round: Round): string {
-  return roundLabel(state, round, getMessages());
+  const m = getMessages();
+  const label =
+    engineRoundLabel(state, round).key === "cadrage" ? m.table.draw.cadrage : roundLabel(state, { ...round, bracket: "main" }, m);
+  return round.bracket === "main" ? label : `${m.table.draw.bracketNames[round.bracket]} · ${label}`;
 }

@@ -6,7 +6,7 @@ import { fmt, getMessages } from "@/i18n";
 import { cn } from "@/components/ui/cn";
 import { PrintTab } from "./PrintTab";
 import { useScoringTable } from "./store";
-import { AccessTab, CheckInTab, DrawTab, HistoryTab, ScoresTab, StandingsTab, StatusControls, VenuesTab } from "./tabs";
+import { AccessTab, CheckInTab, CloseLinkPanel, DrawTab, HistoryTab, ScoresTab, StandingsTab, StatusControls, VenuesTab } from "./tabs";
 import { Btn } from "./ui";
 
 type Tab = "checkin" | "draw" | "venues" | "scores" | "standings" | "history" | "print" | "access";
@@ -168,6 +168,7 @@ export function ScoringTable({ code }: { code: string }) {
         {tab === "print" && <PrintTab state={view} tournament={snap.tournament} />}
         {tab === "access" && <AccessTab code={code} isAccount={Boolean(snap.actor.canManageAccess)} tournamentName={snap.tournament.name} />}
         <p className="text-xs text-ink-soft">{t.shortcuts} Échap : quitter un champ.</p>
+        <CloseLinkPanel table={table} state={view} />
       </main>
     </div>
   );

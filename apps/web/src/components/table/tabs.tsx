@@ -9,19 +9,22 @@ import {
   statusBeforeForfeit,
   teamsLeftOut,
   venueQueue,
+  type Bracket,
   type EngineState,
+  type ExtraBracket,
   type Match,
   type Team,
 } from "@orgasport/engine";
 import { getSport, venueLabel } from "@orgasport/sports";
 import { fmt, getMessages } from "@/i18n";
-import { formatTime } from "@/lib/format";
+import { formatEuros, formatTime } from "@/lib/format";
 import { cn } from "@/components/ui/cn";
 import { standings, type TeamView } from "@/terrain/view-model";
 import type { ScoringTable } from "./store";
 import { Btn, NumberInput, Panel, roundName, sideName, teamMap } from "./ui";
 import { PinHelp } from "./PinHelp";
 import { VolunteerSheetPrint } from "./VolunteerSheetPrint";
+import { collectsEntries, entryCandidates, loneSideLabel, pauseOf, tableBrackets } from "./bracket-model";
 import { volunteerSheet, type VolunteerSheet } from "./volunteer-sheet";
 
 const m = () => getMessages().table;
@@ -39,16 +42,90 @@ export function StatusControls({ table, state }: TabProps) {
   if (status === "published" || status === "registration_closed") next.push({ label: t.openCheckIn, to: "check_in" });
   if (status === "live") next.push({ label: t.finish, to: "finished" });
   if (status === "finished") next.push({ label: t.reopen, to: "live" });
+  const pause = pauseOf(state);
+  const p = m().pause;
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm font-bold text-ink-soft">{t.title} :</span>
-      <span className="rounded-full bg-accent-soft px-3 py-1 text-sm font-black text-accent-ink">{(t as Record<string, string>)[status] ?? status}</span>
-      {next.map((n) => (
-        <Btn key={n.to} tone="ghost" onClick={() => table.dispatch({ type: "tournament.setStatus", status: n.to })}>
-          {n.label}
-        </Btn>
-      ))}
+    <div className="grid gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-bold text-ink-soft">{t.title} :</span>
+        <span className="rounded-full bg-accent-soft px-3 py-1 text-sm font-black text-accent-ink">{(t as Record<string, string>)[status] ?? status}</span>
+        {next.map((n) => (
+          <Btn key={n.to} tone="ghost" onClick={() => table.dispatch({ type: "tournament.setStatus", status: n.to })}>
+            {n.label}
+          </Btn>
+        ))}
+      </div>
+      {pause && (
+        <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border-2 border-warning/60 bg-warning/10 p-3">
+          <span className="grid">
+            <strong className="text-lg">{p.title}</strong>
+            <span className="text-sm">{fmt(p.text, { teams: pause.teams })}</span>
+          </span>
+          <Btn tone="primary" className="text-lg" onClick={() => table.dispatch({ type: "tournament.resume", seed: crypto.randomUUID?.() ?? String(Date.now()) })}>
+            {p.resume}
+          </Btn>
+        </div>
+      )}
+      {status === "archived" && (
+        <p role="status" className="rounded-[var(--radius)] bg-surface-2 p-3 font-bold">
+          {m().closeLink.done}
+        </p>
+      )}
     </div>
+  );
+}
+
+/**
+ * Final close of the link (finished -> archived). Kept away from the daily
+ * buttons (bottom of the page) and confirmed twice: open, tick, confirm.
+ */
+export function CloseLinkPanel({ table, state }: TabProps) {
+  const t = m().closeLink;
+  const [open, setOpen] = useState(false);
+  const [checked, setChecked] = useState(false);
+  if (state.tournament.status !== "finished") return null;
+  return (
+    <section aria-labelledby="close-link-title" className="mt-10 grid gap-3 rounded-[var(--radius-lg)] border-2 border-dashed border-danger/50 p-4">
+      <h2 id="close-link-title" className="text-lg font-black">
+        {t.title}
+      </h2>
+      <p className="text-sm text-ink-soft">{t.text}</p>
+      {!open ? (
+        <Btn tone="danger" className="justify-self-start" onClick={() => setOpen(true)}>
+          {t.open}
+        </Btn>
+      ) : (
+        <div className="grid gap-3">
+          <label className="flex min-h-12 items-center gap-3 font-bold">
+            <input type="checkbox" className="size-6 accent-danger" checked={checked} onChange={(e) => setChecked(e.target.checked)} />
+            {t.check}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <Btn
+              tone="danger"
+              disabled={!checked}
+              onClick={() => {
+                if (table.dispatch({ type: "tournament.close" })) {
+                  setOpen(false);
+                  setChecked(false);
+                }
+              }}
+            >
+              {t.confirm}
+            </Btn>
+            <Btn
+              tone="ghost"
+              onClick={() => {
+                setOpen(false);
+                setChecked(false);
+              }}
+            >
+              {t.cancel}
+            </Btn>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -218,13 +295,59 @@ export function CheckInTab({ table, state, teamSize }: TabProps & { teamSize: nu
 // Draw
 // ---------------------------------------------------------------------------
 
+/** « opt_in » B or C: tick the teams that enter (fee paid at the table), then draw. Replayed from the outbox offline. */
+function EntriesPanel({ table, state, bracket }: TabProps & { bracket: ExtraBracket }) {
+  const t = m().draw;
+  const teams = useMemo(() => teamMap(state), [state]);
+  const list = entryCandidates(state, bracket);
+  const known = list.some((c) => c.eligible);
+  const fee = (bracket === "consolation" ? state.tournament.config.consolation : state.tournament.config.consolationC).feeCents;
+  const name = t.brackets[bracket]!;
+  return (
+    <Panel title={fmt(t.entriesTitle, { bracket: name })}>
+      <p className="text-sm text-ink-soft">{t.entriesHint}</p>
+      {fee ? <p className="text-sm font-bold">{fmt(t.entriesFee, { amount: formatEuros(fee) })}</p> : null}
+      {!known && list.length > 0 && <p className="text-sm text-ink-soft">{t.entriesEarly}</p>}
+      {list.length === 0 ? (
+        <p className="text-ink-soft">{t.entriesNone}</p>
+      ) : (
+        <ul className="grid gap-1 md:grid-cols-2">
+          {list.map((c) => (
+            <li key={c.id}>
+              <label className={cn("flex min-h-12 items-center gap-3 rounded-[var(--radius)] border-2 px-3", c.entered ? "border-accent bg-accent-soft" : "border-line")}>
+                <input
+                  type="checkbox"
+                  className="size-6 accent-accent"
+                  checked={c.entered}
+                  aria-label={`${fmt(t.entryLabel, { bracket: name })} : ${c.number} · ${teams.get(c.id)?.label ?? ""}`}
+                  onChange={(e) => table.dispatch({ type: "team.enterBracket", teamId: c.id, bracket, enter: e.target.checked })}
+                />
+                <span className="w-10 text-xl font-black tabular">{c.number}</span>
+                <span className="min-w-0 flex-1 truncate font-bold">{teams.get(c.id)?.label}</span>
+                {known && !c.eligible && <span className="text-xs font-bold text-ink-soft">{t.notLoser}</span>}
+              </label>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p role="status" className="font-bold tabular">
+        {fmt(t.entriesCount, { count: list.filter((c) => c.entered).length })}
+      </p>
+    </Panel>
+  );
+}
+
 export function DrawTab({ table, state }: TabProps) {
   const t = m().draw;
   const teams = useMemo(() => teamMap(state), [state]);
   const [swapFrom, setSwapFrom] = useState<{ matchId: string; side: "A" | "B"; label: string } | null>(null);
   const [confirmRedraw, setConfirmRedraw] = useState<string | null>(null);
   const venues = new Map(Object.values(state.venues).map((v) => [v.id, v.label]));
-  const brackets: ("main" | "consolation")[] = ["main", "consolation"];
+  const available = tableBrackets(state);
+  const [shown, setShown] = useState<Bracket | "all">("all");
+  const brackets = shown === "all" || !available.includes(shown) ? available : [shown];
+  const paused = Boolean(pauseOf(state));
+  const newSeed = () => crypto.randomUUID?.() ?? String(Date.now());
   const mainStarted = Object.values(state.rounds).some((r) => r.bracket === "main");
   const eligible = Object.values(state.teams).filter((x) => x.status === "checked_in").length || Object.values(state.teams).filter((x) => x.status === "registered").length;
   const leftOut = mainStarted ? [] : teamsLeftOut(state);
@@ -260,16 +383,42 @@ export function DrawTab({ table, state }: TabProps) {
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap gap-2">
-        {canDrawNext(state, "main") && (
-          <Btn tone="primary" className="text-lg" onClick={() => table.dispatch({ type: "round.draw", bracket: "main", seed: crypto.randomUUID?.() ?? String(Date.now()) })}>
+        {canDrawNext(state, "main") && !paused && (
+          <Btn tone="primary" className="text-lg" onClick={() => table.dispatch({ type: "round.draw", bracket: "main", seed: newSeed() })}>
             {mainStarted ? t.next : t.launch}
           </Btn>
         )}
-        {canDrawNext(state, "consolation") && (
-          <Btn onClick={() => table.dispatch({ type: "round.draw", bracket: "consolation", seed: crypto.randomUUID?.() ?? String(Date.now()) })}>{t.launchConsolation}</Btn>
+        {(["consolation", "consolation_c"] as const).map(
+          (b) =>
+            canDrawNext(state, b) &&
+            !paused && (
+              <Btn key={b} onClick={() => table.dispatch({ type: "round.draw", bracket: b, seed: newSeed() })}>
+                {b === "consolation" ? t.launchConsolation : t.launchConsolationC}
+              </Btn>
+            ),
         )}
         {!mainStarted && <p className="self-center font-bold text-ink-soft">{fmt(t.eligible, { count: eligible })}</p>}
       </div>
+      {available.length > 1 && (
+        <div role="group" aria-label={t.bracketFilter} className="flex flex-wrap items-center gap-1">
+          <span className="mr-2 text-sm font-bold text-ink-soft">{t.bracketFilter} :</span>
+          {(["all", ...available] as const).map((b) => (
+            <button
+              key={b}
+              type="button"
+              aria-pressed={shown === b}
+              onClick={() => setShown(b)}
+              className={cn(
+                "min-h-12 min-w-12 rounded-[var(--radius)] border-2 px-3 font-black",
+                shown === b ? "border-accent bg-accent text-on-accent" : "border-line bg-surface text-ink hover:bg-surface-2",
+              )}
+            >
+              {b === "all" ? m().draw.allBrackets : t.brackets[b]}
+            </button>
+          ))}
+        </div>
+      )}
+      {brackets.map((b) => (collectsEntries(state, b) ? <EntriesPanel key={`entries-${b}`} table={table} state={state} bracket={b} /> : null))}
       {leftOut.length > 0 && (
         <div role="status" className="rounded-[var(--radius)] border-2 border-warning/60 bg-warning/10 p-3">
           <p className="font-bold">{fmt(t.leftOut, { count: leftOut.length })}</p>
@@ -329,9 +478,19 @@ export function DrawTab({ table, state }: TabProps) {
                     <li key={x.id} className="grid grid-cols-[3.5rem_minmax(0,1fr)_minmax(0,1fr)_5.5rem] items-center gap-2 border-b border-line py-1 last:border-0">
                       <span className="text-xl font-black tabular">{x.venueId && !isFinished(x) ? venues.get(x.venueId) : x.pool ?? ""}</span>
                       {teamButton(x, "A")}
-                      {x.status === "bye" && !swapFrom ? <span className="text-sm font-bold text-ink-soft">{getMessages().terrain.status.bye}</span> : teamButton(x, "B")}
+                      {x.status === "bye" && !swapFrom ? (
+                        <span className={cn("text-sm font-bold", loneSideLabel(state, x) === "office" ? "font-black text-ink" : "text-ink-soft")}>
+                          {loneSideLabel(state, x) === "office" ? t.office : x.sideB.length ? getMessages().terrain.status.bye : t.exempt}
+                        </span>
+                      ) : (
+                        teamButton(x, "B")
+                      )}
                       <span className="text-right text-sm font-bold tabular text-ink-soft">
-                        {x.status === "done" || x.status === "forfeit" ? `${x.scoreA ?? ""}–${x.scoreB ?? ""}` : getMessages().terrain.status[x.status]}
+                        {x.status === "done" || x.status === "forfeit"
+                          ? `${x.scoreA ?? ""}–${x.scoreB ?? ""}`
+                          : loneSideLabel(state, x) === "office"
+                            ? ""
+                            : getMessages().terrain.status[x.status]}
                       </span>
                     </li>
                   ))}
