@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { applyCommand } from "./commands";
+import { applyCommand, type Command } from "./commands";
 import { EngineError } from "./errors";
+import { eliminationRanking } from "./standings";
 import { matchesOfRound, roundsOf, statusBeforeForfeit, teamsLeftOut } from "./queries";
 import { createIdGenerator } from "./rng";
 import { applyChanges, canInvert, conflictsWithLater, invertChanges } from "./tx";
@@ -358,6 +359,65 @@ describe("determinism (offline devices and server agree)", () => {
     s = exec(s, { type: "round.draw", bracket: "main", seed: "x" });
     const final: Match = matchesOfRound(s, roundsOf(s, "main")[1]!.id)[0]!;
     expect(code(() => exec(s, { type: "match.score", matchId: final.id, scoreA: 13, scoreB: 1 }))).toBe("MATCH_NOT_PLAYABLE");
+  });
+});
+
+describe("single-use link: finished, then closed", () => {
+  const finished = () => {
+    const s = playToEnd(makeState({ teams: 4, config: noConsolation }));
+    expect(s.tournament.status).toBe("finished");
+    return s;
+  };
+  const finalOf = (s: EngineState) => matchesOfRound(s, roundsOf(s, "main").at(-1)!.id)[0]!;
+  const ranking = (s: EngineState) => eliminationRanking(s, roundsOf(s, "main").map((r) => r.id)).map((r) => r.id);
+
+  it("refuses anything but corrections once finished", () => {
+    const s = finished();
+    expect(code(() => exec(s, { type: "team.create", players: [{ firstName: "A", lastName: "B" }] }))).toBe("TOURNAMENT_FINISHED");
+    expect(code(() => exec(s, { type: "round.draw", bracket: "main", seed: "x" }))).toBe("TOURNAMENT_FINISHED");
+    expect(code(() => exec(s, { type: "round.draw", bracket: "consolation", seed: "x" }))).toBe("TOURNAMENT_FINISHED");
+    expect(code(() => exec(s, { type: "team.setStatus", teamId: "team-001", status: "withdrawn" }))).toBe("TOURNAMENT_FINISHED");
+    expect(code(() => exec(s, { type: "venue.add", label: "T9" }))).toBe("TOURNAMENT_FINISHED");
+    expect(code(() => exec(s, { type: "tournament.setStatus", status: "live" }))).toBe("TOURNAMENT_FINISHED");
+    // Fixing a team's name stays possible (results list).
+    expect(exec(s, { type: "team.update", teamId: "team-001", name: "Les Corrigés" }).teams["team-001"]!.name).toBe("Les Corrigés");
+  });
+
+  it("accepts a score correction when finished and updates the ranking", () => {
+    const s = finished();
+    const final = finalOf(s);
+    const before = ranking(s);
+    const flipped = final.winner === "A" ? { scoreA: 5, scoreB: 13 } : { scoreA: 13, scoreB: 5 };
+    const after = exec(s, { type: "match.score", matchId: final.id, ...flipped });
+    expect(after.tournament.status).toBe("finished");
+    expect(ranking(after).slice(0, 2)).toEqual([before[1], before[0]]);
+    // Reopening the final is a correction too: back to live until it is scored again.
+    const reopened = exec(s, { type: "match.reopen", matchId: final.id });
+    expect(reopened.tournament.status).toBe("live");
+    expect(exec(reopened, { type: "match.score", matchId: final.id, scoreA: 13, scoreB: 2 }).tournament.status).toBe("finished");
+  });
+
+  it("closes only a finished tournament, then refuses everything", () => {
+    const live = exec(makeState({ teams: 4, config: noConsolation }), { type: "round.draw", bracket: "main", seed: "x" });
+    expect(live.tournament.status).toBe("live");
+    expect(code(() => exec(live, { type: "tournament.close" }))).toBe("INVALID_STATUS_CHANGE");
+
+    const s = finished();
+    const final = finalOf(s);
+    const closed = exec(s, { type: "tournament.close" });
+    expect(closed.tournament.status).toBe("archived");
+    for (const cmd of [
+      { type: "match.score", matchId: final.id, scoreA: 13, scoreB: 0 },
+      { type: "match.forfeit", matchId: final.id, side: "A" },
+      { type: "match.reopen", matchId: final.id },
+      { type: "team.update", teamId: "team-001", name: "X" },
+      { type: "team.create", players: [{ firstName: "A", lastName: "B" }] },
+      { type: "round.draw", bracket: "main", seed: "x" },
+      { type: "tournament.setStatus", status: "live" },
+      { type: "tournament.close" },
+    ] as Command[]) {
+      expect(code(() => exec(closed, cmd))).toBe("TOURNAMENT_CLOSED");
+    }
   });
 });
 

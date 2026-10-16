@@ -48,7 +48,9 @@ export type Command =
   | { type: "match.setFlag"; matchId: string; flag: "score_submitted" | "disputed" | "clear" }
   | { type: "venue.add"; label: string; reservedForFinals?: boolean }
   | { type: "venue.update"; venueId: string; label?: string; available?: boolean; reservedForFinals?: boolean }
-  | { type: "tournament.setStatus"; status: TournamentStatus };
+  | { type: "tournament.setStatus"; status: TournamentStatus }
+  /** Final, one-way close of the link: finished -> archived. Nothing is accepted afterwards. */
+  | { type: "tournament.close" };
 
 export type CommandType = Command["type"];
 
@@ -59,6 +61,19 @@ export interface CommandResult {
 
 const OUT: ReadonlySet<TeamStatus> = new Set(["forfeit", "withdrawn"]);
 const PLAYABLE: ReadonlySet<Match["status"]> = new Set(["waiting_venue", "ready", "playing", "score_submitted", "disputed"]);
+
+/**
+ * Once finished, only corrections are accepted (scores, forfeits, reopening a
+ * match, fixing a team's name) and the final close. Everything else would
+ * restart the tournament (new teams, new draws...).
+ */
+const ALLOWED_WHEN_FINISHED: ReadonlySet<Command["type"]> = new Set([
+  "match.score",
+  "match.forfeit",
+  "match.reopen",
+  "team.update",
+  "tournament.close",
+]);
 
 const STATUS_FLOW: TournamentStatus[] = ["published", "registration_closed", "check_in", "live", "finished", "archived"];
 
@@ -161,6 +176,7 @@ function settle(tx: Transaction, ctx: DrawContext): void {
   const status = tx.state.tournament.status;
   const complete = isTournamentComplete(tx.state);
   if (status === "live" && complete) tx.updateTournament({ status: "finished" });
+  // A correction can reopen a finished tournament; a closed one (archived) never comes back.
   else if (status === "finished" && !complete) tx.updateTournament({ status: "live" });
 }
 
@@ -190,6 +206,7 @@ function run(tx: Transaction, cmd: Command, ctx: DrawContext): void {
   const state = () => tx.state;
   const t = state().tournament;
   if (t.status === "draft" || t.status === "archived") fail("TOURNAMENT_CLOSED");
+  if (t.status === "finished" && !ALLOWED_WHEN_FINISHED.has(cmd.type)) fail("TOURNAMENT_FINISHED");
 
   switch (cmd.type) {
     case "team.create": {
@@ -430,6 +447,11 @@ function run(tx: Transaction, cmd: Command, ctx: DrawContext): void {
     case "tournament.setStatus": {
       if (!STATUS_FLOW.includes(t.status) || !STATUS_FLOW.includes(cmd.status)) fail("INVALID_STATUS_CHANGE");
       tx.updateTournament({ status: cmd.status });
+      return;
+    }
+    case "tournament.close": {
+      if (t.status !== "finished") fail("INVALID_STATUS_CHANGE");
+      tx.updateTournament({ status: "archived" });
       return;
     }
   }

@@ -5,6 +5,8 @@
 export type EngineErrorCode =
   | "NOT_FOUND"
   | "TOURNAMENT_CLOSED"
+  /** Finished: only corrections and the final close are accepted. */
+  | "TOURNAMENT_FINISHED"
   | "TOURNAMENT_FULL"
   | "INVALID_STATUS_CHANGE"
   | "NOT_ENOUGH_TEAMS"

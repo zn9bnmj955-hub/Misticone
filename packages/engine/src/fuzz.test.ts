@@ -101,8 +101,8 @@ describe("random organizer sessions", () => {
             }
             checkInvariants(s);
           }
-          // Reopen every venue and play to the end.
-          for (const v of Object.values(s.venues)) if (!v.available) s = exec(s, { type: "venue.update", venueId: v.id, available: true });
+          // Reopen every venue and play to the end (a finished tournament only accepts corrections).
+          if (s.tournament.status !== "finished") for (const v of Object.values(s.venues)) if (!v.available) s = exec(s, { type: "venue.update", venueId: v.id, available: true });
           s = playToEnd(s, `${seed}-end`);
           checkInvariants(s);
           expect(s.tournament.status).toBe("finished");
