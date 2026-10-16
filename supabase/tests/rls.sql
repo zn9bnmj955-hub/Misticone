@@ -412,5 +412,49 @@ begin
   end loop;
 end $$;
 
+-- Lot 2 (B1): the engine's real write path is an INSERT of a full row (entityToRow): the server
+-- inserts a "cadrage" round of the concours C; a client can neither do that nor create a
+-- tournament that is already closed or purged.
+do $$
+declare
+  tid uuid := (select id from public.tournaments where short_code = '7KQ2');
+  rid uuid := gen_random_uuid();
+  draft uuid;
+  n int;
+begin
+  perform set_config('role', 'service_role', true);
+  perform public.apply_tournament_changes(tid, (select state_version from public.tournaments where id = tid), jsonb_build_array(
+    jsonb_build_object('table', 'rounds', 'op', 'insert', 'key', 'id', 'id', rid, 'values', jsonb_build_object(
+      'id', rid, 'tournament_id', tid, 'bracket', 'consolation_c', 'phase', 'elimination', 'kind', 'cadrage',
+      'number', 2, 'status', 'drawn', 'seed', 'b1', 'drawn_at', now()))
+  ), jsonb_build_object('type', 'test.lot2.insert', 'source', 'table'));
+  perform pg_temp.reset();
+  if not exists (select 1 from public.rounds where id = rid and bracket = 'consolation_c' and kind = 'cadrage') then
+    raise exception 'the server could not insert a cadrage round of the concours C';
+  end if;
+
+  perform pg_temp.as_user('club@demo.orgasport.fr');
+  begin
+    insert into public.rounds (tournament_id, bracket, phase, kind, number) values (tid, 'consolation_c', 'elimination', 'cadrage', 9);
+    raise exception 'a club member inserted a round directly';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.tournaments (club_id, sport_slug, name, status, created_by, finished_at)
+    select club_id, sport_slug, 'Déjà clos', 'draft', auth.uid(), now() from public.tournaments where id = tid;
+    raise exception 'a club member created a tournament with finished_at';
+  exception when raise_exception then
+    if sqlerrm not like '%server only%' then raise; end if;
+  end;
+  begin
+    insert into public.tournaments (club_id, sport_slug, name, status, created_by, purged_at)
+    select club_id, sport_slug, 'Déjà purgé', 'draft', auth.uid(), now() from public.tournaments where id = tid;
+    raise exception 'a club member created a tournament with purged_at';
+  exception when raise_exception then
+    if sqlerrm not like '%server only%' then raise; end if;
+  end;
+  perform pg_temp.reset();
+end $$;
+
 \echo 'RLS checks passed'
 rollback;
