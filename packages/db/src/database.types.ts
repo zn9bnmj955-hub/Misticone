@@ -179,14 +179,14 @@ isOneToOne: false
                   ]
                 },"kb_documents": {
                   Row: {
-                    "body": string,"id": string,"published": boolean,"source_url": string | null,"sport_slug": string | null,"title": string,"updated_at": string
+                    "body": string,"id": string,"kind": string,"published": boolean,"reviewed_at": string | null,"source_url": string | null,"sport_slug": string | null,"title": string,"updated_at": string,"version_date": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "body": string,"id"?: string,"published"?: boolean,"source_url"?: string | null,"sport_slug"?: string | null,"title": string,"updated_at"?: string
+                    "body": string,"id"?: string,"kind"?: string,"published"?: boolean,"reviewed_at"?: string | null,"source_url"?: string | null,"sport_slug"?: string | null,"title": string,"updated_at"?: string,"version_date"?: string | null
                   }
                   Update: {
-                    "body"?: string,"id"?: string,"published"?: boolean,"source_url"?: string | null,"sport_slug"?: string | null,"title"?: string,"updated_at"?: string
+                    "body"?: string,"id"?: string,"kind"?: string,"published"?: boolean,"reviewed_at"?: string | null,"source_url"?: string | null,"sport_slug"?: string | null,"title"?: string,"updated_at"?: string,"version_date"?: string | null
                   }
                   Relationships: [
                     {
@@ -850,7 +850,7 @@ isOneToOne: false
                            },
 "kb_search":
 { Args: { "p_limit"?: number,"p_query": string,"p_sport"?: string }; Returns: {
-              "content": string,"rank": number,"source_url": string,"sport_slug": string,"title": string
+              "content": string,"kind": string,"rank": number,"reviewed_at": string,"source_url": string,"sport_slug": string,"title": string,"version_date": string
             }[]
                            },
 "publish_tournament":
