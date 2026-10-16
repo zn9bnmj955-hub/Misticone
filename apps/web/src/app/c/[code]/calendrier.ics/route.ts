@@ -14,7 +14,6 @@ export async function GET(request: NextRequest, { params }: Ctx) {
   const { meta, sport } = loaded;
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? request.nextUrl.origin;
   const start = meta.starts_at!;
-  const end = meta.estimated_end_at && meta.estimated_end_at > start ? meta.estimated_end_at : new Date(Date.parse(start) + 4 * 3600_000).toISOString();
   const format = sport.teamFormats.find((f) => f.id === meta.team_format)?.label;
   const m = getMessages().detail;
   const description = [
@@ -27,7 +26,6 @@ export async function GET(request: NextRequest, { params }: Ctx) {
   const body = buildIcs({
     uid: `${code}@orgasport`,
     start,
-    end,
     stamp: new Date().toISOString(),
     summary: meta.name,
     location: [meta.address, meta.postcode, meta.city].filter(Boolean).join(", ") || null,

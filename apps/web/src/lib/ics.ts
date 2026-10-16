@@ -1,11 +1,11 @@
 /**
  * Calendar file (.ics, RFC 5545) for "Ajouter à mon agenda". Works with
- * Google Agenda, Apple Calendrier and Outlook.
+ * Google Agenda, Apple Calendrier and Outlook. The event has a start only:
+ * the end of a competition cannot be predicted, so no DTEND is written.
  */
 export type IcsEvent = {
   uid: string;
   start: string;
-  end: string;
   /** DTSTAMP: when the file was produced. */
   stamp: string;
   summary: string;
@@ -58,7 +58,6 @@ export function buildIcs(e: IcsEvent): string {
     `UID:${e.uid}`,
     `DTSTAMP:${icsDate(e.stamp)}`,
     `DTSTART:${icsDate(e.start)}`,
-    `DTEND:${icsDate(e.end)}`,
     `SUMMARY:${icsEscape(e.summary)}`,
     e.location ? `LOCATION:${icsEscape(e.location)}` : null,
     e.geo ? `GEO:${e.geo.lat.toFixed(6)};${e.geo.lng.toFixed(6)}` : null,

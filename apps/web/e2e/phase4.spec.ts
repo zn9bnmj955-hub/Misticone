@@ -43,7 +43,9 @@ test.describe("catalog and registration", () => {
     // Calendar file.
     const ics = await page.request.get(`/c/${code}/calendrier.ics`);
     expect(ics.headers()["content-type"]).toContain("text/calendar");
-    expect(await ics.text()).toContain("BEGIN:VEVENT");
+    const icsText = await ics.text();
+    expect(icsText).toContain("BEGIN:VEVENT");
+    expect(icsText).not.toContain("DTEND");
 
     // The public page finds the team (names shown as initials by default).
     await page.goto(`/c/${code}?equipe=${number}`);

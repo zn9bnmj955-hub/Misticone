@@ -41,7 +41,6 @@ export type TournamentMeta = Pick<
   | "waitlist_enabled"
   | "rules_pdf_path"
   | "poster_path"
-  | "estimated_end_at"
 > & { club: { name: string; slug: string } | null };
 
 export interface LoadedTournament {
@@ -52,7 +51,7 @@ export interface LoadedTournament {
 }
 
 const META_COLUMNS =
-  "id, short_code, name, status, sport_slug, starts_at, registration_closes_at, checkin_closes_at, address, postcode, city, lat, lng, parking, food, team_format, category, eligibility, max_teams, name_display, fee_cents, fee_per, prize_text, welcome_message, rules_text, contact_name, contact_phone, state_version, config, club_id, registration_mode, waitlist_enabled, rules_pdf_path, poster_path, estimated_end_at, clubs (name, slug)";
+  "id, short_code, name, status, sport_slug, starts_at, registration_closes_at, checkin_closes_at, address, postcode, city, lat, lng, parking, food, team_format, category, eligibility, max_teams, name_display, fee_cents, fee_per, prize_text, welcome_message, rules_text, contact_name, contact_phone, state_version, config, club_id, registration_mode, waitlist_enabled, rules_pdf_path, poster_path, clubs (name, slug)";
 
 /**
  * Loads a published tournament and builds the engine state. Uses the service

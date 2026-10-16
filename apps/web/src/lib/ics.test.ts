@@ -17,7 +17,6 @@ describe("ics", () => {
     const ics = buildIcs({
       uid: "GP3M@orgasport",
       start: "2026-10-24T12:30:00Z",
-      end: "2026-10-24T18:30:00Z",
       stamp: "2026-10-12T10:00:00Z",
       summary: "Grand Prix, doublettes",
       location: "Boulodrome, Aubagne",
@@ -27,6 +26,9 @@ describe("ics", () => {
     });
     expect(ics.startsWith("BEGIN:VCALENDAR\r\nVERSION:2.0\r\n")).toBe(true);
     expect(ics).toContain("DTSTART:20261024T123000Z\r\n");
+    // The end of a competition cannot be predicted: start only.
+    expect(ics).not.toContain("DTEND");
+    expect(ics).not.toContain("DURATION");
     expect(ics).toContain("SUMMARY:Grand Prix\\, doublettes\r\n");
     expect(ics).toContain("GEO:43.290000;5.570000\r\n");
     expect(ics.endsWith("END:VCALENDAR\r\n")).toBe(true);
