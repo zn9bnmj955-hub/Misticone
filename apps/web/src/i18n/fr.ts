@@ -12,6 +12,7 @@ import { videos } from "./fr/videos";
 import { landing3d } from "./fr/landing3d";
 import { a11y } from "./fr/a11y";
 import { adminAssistant } from "./fr/adminAssistant";
+import { pinHelp } from "./fr/pinHelp";
 
 /**
  * French interface texts. Every visible string goes through this file so a
@@ -535,7 +536,6 @@ export const fr = {
     },
     access: {
       title: "Accès des bénévoles",
-      text: "Créez un code PIN par bénévole : il ouvre la table de marque de ce concours seulement, sans compte. Vous pouvez le retirer à tout moment.",
       label: "Nom du bénévole",
       create: "Créer un code PIN",
       created: "Code PIN pour {label} : {pin}. Notez-le, il ne sera plus affiché.",
@@ -633,6 +633,7 @@ export const fr = {
   assistantUi,
   videos,
   adminAssistant,
+  pinHelp,
   landing3d,
   a11y,
 };
