@@ -379,6 +379,14 @@ export const fr = {
       notPlayed: "**",
       nh: "(N.H.)",
       venue: "{initial}.{label}",
+      /** Section title above each round's table: « Résultats Cadrage », « Résultats 1/4 de finale ». */
+      results: "Résultats {label}",
+      team: "Équipe",
+      score: "Score",
+      /** Jump links to the A, B, C sections. */
+      jump: "Aller au concours",
+      byTeams: "Résultats par équipes",
+      hint: "Ctrl+F pour chercher une équipe, F5 pour actualiser la page.",
     },
     pool: "Poule {label}",
     qualified: "qualifiée",

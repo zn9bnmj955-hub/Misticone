@@ -17,6 +17,7 @@ import {
   buildTeamViews,
   currentMatch,
   currentRounds,
+  drawSheets,
   findTeams,
   matchesOfRound,
   poolLabels,
@@ -27,6 +28,7 @@ import {
   standings,
   teamTimeline,
   venueName,
+  type DrawSide,
   type MyMatchInfo,
   type TeamView,
 } from "./view-model";
@@ -206,6 +208,42 @@ function matchRows(ctx: Ctx, matches: Match[]): SafeHtml {
   </table>`;
 }
 
+// ---------------------------------------------------------------------------
+// Draw sheets: one big table per round (Terrain | Équipe | Équipe | Score)
+// ---------------------------------------------------------------------------
+
+const BRACKET_ANCHOR = { main: "concours-a", consolation: "concours-b", consolation_c: "concours-c" } as const;
+
+/** One team cell: number, players one per line, club or « (N.H.) »; greyed when it lost. */
+function sheetCell(ctx: Ctx, side: DrawSide): SafeHtml {
+  const me = side.teamIds.some((id) => ctx.mineIds.has(id));
+  const lines = side.affiliation ? [...side.players, side.affiliation] : side.players;
+  const cls = side.lost ? (me ? "l me" : "l") : me ? "me" : "";
+  return html`<td${cls ? raw(` class="${cls}"`) : ""}><i>${side.number}</i>${lines.map((x, i) => html`${i ? raw("<br>") : ""}${x}`)}</td>`;
+}
+
+/** The draw tab once drawn: A, B, C sections, newest round first, like the federation results pages. */
+function sheetsBlock(ctx: Ctx): SafeHtml {
+  const { m, t } = ctx;
+  const s = m.terrain.sheet;
+  const sheets = drawSheets(t.state, ctx.teams, t.sport, m);
+  const head = html`<thead><tr><th>${ctx.venue}</th><th>${s.team}</th><th>${s.team}</th><th>${s.score}</th></tr></thead>`;
+  return html`<p class="sheet-nav no-print">${
+    sheets.length > 1
+      ? html`<span class="muted">${s.jump} :</span> ${sheets.map((b) => html`<a href="#${BRACKET_ANCHOR[b.bracket]}">${b.title}</a> `)}<br>`
+      : ""
+  }<a href="${ctx.base}/equipes">${s.byTeams}</a><br><span class="muted">${s.hint}</span></p>${sheets.map(
+    (b) => html`<section class="sheets" id="${BRACKET_ANCHOR[b.bracket]}">${sheets.length > 1 ? html`<h2>${b.title}</h2>` : ""}${b.rounds.map(
+      (r) => html`<h3>${fmt(s.results, { label: r.label })}</h3><table class="sheet">${head}<tbody>${r.rows.map(
+        (row) =>
+          html`<tr><td class="c">${row.venue}</td>${row.a ? sheetCell(ctx, row.a) : raw("<td></td>")}${
+            row.alone ? html`<td class="l o">${row.alone === "office" ? s.office : s.exempt}</td>` : row.b ? sheetCell(ctx, row.b) : raw("<td></td>")
+          }<td class="c">${row.score}</td></tr>`,
+      )}</tbody></table>`,
+    )}</section>`,
+  )}`;
+}
+
 function drawTab(ctx: Ctx, bracket: "main" | "consolation"): SafeHtml {
   const { m, t } = ctx;
   const rounds = currentRounds(t.state, bracket);
@@ -219,6 +257,7 @@ function drawTab(ctx: Ctx, bracket: "main" | "consolation"): SafeHtml {
         (x) => html`<tr class="${ctx.mineIds.has(x.id) ? "mine" : ""}"><td class="venue n">${x.number}</td><td class="team">${x.label}${x.club ? html` <span class="muted">· ${x.club}</span>` : ""}</td><td class="score st">${t.state.teams[x.id]?.status === "checked_in" ? "✓" : ""}</td></tr>`,
       )}</tbody></table>`;
   }
+  if (bracket === "main") return sheetsBlock(ctx);
   return html`${rounds.map((r) => {
     const ms = matchesOfRound(t.state, r.id);
     return html`<h2>${roundLabel(t.state, r, m)}</h2>${matchRows(ctx, ms)}`;
