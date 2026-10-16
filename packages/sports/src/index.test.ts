@@ -65,6 +65,26 @@ describe("sport registry", () => {
   });
 });
 
+describe("elimination defaults (cadrage, B/C, bye)", () => {
+  it("pétanque: new draw each round, cadrage after the 1st game, automatic B, no C, bye 13-7", () => {
+    const d = s0().defaults;
+    expect(d.redrawEachRound).toBe(true);
+    expect(d.cadrageAfterRound).toBe(1);
+    expect(d.consolation).toBe(true);
+    expect(d.consolationEntry).toBe("auto");
+    expect(d.consolationC).toBe(false);
+    expect(d.byeScore).toEqual({ winner: 13, loser: 7 });
+  });
+
+  it("football: fixed tree, no B or C, no separate bye score", () => {
+    const d = requireSport("football").defaults;
+    expect(d.redrawEachRound).toBe(false);
+    expect(d.consolation).toBe(false);
+    expect(d.consolationC).toBe(false);
+    expect(d.byeScore).toBeNull();
+  });
+});
+
 describe("license format", () => {
   const sport = requireSport("petanque");
   it("checks the format only", () => {

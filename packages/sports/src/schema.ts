@@ -135,6 +135,14 @@ export const sportConfigSchema = z.object({
     feePer: z.enum(["team", "player"]),
     consolation: z.boolean(),
     consolationFromRound: z.number().int().min(1).nullable(),
+    /** Concours B entry: "auto" = every eligible team, "opt_in" = teams that sign up. */
+    consolationEntry: z.enum(["auto", "opt_in"]),
+    /** Concours C (losers of the B's 1st game). */
+    consolationC: z.boolean(),
+    /** Elimination: full draws for this many games, then the "cadrage" to a power of two. */
+    cadrageAfterRound: z.union([z.literal(1), z.literal(2)]),
+    /** Score of a team exempt before the cadrage; null = same as the forfeit score. */
+    byeScore: z.object({ winner: z.number().int().min(0), loser: z.number().int().min(0) }).nullable(),
     avoidSameClubFirstRound: z.boolean(),
     redrawEachRound: z.boolean(),
     /** Pools: "gsl" = pétanque 4-team pool in 3 games, "round_robin" = everyone plays everyone. */
