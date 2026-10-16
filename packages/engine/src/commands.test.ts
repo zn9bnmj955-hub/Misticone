@@ -397,6 +397,17 @@ describe("single-use link: finished, then closed", () => {
     expect(exec(reopened, { type: "match.score", matchId: final.id, scoreA: 13, scoreB: 2 }).tournament.status).toBe("finished");
   });
 
+  it("accepts a forfeit correction when finished and updates the ranking", () => {
+    const s = finished();
+    const final = finalOf(s);
+    const before = ranking(s);
+    // The winner of the final is declared forfeit: the runner-up wins it.
+    const after = exec(s, { type: "match.forfeit", matchId: final.id, side: final.winner as "A" | "B" });
+    expect(after.tournament.status).toBe("finished");
+    expect(finalOf(after).winner).not.toBe(final.winner);
+    expect(ranking(after).slice(0, 2)).toEqual([before[1], before[0]]);
+  });
+
   it("closes only a finished tournament, then refuses everything", () => {
     const live = exec(makeState({ teams: 4, config: noConsolation }), { type: "round.draw", bracket: "main", seed: "x" });
     expect(live.tournament.status).toBe("live");
