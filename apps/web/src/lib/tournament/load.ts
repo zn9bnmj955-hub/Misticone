@@ -71,13 +71,13 @@ export async function loadTournament(code: string, opts: { secrets?: boolean } =
   // is thrown: the engine must never compute on an incomplete state.
   const [teams, venues, rounds, matches, secrets, registrations, players] = await Promise.all([
     fetchAllRows((from, to) =>
-      admin.from("teams").select("id, number, name, club_name, status, seed, bracket, checked_in_at").eq("tournament_id", tid).order("id").range(from, to),
+      admin.from("teams").select("id, number, name, club_name, status, seed, bracket, checked_in_at, bracket_entries").eq("tournament_id", tid).order("id").range(from, to),
     ),
     fetchAllRows((from, to) =>
       admin.from("venues").select("id, label, position, reserved_for_finals, available").eq("tournament_id", tid).order("id").range(from, to),
     ),
     fetchAllRows((from, to) =>
-      admin.from("rounds").select("id, bracket, phase, number, status, seed, drawn_at").eq("tournament_id", tid).order("id").range(from, to),
+      admin.from("rounds").select("id, bracket, phase, kind, number, status, seed, drawn_at").eq("tournament_id", tid).order("id").range(from, to),
     ),
     fetchAllRows((from, to) =>
       admin
@@ -99,7 +99,7 @@ export async function loadTournament(code: string, opts: { secrets?: boolean } =
     fetchAllRows((from, to) =>
       admin
         .from("players")
-        .select("id, team_id, first_name, last_name, position, teams!inner(tournament_id)")
+        .select("id, team_id, first_name, last_name, position, club_number, club_name, teams!inner(tournament_id)")
         .eq("teams.tournament_id", tid)
         .order("id")
         .range(from, to),

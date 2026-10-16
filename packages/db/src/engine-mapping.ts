@@ -1,4 +1,4 @@
-import type { Change, EngineState, EntityName, Match, SportRules, TournamentConfig } from "@orgasport/engine";
+import type { Bracket, Change, EngineState, EntityName, Match, PlayerClub, SportRules, TournamentConfig } from "@orgasport/engine";
 
 /**
  * Two-way mapping between the draw engine state (camelCase entities) and the
@@ -38,6 +38,15 @@ function winnerTeam(m: Pick<Match, "winner" | "sideA" | "sideB">): string | null
   return side.length === 1 ? side[0]! : null;
 }
 
+const UNCHANGED = Symbol.for("unchanged");
+
+/** Player club ↔ two nullable columns (kept as a pair). */
+function playerClubColumns(club: unknown): Row {
+  if (club === UNCHANGED) return { club_number: UNCHANGED, club_name: UNCHANGED };
+  const c = club as PlayerClub | null | undefined;
+  return { club_number: c?.number ?? null, club_name: c?.name ?? null };
+}
+
 /** Full DB row for an engine entity. */
 export function entityToRow(entity: EntityName, e: Row, tournamentId: string): Row {
   switch (entity) {
@@ -52,13 +61,21 @@ export function entityToRow(entity: EntityName, e: Row, tournamentId: string): R
         seed: e.seed,
         bracket: e.bracket,
         checked_in_at: e.checkedInAt,
+        bracket_entries: e.entries ?? [],
       };
     case "player":
-      return { id: e.id, team_id: e.teamId, first_name: e.firstName, last_name: e.lastName, position: e.position };
+      return {
+        id: e.id,
+        team_id: e.teamId,
+        first_name: e.firstName,
+        last_name: e.lastName,
+        position: e.position,
+        ...playerClubColumns(e.club),
+      };
     case "venue":
       return { id: e.id, tournament_id: tournamentId, label: e.label, position: e.position, reserved_for_finals: e.reservedForFinals, available: e.available };
     case "round":
-      return { id: e.id, tournament_id: tournamentId, bracket: e.bracket, phase: e.phase, number: e.number, status: e.status, seed: e.seed, drawn_at: e.drawnAt };
+      return { id: e.id, tournament_id: tournamentId, bracket: e.bracket, phase: e.phase, kind: e.kind ?? "partie", number: e.number, status: e.status, seed: e.seed, drawn_at: e.drawnAt };
     case "match": {
       const m = e as unknown as Match;
       return {
@@ -141,8 +158,10 @@ export function toDbChanges(changes: Change[], state: EngineState, tournamentId:
     if (c.entity === "match") {
       columns = [...new Set(Object.keys(c.after).flatMap((k) => MATCH_FIELD[k] ?? []))];
     } else {
-      const probe = entityToRow(c.entity, { ...Object.fromEntries(Object.keys(current).map((k) => [k, Symbol.for("unchanged")])), ...c.after }, tournamentId);
-      columns = Object.keys(probe).filter((k) => probe[k] !== Symbol.for("unchanged") && k !== "tournament_id" && k !== "id" && k !== "team_id");
+      // Optional engine fields (entries, club, kind) may be absent from `current`: probe them too.
+      const keys = new Set([...Object.keys(current), "entries", "club", "kind"]);
+      const probe = entityToRow(c.entity, { ...Object.fromEntries([...keys].map((k) => [k, UNCHANGED])), ...c.after }, tournamentId);
+      columns = Object.keys(probe).filter((k) => probe[k] !== UNCHANGED && k !== "tournament_id" && k !== "id" && k !== "team_id");
     }
     const values = Object.fromEntries(columns.map((k) => [k, full[k]]));
     if (Object.keys(values).length) out.push({ table, op: "update", key, id: c.id, values });
@@ -188,8 +207,9 @@ export function rowsToEngineState(rows: TournamentRows, rules: SportRules, confi
       club: (r.club_name as string) ?? null,
       status: r.status as EngineState["teams"][string]["status"],
       seed: (r.seed as number) ?? null,
-      bracket: r.bracket as "main" | "consolation",
+      bracket: r.bracket as Bracket,
       checkedInAt: iso(r.checked_in_at),
+      ...(Array.isArray(r.bracket_entries) && r.bracket_entries.length ? { entries: r.bracket_entries as Bracket[] } : {}),
     })),
     players: by(rows.players, (r) => ({
       id: r.id as string,
@@ -197,6 +217,7 @@ export function rowsToEngineState(rows: TournamentRows, rules: SportRules, confi
       firstName: r.first_name as string,
       lastName: r.last_name as string,
       position: r.position as number,
+      ...(r.club_number || r.club_name ? { club: { number: (r.club_number as string) ?? "", name: (r.club_name as string) ?? "" } } : {}),
     })),
     venues: by(rows.venues, (r) => ({
       id: r.id as string,
@@ -207,7 +228,8 @@ export function rowsToEngineState(rows: TournamentRows, rules: SportRules, confi
     })),
     rounds: by(rows.rounds, (r) => ({
       id: r.id as string,
-      bracket: r.bracket as "main" | "consolation",
+      bracket: r.bracket as Bracket,
+      ...(r.kind === "cadrage" ? { kind: "cadrage" as const } : {}),
       phase: r.phase as EngineState["rounds"][string]["phase"],
       number: r.number as number,
       status: r.status as EngineState["rounds"][string]["status"],
