@@ -83,4 +83,14 @@ describe("scope: sport and the site are allowed", () => {
     expect(assistantUi.starters.some((s) => /règlement/i.test(s))).toBe(true);
     expect(assistantUi.starters.some((s) => /PIN/.test(s))).toBe(true);
   });
+  it("a site question about refunds or privacy is not refused (« politique » alone is not off topic)", () => {
+    expect(questionScope("Quelle est votre politique de remboursement ?")).toBe("in_scope");
+    expect(questionScope("Quelle est la politique de confidentialité ?")).toBe("in_scope");
+    expect(questionScope("Que faites-vous de mes données ?")).toBe("in_scope");
+  });
+  it("every question the assistant suggests passes its own first look", () => {
+    for (const q of [...assistantUi.starters, ...assistantUi.fallbackSuggestions, ...assistantUi.offTopicSuggestions]) {
+      expect(questionScope(q), q).not.toBe("off_topic");
+    }
+  });
 });
