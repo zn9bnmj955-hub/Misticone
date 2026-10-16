@@ -342,3 +342,36 @@ describe("elimination ranking", () => {
     expect(all(s).every(isFinished)).toBe(true);
   });
 });
+
+describe("pool of 4 « en 3 parties »: double forfeits (found by the M8 random test)", () => {
+  /** Draws an 8-team pétanque pool phase and returns the matches of pool round n for the first pool. */
+  const setup = () => exec(makeState({ teams: 8, config: { format: "pools_then_bracket", bracketMode: "redraw", consolation: { enabled: false } } }), { type: "round.draw", bracket: "main", seed: "gsl-ff" });
+  const poolGames = (s: EngineState, n: number, pool: string) => matchesOfRound(s, roundsOf(s, "main", "pool")[n - 1]!.id).filter((m) => m.pool === pool);
+
+  it("both 1st games forfeited by both sides: nobody plays the 2nd games, the pool ends without a crash and the tournament finishes", () => {
+    let s = setup();
+    const pool = matchesOfRound(s, roundsOf(s, "main", "pool")[0]!.id)[0]!.pool!;
+    for (const m of poolGames(s, 1, pool)) s = exec(s, { type: "match.forfeit", matchId: m.id, side: "both" });
+    for (const m of poolGames(s, 2, pool)) {
+      expect(m.sideA.length).toBeLessThanOrEqual(1);
+      expect(m.sideB.length).toBeLessThanOrEqual(1);
+      expect(PLAYABLE_STATUSES.has(m.status)).toBe(false);
+    }
+    s = playToEnd(s, "gsl-ff-end");
+    expect(s.tournament.status).toBe("finished");
+  });
+
+  it("one 1st game forfeited by both sides: the losers' game gets only the other loser, never two teams on one side", () => {
+    let s = setup();
+    const pool = matchesOfRound(s, roundsOf(s, "main", "pool")[0]!.id)[0]!.pool!;
+    const [a, b] = poolGames(s, 1, pool);
+    s = exec(s, { type: "match.forfeit", matchId: a!.id, side: "both" });
+    s = exec(s, { type: "match.score", matchId: b!.id, scoreA: 13, scoreB: 4 });
+    for (const m of [...poolGames(s, 2, pool), ...poolGames(s, 3, pool)]) {
+      expect(m.sideA.length).toBeLessThanOrEqual(1);
+      expect(m.sideB.length).toBeLessThanOrEqual(1);
+    }
+    s = playToEnd(s, "gsl-ff-end2");
+    expect(s.tournament.status).toBe("finished");
+  });
+});

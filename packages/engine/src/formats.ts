@@ -315,6 +315,9 @@ function drawPools(tx: Transaction, ctx: DrawContext): void {
   }
 }
 
+/** Losers that go on in a pool of 4: none after a double forfeit (both teams are out, they never play together). */
+const gslLosers = (m: Match): string[] => (m.winner === null ? [] : loserTeams(m));
+
 /** Pétanque-style pool of 4: winners' match, losers' match, then a decider. */
 function gslProgress(tx: Transaction, ctx: EngineContext, label: string): void {
   const state = tx.state;
@@ -326,16 +329,15 @@ function gslProgress(tx: Transaction, ctx: EngineContext, label: string): void {
   if (r1.length === 2 && r1.every(isFinished) && !rounds.get(2)) {
     const round = poolRound(2)!;
     newMatch(tx, ctx, round, nextPos(round), winnerTeams(r1[0]!), winnerTeams(r1[1]!), label);
-    newMatch(tx, ctx, round, nextPos(round), loserTeams(r1[0]!), loserTeams(r1[1]!), label);
+    newMatch(tx, ctx, round, nextPos(round), gslLosers(r1[0]!), gslLosers(r1[1]!), label);
     return;
   }
   const r2 = rounds.get(2) ?? [];
   if (r2.length === 2 && r2.every(isFinished) && !rounds.get(3)) {
-    const r1Winners = new Set(r1.flatMap(winnerTeams));
-    const wm = r2.find((m) => [...m.sideA, ...m.sideB].some((id) => r1Winners.has(id)))!;
-    const lm = r2.find((m) => m !== wm)!;
+    // The winners' match is drawn first (lower position), even when it is empty after two double forfeits.
+    const [wm, lm] = [...r2].sort((x, y) => x.position - y.position) as [Match, Match];
     const round = poolRound(3)!;
-    newMatch(tx, ctx, round, nextPos(round), loserTeams(wm), winnerTeams(lm), label);
+    newMatch(tx, ctx, round, nextPos(round), gslLosers(wm), winnerTeams(lm), label);
   }
 }
 
