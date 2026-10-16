@@ -13,6 +13,10 @@ import { DATE_RE, TIME_RE, parisToIso } from "./time";
 export const STEPS = ["team", "general", "participants", "money", "draw", "venues", "communication", "summary"] as const;
 export type Step = (typeof STEPS)[number];
 
+/** Two-day tournament: pause before the 1/16 (32 teams left), 1/8, 1/4, 1/2, or after the pools. */
+export const PAUSES = ["none", "before32", "before16", "before8", "before4", "afterPools"] as const;
+export type PauseChoice = (typeof PAUSES)[number];
+
 const trimmed = (max: number) => z.string().trim().max(max);
 const optionalText = (max: number) => trimmed(max).default("");
 
@@ -64,8 +68,17 @@ export const formSchema = z.object({
   format: z.enum(COMPETITION_FORMATS),
   rounds: z.number().int().min(1).max(30).nullable().default(null),
   bracketMode: z.enum(["fixed", "redraw"]),
+  /** Elimination with a new draw each game: full draws for 1 or 2 games, then the cadrage. */
+  cadrageAfterRound: z.union([z.literal(1), z.literal(2)]).default(1),
+  /** Concours B: losers of the A's 1st game (pools: the non-qualified teams). */
   consolation: z.boolean(),
-  consolationFromRound: z.number().int().min(1).max(10).default(1),
+  consolationEntry: z.enum(["auto", "opt_in"]).default("auto"),
+  /** Entry fee of the B when teams sign up for it: information only, paid on site. */
+  consolationFeeCents: z.number().int().min(0).max(100_000).default(0),
+  /** Concours C: losers of the B's 1st game. */
+  consolationC: z.boolean().default(false),
+  /** Two-day tournament: where play stops for the night. */
+  pause: z.enum(PAUSES).default("none"),
   avoidSameClub: z.boolean(),
   seeding: z.boolean().default(false),
   poolSize: z.number().int().min(3).max(8).default(4),
@@ -135,8 +148,12 @@ export const FIELD_STEP: Record<keyof TournamentForm, Step> = {
   format: "draw",
   rounds: "draw",
   bracketMode: "draw",
+  cadrageAfterRound: "draw",
   consolation: "draw",
-  consolationFromRound: "draw",
+  consolationEntry: "draw",
+  consolationFeeCents: "draw",
+  consolationC: "draw",
+  pause: "draw",
   avoidSameClub: "draw",
   seeding: "draw",
   poolSize: "draw",
@@ -193,6 +210,8 @@ export function sportIssues(form: TournamentForm, sport: SportConfig, today: str
     const pools = form.maxTeams <= form.poolSize + 1 ? 1 : Math.ceil(form.maxTeams / form.poolSize);
     if (pools * form.poolQualifiers < 2) add("poolQualifiers", "too_few");
   }
+  if (form.pause === "afterPools" && form.format !== "pools_then_bracket") add("pause", "needs_pools");
+  if (form.pause !== "none" && form.format !== "pools_then_bracket" && form.format !== "single_elimination") add("pause", "not_applicable");
   if ((form.format === "swiss" || form.format === "melee_rotation") && form.rounds == null) add("rounds", "required");
   if (sport.scoring.mode !== "points" && form.timeLimitMinutes != null) add("timeLimitMinutes", "not_applicable");
   if (sport.scoring.mode !== "time" && form.durationMinutes != null) add("durationMinutes", "not_applicable");

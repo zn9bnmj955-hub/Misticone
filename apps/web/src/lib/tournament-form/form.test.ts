@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { resolveConfig } from "@orgasport/engine";
 import { SPORTS, getSport, requireSport } from "@orgasport/sports";
 import {
   buildPublication,
+  consolationCImpossible,
+  consolationFeeOf,
   defaultForm,
   firstStepWithIssue,
   isoToParis,
@@ -221,5 +224,86 @@ describe("format advice", () => {
       expect(advice.reasons.map((r) => r.key)).not.toContain("noConsolation");
       expect(advice.reasons.map((r) => r.key)).not.toContain("swissShorter");
     }
+  });
+});
+
+describe("cadrage, concours B and C, 2 days", () => {
+  const sport = requireSport("petanque");
+  const publish = (form: ReturnType<typeof defaultForm>) =>
+    buildPublication(form, sport, { organizerUserId: null, pins: [], pinLabel: (n) => String(n) }).fields.config;
+
+  it("pétanque defaults: cadrage after the 1st game, automatic B, no C, one day", () => {
+    const f = defaultForm(sport, ctx);
+    expect(f).toMatchObject({ cadrageAfterRound: 1, consolation: true, consolationEntry: "auto", consolationFeeCents: 0, consolationC: false, pause: "none" });
+    const c = resolveConfig(publish({ ...f, name: "X" }), sport);
+    expect(c.cadrage).toEqual({ afterRound: 1 });
+    expect(c.consolation).toMatchObject({ enabled: true, source: "losers_round_1", entry: "auto", feeCents: null });
+    expect(c.consolationC.enabled).toBe(false);
+    expect(c.pause).toBeNull();
+    expect(c.byeScore).toEqual({ winner: 13, loser: 7 });
+  });
+
+  it("an old draft (complémentaire du tour n°) still reads, with the new defaults", () => {
+    const f = mergeDraft({ name: "Ancien", consolation: true, consolationFromRound: 2, format: "single_elimination" }, sport, ctx);
+    expect("consolationFromRound" in f).toBe(false);
+    expect(f).toMatchObject({ name: "Ancien", consolation: true, consolationEntry: "auto", consolationC: false, pause: "none", cadrageAfterRound: 1 });
+    expect(validateForm(f, anySport, today).ok).toBe(true);
+  });
+
+  it("the paid form_snapshot gives the engine the chosen options", () => {
+    const form = {
+      ...defaultForm(sport, ctx),
+      name: "Deux jours",
+      maxTeams: 128,
+      cadrageAfterRound: 2 as const,
+      consolationEntry: "opt_in" as const,
+      consolationFeeCents: 500,
+      consolationC: true,
+      pause: "before16" as const,
+    };
+    expect(validateForm(form, anySport, today).ok).toBe(true);
+    // The snapshot goes through JSON (payments.form_snapshot) before publication.
+    const config = publish(JSON.parse(JSON.stringify(form)));
+    const c = resolveConfig(JSON.parse(JSON.stringify(config)), sport);
+    expect(c.cadrage).toEqual({ afterRound: 2 });
+    expect(c.consolation).toMatchObject({ enabled: true, source: "losers_round_1", entry: "opt_in", feeCents: 500 });
+    expect(c.consolationC).toMatchObject({ enabled: true, entry: "opt_in" });
+    expect(c.pause).toEqual({ before: { remaining: 16 } });
+    expect(consolationFeeOf(config)).toBe(500);
+  });
+
+  it("pools: the B takes the non-qualified teams, pause after the pools", () => {
+    const form = { ...defaultForm(sport, ctx), name: "Poules", format: "pools_then_bracket" as const, pause: "afterPools" as const };
+    expect(validateForm(form, anySport, today).ok).toBe(true);
+    const c = resolveConfig(publish(form), sport);
+    expect(c.consolation.source).toBe("pool_non_qualified");
+    expect(c.pause).toBe("afterPools");
+  });
+
+  it("no B means no C, and an automatic B shows no fee", () => {
+    const base = { ...defaultForm(sport, ctx), name: "X", consolationC: true, consolationFeeCents: 300 };
+    const noB = resolveConfig(publish({ ...base, consolation: false }), sport);
+    expect(noB.consolationC.enabled).toBe(false);
+    const auto = publish(base);
+    expect(consolationFeeOf(auto)).toBeNull();
+    expect(consolationFeeOf(null)).toBeNull();
+  });
+
+  it("warns when the C is impossible (B under 4 teams expected)", () => {
+    const form = { ...defaultForm(sport, ctx), name: "X", consolationC: true };
+    expect(consolationCImpossible({ ...form, maxTeams: 7 })).toBe(true); // B = 3
+    expect(consolationCImpossible({ ...form, maxTeams: 8 })).toBe(false); // B = 4
+    expect(consolationCImpossible({ ...form, maxTeams: 7, consolationC: false })).toBe(false);
+    // 5 teams (the spec example): the B would have too few teams, the advisor says so.
+    const advice = suggestFormat({ ...form, maxTeams: 5, venueCount: 10 }, sport, 5);
+    expect(advice.reasons.map((r) => r.key)).toContain("consolationCImpossible");
+    const big = suggestFormat({ ...form, maxTeams: 32, venueCount: 16 }, sport, 32);
+    expect(big.reasons.map((r) => r.key)).not.toContain("consolationCImpossible");
+  });
+
+  it("refuses a pause after the pools without pools", () => {
+    const res = validateForm({ ...defaultForm(sport, ctx), name: "Sans poules", pause: "afterPools" }, anySport, today);
+    expect(res.ok ? [] : res.issues).toEqual([{ path: "pause", code: "needs_pools" }]);
+    expect(firstStepWithIssue(res.ok ? [] : res.issues)).toBe("draw");
   });
 });

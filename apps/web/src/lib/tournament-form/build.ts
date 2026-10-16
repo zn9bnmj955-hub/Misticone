@@ -1,6 +1,6 @@
 import { estimatePlan, rulesFromSport, type Plan, type StoredTournamentConfig } from "@orgasport/engine";
 import type { SportConfig } from "@orgasport/sports";
-import { venueLabelsOf, type TournamentForm } from "./schema";
+import { venueLabelsOf, type PauseChoice, type TournamentForm } from "./schema";
 import { parisToIso } from "./time";
 
 /** What tournaments.config stores: engine settings + form-only settings. */
@@ -10,6 +10,15 @@ export type TournamentStoredConfig = StoredTournamentConfig & {
   substitutes: number;
   referee: string | null;
 };
+
+const PAUSE_REMAINING = { before32: 32, before16: 16, before8: 8, before4: 4 } as const;
+
+/** The form's pause choice as the engine reads it (tournaments.config.pause). */
+export function pauseRule(pause: PauseChoice): StoredTournamentConfig["pause"] {
+  if (pause === "none") return null;
+  if (pause === "afterPools") return "afterPools";
+  return { before: { remaining: PAUSE_REMAINING[pause] } };
+}
 
 export function storedConfig(form: TournamentForm, sport: SportConfig): TournamentStoredConfig {
   const scoring =
@@ -22,7 +31,17 @@ export function storedConfig(form: TournamentForm, sport: SportConfig): Tourname
     format: form.format,
     bracketMode: form.bracketMode,
     rounds: form.rounds,
-    consolation: { enabled: form.consolation, losersOfRound: form.consolationFromRound },
+    cadrage: { afterRound: form.cadrageAfterRound },
+    consolation: {
+      enabled: form.consolation,
+      source: form.format === "pools_then_bracket" ? "pool_non_qualified" : "losers_round_1",
+      entry: form.consolationEntry,
+      feeCents: form.consolationEntry === "opt_in" && form.consolationFeeCents > 0 ? form.consolationFeeCents : null,
+      losersOfRound: 1,
+    },
+    // The C is played by the B's losers: no B, no C.
+    consolationC: { enabled: form.consolation && form.consolationC, entry: form.consolationEntry, feeCents: null },
+    pause: pauseRule(form.pause),
     draw: { avoidSameClubFirstRound: form.avoidSameClub, seeding: form.seeding },
     pools: { size: form.poolSize, qualifiers: form.poolQualifiers, system: sport.defaults.poolSystem },
     autoNextRound: true,
