@@ -89,6 +89,19 @@ describe("finished_at", () => {
     expect(tournamentValues()).toEqual({ status: "archived" });
   });
 
+  it("is cleared when the final result is undone (undo goes through the same write)", async () => {
+    const done = finishedState();
+    const final = finalMatch(done);
+    const live = applyCommand(done, { type: "match.reopen", matchId: final.id }, { now: "2026-10-12T18:00:00.000Z", newId: createIdGenerator("r"), seed: "r" }).state;
+    const scored = applyCommand(live, { type: "match.score", matchId: final.id, scoreA: 13, scoreB: 5 }, { now: "2026-10-12T18:05:00.000Z", newId: createIdGenerator("s"), seed: "s" });
+    expect(scored.state.tournament.status).toBe("finished");
+    current = scored.state;
+    actions = [{ id: 12, tournament_id: "t1", type: "match.score", changes: scored.changes, undone_at: null }];
+    const res = await undoAction({ code: "ABCD", actionId: 12, clientOpId: OP, actor: staff });
+    expect(res.ok).toBe(true);
+    expect(tournamentValues()).toEqual({ status: "live", finished_at: null });
+  });
+
   it("stampFinishedAt leaves other changes alone", () => {
     const changes = [{ table: "matches" as const, op: "update" as const, key: "id" as const, id: "m", values: { score_a: 13 } }];
     expect(stampFinishedAt(changes, "live", "finished", "2026-10-16T10:00:00.000Z")).toEqual(changes);
