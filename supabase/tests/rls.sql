@@ -622,6 +622,70 @@ begin
   end;
 end $$;
 
+-- B3 (testeur). Details of the purge: captains' score submissions deleted, a device of an
+-- account kept but unlinked, a device without an account that still follows another tournament
+-- kept, state_version bumped so open pages refresh; a tournament only 'finished' (not closed for
+-- good) 15 days ago is left alone; rounds and matches (anonymous counters) are kept.
+do $$
+declare
+  club uuid;
+  uid uuid;
+  t_old uuid; t_fin uuid; t_other uuid;
+  tm uuid; tm2 uuid; rd uuid; mt uuid;
+  sub_acc uuid; sub_anon uuid;
+  v int;
+  purged text[];
+begin
+  select club_id into club from public.tournaments where short_code = 'GP3M';
+  select id into uid from auth.users where email = 'joueur@demo.orgasport.fr';
+  insert into public.tournaments (club_id, sport_slug, name, status, finished_at, starts_at)
+    values (club, 'petanque', 'Purge détails', 'archived', now() - interval '20 days', now() - interval '20 days')
+    returning id, state_version into t_old, v;
+  insert into public.tournaments (club_id, sport_slug, name, status, finished_at, starts_at)
+    values (club, 'petanque', 'Fini non clos', 'finished', now() - interval '15 days', now() - interval '15 days')
+    returning id into t_fin;
+  insert into public.tournaments (club_id, sport_slug, name, status, starts_at)
+    values (club, 'petanque', 'Autre suivi', 'published', now() + interval '5 days')
+    returning id into t_other;
+  insert into public.teams (tournament_id, number, name) values (t_old, 1, 'Equipe A') returning id into tm;
+  insert into public.teams (tournament_id, number, name) values (t_old, 2, 'Equipe B') returning id into tm2;
+  insert into public.rounds (tournament_id, number, phase, status) values (t_old, 1, 'elimination', 'finished') returning id into rd;
+  insert into public.matches (tournament_id, round_id, position, team_a_id, team_b_id, score_a, score_b, winner_team_id, status)
+    values (t_old, rd, 1, tm, tm2, 13, 7, tm, 'done') returning id into mt;
+  insert into public.score_submissions (match_id, submitted_by_team, score_a, score_b) values (mt, tm, 13, 7);
+  -- Device of an account, linked to the purged tournament.
+  insert into public.push_subscriptions (endpoint, p256dh, auth, user_id, tournament_id, team_id)
+    values ('https://push.example/acc', 'k', 'a', uid, t_old, tm) returning id into sub_acc;
+  insert into public.push_targets (subscription_id, tournament_id, team_id) values (sub_acc, t_old, tm);
+  -- Device without an account, following the purged tournament and another one.
+  insert into public.push_subscriptions (endpoint, p256dh, auth) values ('https://push.example/anon2', 'k', 'a') returning id into sub_anon;
+  insert into public.push_targets (subscription_id, tournament_id, team_id) values (sub_anon, t_old, tm2);
+  insert into public.push_targets (subscription_id, tournament_id) values (sub_anon, t_other);
+  insert into public.teams (tournament_id, number, name) values (t_fin, 1, 'Pas encore close');
+
+  purged := public.purge_finished_tournaments(now());
+  if not ((select short_code from public.tournaments where id = t_old) = any(purged)) then raise exception 'B3: tournament closed 20 days ago not purged'; end if;
+  if exists (select 1 from public.score_submissions where match_id = mt) then raise exception 'B3: captains score submissions must be deleted'; end if;
+  if not exists (select 1 from public.matches where id = mt and score_a = 13 and score_b = 7)
+     or not exists (select 1 from public.rounds where id = rd) then
+    raise exception 'B3: rounds and matches (anonymous counters) must be kept';
+  end if;
+  if not exists (select 1 from public.push_subscriptions where id = sub_acc and user_id = uid and tournament_id is null and team_id is null) then
+    raise exception 'B3: the device of an account must be kept, unlinked from the purged tournament';
+  end if;
+  if exists (select 1 from public.push_targets where subscription_id in (sub_acc, sub_anon) and tournament_id = t_old) then
+    raise exception 'B3: push targets of the purged tournament must be deleted';
+  end if;
+  if not exists (select 1 from public.push_targets where subscription_id = sub_anon and tournament_id = t_other) then
+    raise exception 'B3: a device following another tournament must keep that follow';
+  end if;
+  if (select state_version from public.tournaments where id = t_old) <> v + 1 then raise exception 'B3: state_version must be bumped'; end if;
+  if (select purged_at from public.tournaments where id = t_fin) is not null
+     or not exists (select 1 from public.teams where tournament_id = t_fin and name = 'Pas encore close') then
+    raise exception 'B3: a tournament not closed for good must not be purged at 15 days';
+  end if;
+end $$;
+
 -- Only the server (service role, pg_cron) may run the purge.
 select pg_temp.as_user('club@demo.orgasport.fr');
 do $$ begin
