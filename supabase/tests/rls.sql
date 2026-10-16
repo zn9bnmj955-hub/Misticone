@@ -456,5 +456,34 @@ begin
   perform pg_temp.reset();
 end $$;
 
+-- Lot 2 (B1): with a real service-role JWT (as the web server sends it), apply_tournament_changes
+-- writes finished_at together with the status (B2: set when the engine reaches "finished", cleared
+-- when it goes back to "live", in the same atomic action); a club member cannot call the function.
+do $$
+declare
+  tid uuid := (select id from public.tournaments where short_code = '7KQ2');
+begin
+  perform set_config('role', 'service_role', true);
+  perform set_config('request.jwt.claims', '{"role":"service_role"}', true);
+  perform public.apply_tournament_changes(tid, (select state_version from public.tournaments where id = tid), jsonb_build_array(
+    jsonb_build_object('table', 'tournaments', 'op', 'update', 'key', 'id', 'id', tid, 'values',
+      jsonb_build_object('status', 'finished', 'finished_at', '2026-10-12T18:00:00Z'))
+  ), jsonb_build_object('type', 'test.lot2.lifecycle', 'source', 'table'));
+  perform pg_temp.reset();
+  if (select finished_at from public.tournaments where id = tid) is distinct from '2026-10-12T18:00:00Z'::timestamptz then
+    raise exception 'the server could not write finished_at through apply_tournament_changes';
+  end if;
+
+  perform pg_temp.as_user('club@demo.orgasport.fr');
+  begin
+    perform public.apply_tournament_changes(tid, (select state_version from public.tournaments where id = tid), jsonb_build_array(
+      jsonb_build_object('table', 'tournaments', 'op', 'update', 'key', 'id', 'id', tid, 'values', jsonb_build_object('finished_at', null))
+    ), jsonb_build_object('type', 'test.lot2.lifecycle', 'source', 'table'));
+    raise exception 'a club member called apply_tournament_changes';
+  exception when insufficient_privilege then null;
+  end;
+  perform pg_temp.reset();
+end $$;
+
 \echo 'RLS checks passed'
 rollback;
