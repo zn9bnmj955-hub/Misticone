@@ -51,7 +51,7 @@ function makeState(teams: number, over: Partial<TournamentConfig> = {}): EngineS
 }
 
 /** Plays every open game of a bracket's last round (side A wins 13-5). */
-function playLast(state: EngineState, bracket: "main" | "consolation" = "main"): EngineState {
+function playLast(state: EngineState, bracket: "main" | "consolation" | "consolation_c" = "main"): EngineState {
   const rounds = roundsOf(state, bracket);
   const last = rounds[rounds.length - 1]!;
   let s = state;
@@ -118,6 +118,49 @@ describe("A / B / C on the scoring table", () => {
     page = html(createElement(DrawTab, { table: fakeTable(sent), state: s }));
     expect(page).not.toContain("Inscriptions au B");
     expect(page).toContain("Concours B · ");
+  });
+
+  it("opt_in C: the B's 1st-game losers are ticked, « Tirer le C », and B / C rounds are named « Concours B · … »", () => {
+    const AUTO_B_OPT_IN_C: Partial<TournamentConfig> = {
+      consolation: { enabled: true, source: "losers_round_1", entry: "auto", feeCents: null, losersOfRound: 1 },
+      consolationC: { enabled: true, entry: "opt_in", feeCents: 300 },
+      pause: null,
+      autoNextRound: true,
+    };
+    let s = playLast(exec(makeState(13, AUTO_B_OPT_IN_C), { type: "round.draw", bracket: "main", seed: "a" }));
+    // The B (auto) takes the 6 losers of the A's 1st game; the C still collects entries.
+    if (roundsOf(s, "consolation").length === 0) s = exec(s, { type: "round.draw", bracket: "consolation", seed: "b" });
+    expect(collectsEntries(s, "consolation")).toBe(false);
+    expect(collectsEntries(s, "consolation_c")).toBe(true);
+    const b1 = roundsOf(s, "consolation")[0]!;
+    expect(roundName(s, b1)).toBe("Concours B · 1re partie");
+
+    s = playLast(s, "consolation");
+    const list = entryCandidates(s, "consolation_c");
+    expect(list).toHaveLength(3);
+    expect(list.every((c) => c.eligible && !c.entered)).toBe(true);
+
+    const sent: Command[] = [];
+    let page = html(createElement(DrawTab, { table: fakeTable(sent), state: s }));
+    expect(page).toContain("Inscriptions au C");
+    expect(page).toMatch(/Droit d&#x27;inscription : 3\s€ par équipe/);
+    expect(page).not.toContain("Tirer le C");
+
+    for (const c of list.slice(0, 2)) s = exec(s, { type: "team.enterBracket", teamId: c.id, bracket: "consolation_c", enter: true });
+    page = html(createElement(DrawTab, { table: fakeTable(sent), state: s }));
+    expect(page).toContain("2 équipe(s) inscrite(s).");
+    expect(page).toContain("Tirer le C");
+
+    // B: 3 winners of its 1st game → its own cadrage (1 game, 1 « Office »).
+    const b2 = roundsOf(s, "consolation")[1]!;
+    expect(roundName(s, b2)).toBe("Concours B · Cadrage");
+    expect(matchesOfRound(s, b2.id).filter((x) => loneSideLabel(s, x) === "office")).toHaveLength(1);
+
+    s = exec(s, { type: "round.draw", bracket: "consolation_c", seed: "c" });
+    expect(collectsEntries(s, "consolation_c")).toBe(false);
+    page = html(createElement(DrawTab, { table: fakeTable(sent), state: s }));
+    expect(page).not.toContain("Inscriptions au C");
+    expect(page).toContain("Concours C · ");
   });
 
   it("cadrage rounds are named « Cadrage » and show « Office » facing a team qualified without playing", () => {
