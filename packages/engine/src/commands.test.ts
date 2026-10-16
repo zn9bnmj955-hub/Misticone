@@ -378,6 +378,7 @@ describe("single-use link: finished, then closed", () => {
     expect(code(() => exec(s, { type: "round.draw", bracket: "consolation", seed: "x" }))).toBe("TOURNAMENT_FINISHED");
     expect(code(() => exec(s, { type: "team.setStatus", teamId: "team-001", status: "withdrawn" }))).toBe("TOURNAMENT_FINISHED");
     expect(code(() => exec(s, { type: "venue.add", label: "T9" }))).toBe("TOURNAMENT_FINISHED");
+    expect(code(() => exec(s, { type: "team.enterBracket", teamId: "team-001", bracket: "consolation", enter: true }))).toBe("TOURNAMENT_FINISHED");
     expect(code(() => exec(s, { type: "tournament.setStatus", status: "live" }))).toBe("TOURNAMENT_FINISHED");
     // Fixing a team's name stays possible (results list).
     expect(exec(s, { type: "team.update", teamId: "team-001", name: "Les Corrigés" }).teams["team-001"]!.name).toBe("Les Corrigés");
@@ -415,6 +416,10 @@ describe("single-use link: finished, then closed", () => {
     // No side door: setStatus cannot archive, the tournament stays live.
     expect(code(() => exec(live, { type: "tournament.setStatus", status: "archived" }))).toBe("INVALID_STATUS_CHANGE");
     expect(live.tournament.status).toBe("live");
+    // Nor before the start (registrations, check-in).
+    for (const status of ["published", "registration_closed", "check_in"] as const) {
+      expect(code(() => exec(makeState({ teams: 4, status }), { type: "tournament.setStatus", status: "archived" }))).toBe("INVALID_STATUS_CHANGE");
+    }
 
     const s = finished();
     const final = finalOf(s);
