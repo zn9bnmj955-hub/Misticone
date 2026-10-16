@@ -3,16 +3,21 @@
  * page is idle and visible; never on the critical path). One WebGL canvas:
  *
  * - a night boulodrome seen from a drone: neon lane lines (pétanque) or pitch
- *   markings (football) drawn by one floor shader with a built-in glow, a scan
- *   pulse, floodlight pylons with light cones, rising light particles, stars;
+ *   markings (football) drawn by one floor shader with a built-in glow (lines and
+ *   floor are the same surface: nothing to z-fight), floodlight pylons with light
+ *   cones, light particles, stars;
  * - the photorealistic ball (ballModel.ts) drawn in a second pass inside the
  *   rectangle of the page's ball anchor, so it sits exactly where the static
  *   pre-rendered image was (no layout shift, seamless hand-off).
  *
- * The camera drifts, follows the pointer and dollies forward while the hero is
- * scrolled past. Rendering pauses off-screen and when the tab is hidden; DPR is
- * capped (2 on desktop, 1.5 on touch devices); everything is disposed on
- * unmount. Colours come from the design tokens of the hero element.
+ * The camera follows the pointer and dollies forward while the hero is scrolled
+ * past; nothing in the décor depends on the clock, so a still page gives a still
+ * picture (no shimmer, no blinking): only the ball turns. Smoothing is
+ * frame-rate independent (heroMotion.ts). Rendering pauses off-screen and when
+ * the tab is hidden; the pixel ratio is fixed at mount (2 at most, 1.5 on touch
+ * devices); MSAA is on; shaders output tone-mapped sRGB like the built-in
+ * materials. Everything is disposed on unmount. Colours come from the design
+ * tokens of the hero element.
  */
 import {
   CustomBlending,
@@ -37,6 +42,7 @@ import {
   Vector3,
   WebGLRenderer,
 } from "three";
+import { cameraPose, damp, fixedPixelRatio, pointerTarget } from "./heroMotion";
 import { REST_SPIN, createBall, createEnvironment, frameBallCamera, poseBall, readStageColors, type StageColors } from "./ballModel";
 
 export type HeroOptions = {
@@ -67,7 +73,6 @@ void main() {
 }`;
 
 const FLOOR_FRAG = /* glsl */ `
-uniform float uTime;
 uniform float uPitch;
 uniform vec3 uLine;
 uniform vec3 uAccent;
@@ -89,7 +94,7 @@ void main() {
 
   // Minor grid (1 m), fades out in the distance to avoid moiré.
   float minor = max(1.0 - smoothstep(0.0, fwidth(p.x) * 1.2, dist(p.x, 1.0)),
-                    1.0 - smoothstep(0.0, fwidth(p.y) * 1.2, dist(p.y, 1.0))) * 0.12 * fine;
+                    1.0 - smoothstep(0.0, fwidth(p.y) * 1.2, dist(p.y, 1.0))) * 0.06 * fine;
 
   // Pétanque: lanes 4 m wide, 15 m long.
   float lanes = max(neon(dist(p.x, 4.0), 0.035), neon(dist(p.y + 7.5, 15.0), 0.035) * 0.8);
@@ -104,31 +109,26 @@ void main() {
   float stripes = step(0.5, fract(q.y / 10.0)) * 0.05 * step(abs(q.x), 30.0) * step(abs(q.y), 45.0);
   float marks = mix(lanes, pitch, uPitch);
 
-  // Scan pulse rolling away from the centre.
-  float r = length(p - vec2(0.0, -6.0));
-  float wave = mod(uTime * 9.0, 90.0);
-  float pulse = exp(-pow((r - wave) / 2.4, 2.0)) * (1.0 - wave / 90.0);
-
-  vec3 col = uLine * (minor + marks * (1.0 + pulse * 1.8)) + uAccent * (stripes * uPitch + pulse * 0.06 + minor * pulse);
+  vec3 col = uLine * (minor + marks) + uAccent * (stripes * uPitch);
   // Light pool in front of the camera.
-  col += uAccent * 0.05 * exp(-dot(p - vec2(0.0, -4.0), p - vec2(0.0, -4.0)) * 0.004);
+  col += uAccent * 0.02 * exp(-dot(p - vec2(0.0, -4.0), p - vec2(0.0, -4.0)) * 0.004);
   float fog = exp(-far * 0.028);
   gl_FragColor = vec4(col * fog, 1.0);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }`;
 
 const POINTS_VERT = /* glsl */ `
 attribute float aSeed;
-uniform float uTime;
 uniform float uScale;
 uniform float uRise;
 varying float vAlpha;
 void main() {
+  // Fixed positions and brightness (no twinkle): a still page stays still.
   vec3 pos = position;
-  pos.y = mod(position.y + uTime * uRise * (0.4 + aSeed), 14.0);
-  pos.x += sin(uTime * 0.3 + aSeed * 30.0) * 0.6 * uRise;
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
-  float twinkle = 0.55 + 0.45 * sin(uTime * (1.0 + aSeed * 3.0) + aSeed * 40.0);
-  vAlpha = twinkle * (uRise > 0.0 ? smoothstep(0.0, 2.0, pos.y) * (1.0 - smoothstep(9.0, 14.0, pos.y)) : 1.0);
+  float shade = 0.55 + 0.45 * fract(aSeed * 7.31);
+  vAlpha = shade * (uRise > 0.0 ? smoothstep(0.0, 2.0, pos.y) * (1.0 - smoothstep(9.0, 14.0, pos.y)) : 1.0);
   gl_PointSize = uRise > 0.0 ? uScale * (0.6 + aSeed) * 26.0 / -mv.z : uScale * (0.6 + aSeed * 1.2);
   gl_Position = projectionMatrix * mv;
 }`;
@@ -141,6 +141,8 @@ void main() {
   float d = length(c) * 2.0;
   float a = exp(-d * d * 5.0) * (1.0 - step(1.0, d));
   gl_FragColor = vec4(uColor * a * vAlpha, 1.0);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }`;
 
 const BEAM_FRAG = /* glsl */ `
@@ -148,7 +150,9 @@ uniform vec3 uColor;
 varying vec2 vUv;
 void main() {
   float a = pow(vUv.y, 1.5) * 0.8 + 0.06;
-  gl_FragColor = vec4(uColor * a * 0.07, 1.0);
+  gl_FragColor = vec4(uColor * a * 0.03, 1.0);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }`;
 
 const BEAM_VERT = /* glsl */ `
@@ -198,10 +202,10 @@ export function mountHeroScene(host: HTMLElement, options: HeroOptions): HeroHan
   canvas.setAttribute("aria-hidden", "true");
 
   const coarse = window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768;
-  const dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2);
+  const dpr = fixedPixelRatio(window.devicePixelRatio, coarse);
   let renderer: WebGLRenderer;
   try {
-    renderer = new WebGLRenderer({ canvas, antialias: dpr < 1.75, alpha: true, powerPreference: "high-performance" });
+    renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
   } catch {
     return null;
   }
@@ -222,7 +226,6 @@ export function mountHeroScene(host: HTMLElement, options: HeroOptions): HeroHan
   const track = <T extends { dispose(): void }>(d: T) => (disposables.push(d), d);
 
   const floorUniforms = {
-    uTime: { value: 0 },
     uPitch: { value: options.look === 1 ? 1 : 0 },
     uLine: { value: lineColor },
     uAccent: { value: colors.accent },
@@ -239,7 +242,7 @@ export function mountHeroScene(host: HTMLElement, options: HeroOptions): HeroHan
       new ShaderMaterial({
         vertexShader: POINTS_VERT,
         fragmentShader: POINTS_FRAG,
-        uniforms: { uTime: floorUniforms.uTime, uScale: { value: scale * dpr }, uRise: { value: rise }, uColor: { value: color } },
+        uniforms: { uScale: { value: scale * dpr }, uRise: { value: rise }, uColor: { value: color } },
         ...ADD_LIGHT,
         transparent: true,
         depthWrite: false,
@@ -305,10 +308,10 @@ export function mountHeroScene(host: HTMLElement, options: HeroOptions): HeroHan
   let pitchAngle = 0;
 
   // ---- Interaction ------------------------------------------------------------
-  const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
+  const pointer = { x: 0, y: 0 };
+  let target = { x: 0, y: 0 };
   const onPointerMove = (e: PointerEvent) => {
-    pointer.tx = (e.clientX / window.innerWidth) * 2 - 1;
-    pointer.ty = (e.clientY / window.innerHeight) * 2 - 1;
+    target = pointerTarget(target, (e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
   };
   window.addEventListener("pointermove", onPointerMove, { passive: true });
 
@@ -368,7 +371,6 @@ export function mountHeroScene(host: HTMLElement, options: HeroOptions): HeroHan
   let pendingLook: number | null = null;
   let frame = 0;
   let last = performance.now();
-  let time = 0;
   let ready = false;
   let disposed = false;
   const camPos = new Vector3();
@@ -386,20 +388,19 @@ export function mountHeroScene(host: HTMLElement, options: HeroOptions): HeroHan
     if (disposed) return;
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
-    time += dt;
-    floorUniforms.uTime.value = time;
-    pointer.x += (pointer.tx - pointer.x) * Math.min(1, dt * 2.5);
-    pointer.y += (pointer.ty - pointer.y) * Math.min(1, dt * 2.5);
-    floorUniforms.uPitch.value += (pitchTarget - floorUniforms.uPitch.value) * Math.min(1, dt * 3);
+    pointer.x = damp(pointer.x, target.x, 2.5, dt);
+    pointer.y = damp(pointer.y, target.y, 2.5, dt);
+    floorUniforms.uPitch.value = damp(floorUniforms.uPitch.value, pitchTarget, 3, dt);
 
-    // Drone camera: drift + pointer parallax + dolly while the hero scrolls away.
+    // Drone camera: pointer parallax + dolly while the hero scrolls away (no clock-driven drift).
     const rect = host.getBoundingClientRect();
     const scroll = Math.min(1, Math.max(0, -rect.top / Math.max(1, rect.height)));
     const hFrac = horizonFraction();
     const pitch = Math.atan((0.5 - hFrac) * 2 * Math.tan((camera.fov * Math.PI) / 360));
-    camPos.set(Math.sin(time * 0.07) * 1.6 + pointer.x * 1.5, 6.4 + Math.sin(time * 0.11) * 0.35 - pointer.y * 0.5 - scroll * 2.4, 16 - scroll * 12);
+    const pose = cameraPose(pointer.x, pointer.y, scroll);
+    camPos.set(pose.x, pose.y, pose.z);
     camera.position.copy(camPos);
-    const yaw = pointer.x * 0.05 + Math.sin(time * 0.05) * 0.03;
+    const yaw = pose.yaw;
     look.set(camPos.x + Math.sin(yaw) * 10, camPos.y - Math.tan(pitch) * 10, camPos.z - Math.cos(yaw) * 10);
     camera.lookAt(look);
 
@@ -410,8 +411,8 @@ export function mountHeroScene(host: HTMLElement, options: HeroOptions): HeroHan
 
     // Ball: spin, drag inertia, look switch.
     if (!drag) {
-      velocity += (0.35 - velocity) * Math.min(1, dt * 1.5);
-      pitchAngle *= 1 - Math.min(1, dt * 1.2);
+      velocity = damp(velocity, 0.35, 1.5, dt);
+      pitchAngle = damp(pitchAngle, 0, 1.2, dt);
       spinAngle += velocity * dt;
     }
     if (pendingLook !== null || morph > 0) {
