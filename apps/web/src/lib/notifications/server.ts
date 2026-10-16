@@ -11,7 +11,7 @@ import { isoToParis, parisDatePlus } from "@/lib/tournament-form/time";
 import { loadTournament } from "@/lib/tournament/load";
 import { buildTeamViews, sideText } from "@/terrain/view-model";
 import { eventsFromChanges, type NotifyEvent } from "./events";
-import { renderBody, type NotificationKind, type TemplateVars } from "./templates";
+import { renderBody, roundText, type NotificationKind, type TemplateVars } from "./templates";
 
 /**
  * Notifications: "À vous de jouer" and friends. Events come from the draw
@@ -22,7 +22,7 @@ import { renderBody, type NotificationKind, type TemplateVars } from "./template
  * organizer action: all errors are logged and swallowed.
  */
 
-const EMAIL_FALLBACK: ReadonlySet<NotificationKind> = new Set(["your_turn", "tournament_starting", "reminder_day_before", "not_checked_in"]);
+const EMAIL_FALLBACK: ReadonlySet<NotificationKind> = new Set(["your_turn", "tournament_starting", "reminder_day_before", "not_checked_in", "paused"]);
 const MAX_ATTEMPTS = 5;
 
 type Sub = { id: string; endpoint: string; p256dh: string; auth: string };
@@ -170,7 +170,15 @@ function messagesForEvent(e: NotifyEvent, state: EngineState, sport: SportConfig
         score: match.scoreA !== null && match.scoreB !== null ? (mine === "A" ? `${match.scoreA}–${match.scoreB}` : `${match.scoreB}–${match.scoreA}`) : undefined,
       };
     }
-    if (e.kind === "draw_published") vars = { ...vars, round: state.rounds[e.roundId]?.number };
+    if (e.kind === "draw_published") {
+      const round = state.rounds[e.roundId];
+      vars = { ...vars, round: round ? roundText(state, round, m) : undefined };
+    }
+    if (e.kind === "office") {
+      const round = state.rounds[state.matches[e.matchId]?.roundId ?? ""];
+      vars = { ...vars, round: round ? roundText(state, round, m) : undefined };
+    }
+    if (e.kind === "bracket_entry") vars = { ...vars, bracket: m.notifications.brackets[e.bracket] };
     out.push({ kind: e.kind, eventKey: e.key, teamId, title: t.name, body: renderBody(sport, e.kind, vars), url });
   }
   return out;
