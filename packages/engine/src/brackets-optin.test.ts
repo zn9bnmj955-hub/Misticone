@@ -104,6 +104,31 @@ describe("opt_in B and C", () => {
     expect(new Set(c1.flatMap((m) => [...m.sideA, ...m.sideB]))).toEqual(new Set(bLosers.slice(0, 2)));
   });
 
+  it("the C needs at least 4 teams at the B's start, entries counted (3 entered: C refused; 4 entered: C drawn)", () => {
+    const bThenC = (entered: number) => {
+      let { s, losers } = afterFirstGame();
+      for (const id of losers.slice(0, entered)) s = exec(s, { type: "team.enterBracket", teamId: id, bracket: "consolation", enter: true });
+      s = exec(s, { type: "round.draw", bracket: "consolation", seed: "b" });
+      const b1 = roundsOf(s, "consolation")[0]!;
+      for (const m of matchesOfRound(s, b1.id)) if (m.status !== "bye") s = exec(s, { type: "match.score", matchId: m.id, scoreA: 13, scoreB: 2 });
+      const bLosers = matchesOfRound(s, b1.id).filter((m) => m.status !== "bye").map((m) => m.sideB[0]!);
+      for (const id of bLosers) s = exec(s, { type: "team.enterBracket", teamId: id, bracket: "consolation_c", enter: true });
+      return s;
+    };
+    // 3 entered in the B: 1 game + 1 exempt, so the B started with 3 teams.
+    const three = bThenC(3);
+    expect(canDrawNext(three, "consolation_c")).toBe(false);
+    expect(code(() => exec(three, { type: "round.draw", bracket: "consolation_c", seed: "c" }))).toBe("NOT_ENOUGH_TEAMS");
+    const end = playToEnd(three, "three");
+    expect(roundsOf(end, "consolation_c")).toHaveLength(0);
+    expect(end.tournament.status).toBe("finished");
+    // 4 entered: the B started with 4 teams, its 2 losers entered the C, which the table can draw.
+    const four = bThenC(4);
+    expect(canDrawNext(four, "consolation_c")).toBe(true);
+    const drawn = exec(four, { type: "round.draw", bracket: "consolation_c", seed: "c" });
+    expect(roundsOf(drawn, "consolation_c")).toHaveLength(1);
+  });
+
   it("nobody enters: the B and the C are not played and the tournament ends", () => {
     const s = playToEnd(makeState({ teams: 13, config: OPT_IN }), "nobody");
     expect(roundsOf(s, "consolation")).toHaveLength(0);
