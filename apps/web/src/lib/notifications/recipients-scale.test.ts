@@ -69,3 +69,18 @@ describe("notifications on a 512-triplette tournament", () => {
     expect(new Set(push.map((r) => r.team_id)).size).toBe(512);
   });
 });
+
+describe("reminder of a 1 024-team tournament (maximum allowed by the form)", () => {
+  it("queues the day-before reminder for every team, beyond max_rows", async () => {
+    const evening = Date.parse("2026-06-13T17:30:00Z"); // 19 h 30 in Paris
+    const teams = Array.from({ length: 1024 }, (_, i) => ({ id: id("t", i + 1), tournament_id: "T", number: i + 1, status: "registered" }));
+    db.teams = teams;
+    db.tournaments[0]!.starts_at = "2026-06-14T07:00:00Z";
+    db.players = teams.map((t, i) => ({ id: id("p", i + 1), team_id: t.id, user_id: id("u", i + 1) }));
+    db.push_subscriptions = db.players.map((p, i) => ({ id: id("s", i + 1), endpoint: `https://push.example/${i}`, p256dh: "k", auth: "a", user_id: p.user_id }));
+    db.profiles = db.players.map((p) => ({ id: p.user_id, notifications_opt_in: true }));
+    await queueScheduledNotifications(evening);
+    const push = upserted.filter((r) => r.channel === "push" && r.template === "reminder_day_before");
+    expect(new Set(push.map((r) => r.team_id)).size).toBe(1024);
+  });
+});

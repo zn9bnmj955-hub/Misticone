@@ -205,12 +205,14 @@ export async function queueScheduledNotifications(nowMs = Date.now()): Promise<n
   const tomorrow = parisDatePlus(nowMs, 1);
   const parisHour = Number(isoToParis(now.toISOString()).time.slice(0, 2));
   const soon = new Date(nowMs + 30 * 60_000).toISOString();
-  const { data: tournaments } = await admin
-    .from("tournaments")
-    .select("id, short_code, name, sport_slug, starts_at, checkin_closes_at, address, city, config, status")
-    .in("status", ["published", "registration_closed", "check_in", "live"])
-    .gte("starts_at", new Date(nowMs - 3600_000).toISOString())
-    .lte("starts_at", new Date(nowMs + 2 * 86_400_000).toISOString());
+  const tournaments = must(
+    await admin
+      .from("tournaments")
+      .select("id, short_code, name, sport_slug, starts_at, checkin_closes_at, address, city, config, status")
+      .in("status", ["published", "registration_closed", "check_in", "live"])
+      .gte("starts_at", new Date(nowMs - 3600_000).toISOString())
+      .lte("starts_at", new Date(nowMs + 2 * 86_400_000).toISOString()),
+  );
   let queued = 0;
   for (const t of tournaments ?? []) {
     if (!t.short_code || !t.starts_at || !notificationsEnabled(t.config)) continue;
@@ -222,9 +224,12 @@ export async function queueScheduledNotifications(nowMs = Date.now()): Promise<n
     if (t.starts_at > now.toISOString() && t.starts_at <= soon && t.status !== "live") kinds.push({ kind: "tournament_starting", onlyNotCheckedIn: false });
     if (t.checkin_closes_at && t.checkin_closes_at > now.toISOString() && t.checkin_closes_at <= soon) kinds.push({ kind: "not_checked_in", onlyNotCheckedIn: true });
     if (kinds.length === 0) continue;
-    const { data: teams } = await admin.from("teams").select("id, number, status").eq("tournament_id", t.id).in("status", ["registered", "checked_in"]);
+    // Paginated: a 1 024-team tournament is beyond max_rows (1000); an error is thrown, never a truncated list.
+    const teams = await fetchAllRows((from, to) =>
+      admin.from("teams").select("id, number, status").eq("tournament_id", t.id).in("status", ["registered", "checked_in"]).order("id").range(from, to),
+    );
     for (const { kind, onlyNotCheckedIn } of kinds) {
-      const list = (teams ?? []).filter((x) => !onlyNotCheckedIn || x.status === "registered");
+      const list = teams.filter((x) => !onlyNotCheckedIn || x.status === "registered");
       const place = [t.address, t.city].filter(Boolean).join(", ");
       const vars: TemplateVars = {
         tournament: t.name,
