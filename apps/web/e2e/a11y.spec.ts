@@ -111,7 +111,7 @@ test.describe("keyboard", () => {
   test("wizard first step and scoring table: visible focus", async ({ page }) => {
     await signIn(page, "club");
     await page.goto("/club/concours/nouveau");
-    await expect(page.getByRole("button", { name: /Pétanque/ }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Créer le concours" })).toBeVisible();
     await tabAndCheckFocus(page, 10);
     await signIn(page, "pin");
     await page.goto("/c/7KQ2/table");

@@ -67,7 +67,7 @@ async function Start() {
 
   return (
     <div className="grid gap-8">
-      <p className="text-lg text-ink-soft">{t.pickSportText}</p>
+      <p className="text-lg text-ink-soft">{enabled.length > 1 ? t.pickSportText : t.singleSportText}</p>
       <SportPicker groups={groups} />
       {drafts && drafts.length > 0 && (
         <section aria-labelledby="drafts" className="grid gap-3">

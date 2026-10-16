@@ -10,6 +10,9 @@ export const wizard = {
     pickSportText: "Le formulaire s'adapte au sport choisi. Tout est déjà rempli avec des réglages par défaut : vous pouvez publier en deux minutes.",
     yourSports: "Les sports de votre club",
     otherSports: "Autres sports",
+    /** A single sport offered: no sport choice, one button. */
+    singleSportText: "Tout est déjà rempli avec des réglages par défaut : vous pouvez publier en deux minutes.",
+    startSingle: "Créer le concours",
     creating: "Création du brouillon…",
     drafts: "Reprendre un brouillon",
     continue: "Continuer",

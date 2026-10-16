@@ -3,18 +3,39 @@ import { useActionState, useState } from "react";
 import { Icon } from "@orgasport/ui";
 import { getMessages } from "@/i18n";
 import { cn } from "@/components/ui/cn";
+import { Button } from "@/components/ui/Button";
 import { startDraft } from "@/app/(app)/club/concours/actions";
 
 export type SportOption = { slug: string; name: string; icon: string; accentToken: string };
 
 /**
  * Step 0: big sport cards. Each card is a submit button, so creating the
- * draft also works before JavaScript has loaded.
+ * draft also works before JavaScript has loaded. With a single sport offered
+ * (pétanque only), the choice is hidden: one « Créer le concours » button.
  */
 export function SportPicker({ groups }: { groups: { title: string; sports: SportOption[] }[] }) {
   const t = getMessages().wizard.start;
   const [state, action, pending] = useActionState(startDraft, null);
   const [picked, setPicked] = useState<string | null>(null);
+  const all = groups.flatMap((g) => g.sports);
+
+  if (all.length === 1) {
+    const only = all[0]!;
+    return (
+      <form action={action} className="grid gap-3" aria-busy={pending}>
+        <input type="hidden" name="sport" value={only.slug} />
+        <Button type="submit" size="lg" disabled={pending} data-sport={only.accentToken} className="justify-self-start">
+          {pending ? t.creating : t.startSingle}
+          <Icon name="arrowRight" />
+        </Button>
+        {state && !state.ok && (
+          <p role="alert" className="font-bold text-danger">
+            {t.errors[state.error] ?? getMessages().common.error}
+          </p>
+        )}
+      </form>
+    );
+  }
 
   return (
     <form action={action} className="grid gap-6" aria-busy={pending}>

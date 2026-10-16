@@ -24,7 +24,7 @@ test.describe("club space", () => {
     await signIn(page, "club@demo.orgasport.fr");
 
     await page.goto("/club/concours/nouveau");
-    await page.getByRole("button", { name: /Pétanque/ }).first().click();
+    await page.getByRole("button", { name: "Créer le concours" }).click();
     await page.waitForURL(/\/club\/concours\/[0-9a-f-]+\/modifier/);
 
     // Only the name is missing from the defaults: step 2, then straight to the summary.
@@ -60,7 +60,7 @@ test.describe("club space", () => {
     const name = `Concours offert ${Date.now().toString(36)}`;
     await signIn(page, "club@demo.orgasport.fr");
     await page.goto("/club/concours/nouveau");
-    await page.getByRole("button", { name: /Pétanque/ }).first().click();
+    await page.getByRole("button", { name: "Créer le concours" }).click();
     await page.waitForURL(/modifier/);
     await page.getByRole("button", { name: "Continuer" }).first().click();
     await page.getByLabel("Nom du concours").fill(name);

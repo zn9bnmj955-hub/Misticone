@@ -23,6 +23,11 @@ const ctx: FormContext = {
   nowMs: NOW,
 };
 const today = "2026-10-12";
+/** Every built-in sport as if offered: the form stays tested for football while it is switched off. */
+const anySport = (slug: string) => {
+  const s = getSport(slug);
+  return s && { ...s, enabled: true };
+};
 
 describe("Paris time", () => {
   it("converts summer and winter times", () => {
@@ -41,8 +46,14 @@ describe("defaults", () => {
   it.each(SPORTS.map((s) => [s.slug]))("%s: defaults only need a name to be valid", (slug) => {
     const sport = requireSport(slug);
     const form = { ...defaultForm(sport, ctx), name: "Concours d'automne" };
-    const res = validateForm(form, getSport, today);
+    const res = validateForm(form, anySport, today);
     expect(res.ok ? [] : res.issues).toEqual([]);
+  });
+
+  it("refuses a sport that is not offered (football switched off)", () => {
+    const form = { ...defaultForm(requireSport("football"), ctx), name: "Tournoi" };
+    const res = validateForm(form, getSport, today);
+    expect(res.ok ? [] : res.issues).toEqual([{ path: "sportSlug", code: "unknown_sport" }]);
   });
 
   it("uses the club's venues and address", () => {
@@ -59,7 +70,7 @@ describe("defaults", () => {
     expect(f.name).toBe("Fête du village");
     expect(f.sportSlug).toBe("football");
     expect(requireSport("football").teamFormats.some((t) => t.id === f.teamFormat)).toBe(true);
-    expect(validateForm(f, getSport, today).ok).toBe(true);
+    expect(validateForm(f, anySport, today).ok).toBe(true);
   });
 
   it("merges an old, incomplete draft without losing typed values", () => {
@@ -187,7 +198,7 @@ describe("format advice", () => {
       const advice = suggestFormat(form, sport, teams);
       expect(sport.competitionFormats).toContain(advice.changes.format);
       const merged = { ...form, ...advice.changes };
-      const res = validateForm(merged, getSport, today);
+      const res = validateForm(merged, anySport, today);
       expect(res.ok ? [] : res.issues).toEqual([]);
     }
   });
