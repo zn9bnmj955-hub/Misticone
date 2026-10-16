@@ -82,7 +82,9 @@ describe("cadragePairing", () => {
 describe("elimination without pools: rounds of the reference table", () => {
   const cases: [number, 1 | 2, string[]][] = [
     [2, 1, ["1p final"]],
+    [2, 2, ["1p final"]],
     [3, 1, ["1p+1ex partie1", "1p final"]],
+    [3, 2, ["1p+1ex partie1", "1p final"]],
     [5, 1, ["2p+1ex partie1", "1p+1off cadrage", "1p final"]],
     [5, 2, ["2p+1ex partie1", "1p+1ex partie2", "1p final"]],
     [7, 1, ["3p+1ex partie1", "2p semifinal", "1p final"]],
@@ -94,6 +96,7 @@ describe("elimination without pools: rounds of the reference table", () => {
     [100, 1, ["50p partie1", "18p+14off cadrage", "16p round_of_32", "8p round_of_16", "4p quarterfinal", "2p semifinal", "1p final"]],
     [100, 2, ["50p partie1", "25p partie2", "9p+7off cadrage", "8p round_of_16", "4p quarterfinal", "2p semifinal", "1p final"]],
     [129, 1, ["64p+1ex partie1", "1p+63off cadrage", "32p round_of_64", "16p round_of_32", "8p round_of_16", "4p quarterfinal", "2p semifinal", "1p final"]],
+    [129, 2, ["64p+1ex partie1", "32p+1ex partie2", "1p+31off cadrage", "16p round_of_32", "8p round_of_16", "4p quarterfinal", "2p semifinal", "1p final"]],
     [200, 1, ["100p partie1", "36p+28off cadrage", "32p round_of_64", "16p round_of_32", "8p round_of_16", "4p quarterfinal", "2p semifinal", "1p final"]],
     [200, 2, ["100p partie1", "50p partie2", "18p+14off cadrage", "16p round_of_32", "8p round_of_16", "4p quarterfinal", "2p semifinal", "1p final"]],
   ];
