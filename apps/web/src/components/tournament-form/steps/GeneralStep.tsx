@@ -28,20 +28,23 @@ export function GeneralStep({ tournamentId, form, ctx, today, update, replace, e
 
   return (
     <div className="grid gap-8">
-      <Group title={g.sport}>
-        <Choice
-          label={g.sport}
-          value={form.sportSlug}
-          options={sports.map((s) => ({ value: s.slug, label: s.name, icon: s.icon }))}
-          onChange={(slug) => {
-            const next = getSport(slug);
-            if (!next || slug === form.sportSlug) return;
-            replace(switchSport(form, next, ctx));
-            setSportChanged(true);
-          }}
-          hint={sportChanged ? g.sportChanged : undefined}
-          error={error("sportSlug")}
-        />
+      <Group title={sports.length > 1 ? g.sport : g.nameGroup}>
+        {/* One sport only (pétanque today): nothing to choose, the question disappears. */}
+        {sports.length > 1 && (
+          <Choice
+            label={g.sport}
+            value={form.sportSlug}
+            options={sports.map((s) => ({ value: s.slug, label: s.name, icon: s.icon }))}
+            onChange={(slug) => {
+              const next = getSport(slug);
+              if (!next || slug === form.sportSlug) return;
+              replace(switchSport(form, next, ctx));
+              setSportChanged(true);
+            }}
+            hint={sportChanged ? g.sportChanged : undefined}
+            error={error("sportSlug")}
+          />
+        )}
         <TextField id={fid("name")} label={g.name} placeholder={g.namePlaceholder} maxLength={140} value={form.name} error={error("name")} onChange={(e) => update({ name: e.target.value })} />
       </Group>
 

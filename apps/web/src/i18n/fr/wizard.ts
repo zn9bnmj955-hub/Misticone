@@ -112,6 +112,7 @@ export const wizard = {
   // 2. General information
   general: {
     sport: "Sport",
+    nameGroup: "Votre concours",
     sportChanged: "Les réglages propres au sport ont été remis à leurs valeurs par défaut.",
     name: "Nom du concours",
     namePlaceholder: "ex. Grand prix de la ville",
