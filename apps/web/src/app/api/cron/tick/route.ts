@@ -2,13 +2,16 @@ import type { NextRequest } from "next/server";
 import { dispatchQueued, queueScheduledNotifications } from "@/lib/notifications/server";
 import { closeExpiredTournaments } from "@/lib/tournament/auto-close";
 import { processDueDraws } from "@/lib/tournament/auto-draw";
+import { purgeExpiredTournaments } from "@/lib/tournament/purge";
 import { json } from "@/lib/tournament/http";
 
 /**
  * Called every minute by a scheduler (Supabase pg_cron, cron-job.org…):
  * runs the automatic draws whose time has come, queues the scheduled
  * notifications (reminders), sends what is waiting (retries included) and
- * closes for good the tournaments finished more than 24 h ago.
+ * closes for good the tournaments finished more than 24 h ago, then purges the
+ * personal data of those closed more than 14 days ago (idempotent; pg_cron also
+ * runs it once a day in production).
  */
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -17,5 +20,6 @@ export async function GET(request: NextRequest) {
   const queued = await queueScheduledNotifications();
   const notifications = await dispatchQueued();
   const closed = await closeExpiredTournaments();
-  return json({ drawn, queued, notifications, closed });
+  const purged = await purgeExpiredTournaments();
+  return json({ drawn, queued, notifications, closed, purged });
 }
