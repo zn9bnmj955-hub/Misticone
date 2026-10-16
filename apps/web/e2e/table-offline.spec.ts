@@ -40,7 +40,7 @@ async function playing(request: APIRequestContext) {
   return {
     matches: state.matches,
     list: Object.values(state.matches)
-      .filter((m) => m.status === "playing" && m.venueId)
+      .filter((m) => (m.status === "playing" || m.status === "ready") && m.venueId)
       .map((m) => ({ id: m.id, venue: label.get(m.venueId!)! })),
   };
 }
