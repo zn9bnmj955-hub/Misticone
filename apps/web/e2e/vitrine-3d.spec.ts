@@ -37,6 +37,43 @@ test.describe("landing 3D", () => {
     expect(frames).toBeGreaterThanOrEqual(4);
   });
 
+  test("after a pointer move the camera settles to a still picture, and hand tremor changes nothing", async ({ page }) => {
+    test.setTimeout(120_000);
+    const hero = await open3D(page);
+    if ((await hero.getAttribute("data-ball")) !== "3d") test.skip(true, "no WebGL 2 on this machine: static scene only");
+    await expect(page.locator("canvas[data-ball-canvas][data-ready]")).toHaveCount(1);
+    await page.waitForTimeout(1500);
+
+    const mask = [page.locator(".ld-ballSpot")];
+    const shot = () => hero.screenshot({ mask, animations: "disabled", caret: "hide" });
+    const before = await shot();
+
+    // A real move, far from the ball (which can be dragged): the décor follows the pointer...
+    await page.mouse.move(100, 700, { steps: 5 });
+    await page.waitForTimeout(800);
+    expect((await shot()).equals(before), "the camera follows a real pointer move").toBe(false);
+
+    // ...then really stops (no sub-pixel drift): two identical pictures in a row.
+    let prev = await shot();
+    let settled = false;
+    const started = Date.now();
+    while (Date.now() - started < 60_000) {
+      await page.waitForTimeout(500);
+      const next = await shot();
+      if (next.equals(prev)) { settled = true; break; }
+      prev = next;
+    }
+    expect(settled, "the camera comes to a complete stop").toBe(true);
+
+    // Tremor: moves of a few pixels (inside the dead zone) leave the picture untouched.
+    for (const [x, y] of [[102, 701], [99, 698], [101, 702], [100, 700]]) await page.mouse.move(x, y);
+    await page.waitForTimeout(1500);
+    for (let i = 0; i < 3; i++) {
+      expect((await shot()).equals(prev), `image ${i + 1} after tiny pointer moves`).toBe(true);
+      await page.waitForTimeout(500);
+    }
+  });
+
   test("the frame rate stays steady", async ({ page }) => {
     const hero = await open3D(page);
     if ((await hero.getAttribute("data-ball")) !== "3d") test.skip(true, "no WebGL 2 on this machine: static scene only");
