@@ -3,6 +3,7 @@ import { cadragePairing } from "./pairing";
 import { canDrawNext, eliminationDrawPlan, qualifiers } from "./formats";
 import { isOfficeBye, isPowerOfTwo, largestPowerOfTwo, matchesOfRound, roundLabel, roundsOf } from "./queries";
 import { createRng } from "./rng";
+import { computeStats } from "./standings";
 import { exec, makeState, PLAYABLE_STATUSES, playToEnd, randomScore, resetOps } from "./test-helpers";
 import type { EngineState, Phase } from "./types";
 
@@ -203,5 +204,26 @@ describe("safety net after the cadrage", () => {
     expect(profile(s, "elimination")).toEqual(["16p+1ex partie1", "1p+15off cadrage", "8p round_of_16", "3p+1off quarterfinal"]);
     const r4 = roundsOf(s, "main", "elimination")[3]!;
     expect(r4.kind).toBe("partie");
+  });
+});
+
+describe("scores of an exempt and of a place « d'office »", () => {
+  it("exempt before the cadrage: 13-7 (not the forfeit 13-0); « d'office »: a win without points", () => {
+    let s = makeState({ teams: 13, config: { bracketMode: "redraw", autoNextRound: false, ...noB } });
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "x" });
+    const r1 = roundsOf(s, "main", "elimination")[0]!;
+    const exempt = matchesOfRound(s, r1.id).find((m) => m.status === "bye")!;
+    const rng = createRng("sc");
+    for (const m of matchesOfRound(s, r1.id).filter((x) => PLAYABLE_STATUSES.has(x.status)))
+      s = exec(s, { type: "match.score", matchId: m.id, ...randomScore(s, () => rng.next(), true) });
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "y" });
+    const r2 = roundsOf(s, "main", "elimination")[1]!;
+    const office = matchesOfRound(s, r2.id).find((m) => m.status === "bye")!;
+    expect(isOfficeBye(s, exempt)).toBe(false);
+    expect(isOfficeBye(s, office)).toBe(true);
+    const e = computeStats(s, exempt.sideA, [exempt]).get(exempt.sideA[0]!)!;
+    expect([e.wins, e.pointsFor, e.pointsAgainst]).toEqual([1, 13, 7]);
+    const o = computeStats(s, office.sideA, [office]).get(office.sideA[0]!)!;
+    expect([o.wins, o.pointsFor, o.pointsAgainst]).toEqual([1, 0, 0]);
   });
 });

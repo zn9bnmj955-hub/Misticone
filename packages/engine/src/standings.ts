@@ -1,5 +1,5 @@
 import { hash128 } from "./rng";
-import { isFinished } from "./queries";
+import { isFinished, isOfficeBye } from "./queries";
 import type { EngineState, Match, RankingCriterion } from "./types";
 
 export interface TeamStats {
@@ -35,8 +35,9 @@ const empty = (id: string): TeamStats => ({
 });
 
 /**
- * Per-team statistics over the given finished matches. A bye or a forfeit
- * win counts as a win with the configured forfeit score.
+ * Per-team statistics over the given finished matches. A forfeit win counts
+ * with the forfeit score, an exempt with the bye score, a place « d'office »
+ * as a win without points.
  */
 export function computeStats(state: EngineState, teamIds: string[], matches: Match[]): Map<string, TeamStats> {
   const fs = state.tournament.config.forfeitScore;
@@ -49,13 +50,16 @@ export function computeStats(state: EngineState, teamIds: string[], matches: Mat
   for (const m of matches) {
     if (!isFinished(m)) continue;
     if (m.status === "bye") {
+      // Exempt: a win with the bye score (13-7 in pétanque). « D'office »
+      // (cadrage): a win without any score (shown « ** »).
+      const bs = isOfficeBye(state, m) ? { winner: 0, loser: 0 } : state.tournament.config.byeScore;
       for (const id of m.sideA)
         add(id, (s) => {
           s.played++;
           s.wins++;
           s.byes++;
-          s.pointsFor += fs.winner;
-          s.pointsAgainst += fs.loser;
+          s.pointsFor += bs.winner;
+          s.pointsAgainst += bs.loser;
           s.matchPoints += mp.win;
         });
       continue;
