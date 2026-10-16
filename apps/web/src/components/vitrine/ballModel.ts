@@ -1,16 +1,15 @@
 /**
- * Photorealistic sport balls for the landing hero (three.js, loaded lazily).
- *
- * - Pétanque: satin, lathe-turned steel (anisotropic metal), three engraved
- *   striations, micro-scratches and polish variation from generated maps. No
- *   brand, no text, no weight number: the surface is deliberately anonymous.
- * - Football: black pentagons / white hexagons with stitched seams, pebbled
- *   synthetic leather and a light varnish.
- * - Plain: any other sport, a lacquered ball in the accent color.
+ * Photorealistic pétanque ball for the landing hero (three.js, loaded lazily),
+ * modelled on docs/references/boule-reference.png: smooth, very dark silver
+ * steel (no grooves, no striations) with soft reflections of the scene, and a
+ * single engraving, « ORGASPORT », hollowed into the metal. The engraving is
+ * drawn on a canvas with a built-in stroke font (no external font), turned
+ * into a normal map and a relief (cavity) map, and projected on the ball as a
+ * decal facing the camera at rest. No other mark, no number.
  *
  * Everything is procedural (seeded, so the pre-rendered fallback image made by
  * scripts/render-hero-balls.mjs is identical to what the browser draws). The
- * balls are lit by a small "neon studio" environment (PMREM) so the steel
+ * ball is lit by a small "neon studio" environment (PMREM) so the steel
  * reflects the blue lines of the scene. Colors come from the CSS tokens.
  */
 import {
@@ -25,9 +24,10 @@ import {
   Group,
   LinearFilter,
   LinearMipmapLinearFilter,
+  LinearSRGBColorSpace,
   Mesh,
   MeshBasicMaterial,
-  MeshPhysicalMaterial,
+  MeshStandardMaterial,
   NoColorSpace,
   PlaneGeometry,
   PerspectiveCamera,
@@ -41,11 +41,20 @@ import {
   SRGBColorSpace,
   Vector2,
   Vector3,
-  type Texture,
   type WebGLRenderer,
   type WebGLRenderTarget,
 } from "three";
-import { BALL_TILT, GROOVE_OFFSETS, HEXAGON_CENTERS, PENTAGON_CENTERS } from "./ballGeometry";
+import {
+  BALL_FINISH,
+  BALL_TILT,
+  ENGRAVING_ANGLE,
+  ENGRAVING_CAP,
+  ENGRAVING_STROKE,
+  ENGRAVING_TEXT,
+  GLYPHS,
+  layoutEngraving,
+  type GlyphCommand,
+} from "./ballGeometry";
 
 /** Colors of the scene, read from the design tokens of the hero (see readStageColors). */
 export type StageColors = { stage: Color; light: Color; line: Color; haze: Color; accent: Color };
@@ -93,222 +102,194 @@ function dataTexture(data: Uint8Array, w: number, h: number, wrap: boolean, colo
   return t;
 }
 
-/** Tangent-space normal map from a height field on the sphere (equirectangular, row 0 = south pole). */
-function normalsFromHeight(height: Float32Array, w: number, h: number, strength: number): Uint8Array {
-  const out = new Uint8Array(w * h * 4);
-  for (let y = 0; y < h; y++) {
-    const lat = ((y + 0.5) / h - 0.5) * Math.PI;
-    const stretch = 1 / Math.max(Math.cos(lat), 0.15);
-    const yu = Math.min(h - 1, y + 1), yd = Math.max(0, y - 1);
-    for (let x = 0; x < w; x++) {
-      const xl = (x - 1 + w) % w, xr = (x + 1) % w;
-      const dx = ((height[y * w + xr] - height[y * w + xl]) / 2) * stretch * strength;
-      const dy = ((height[yu * w + x] - height[yd * w + x]) / 2) * strength;
-      const l = Math.hypot(dx, dy, 1);
-      const i = (y * w + x) * 4;
-      out[i] = ((-dx / l) * 0.5 + 0.5) * 255;
-      out[i + 1] = ((-dy / l) * 0.5 + 0.5) * 255;
-      out[i + 2] = ((1 / l) * 0.5 + 0.5) * 255;
-      out[i + 3] = 255;
-    }
+/** Soft polish variation of the steel (roughness in G): smudges, no scratches, no grooves. */
+function polishMap(w: number) {
+  const h = w / 2;
+  const rand = rng(0x5eed);
+  const broad = valueNoise(w, h, 7, rand);
+  const fine = valueNoise(w, h, 24, rand);
+  const rough = new Uint8Array(w * h * 4);
+  for (let i = 0; i < w * h; i++) {
+    const m = broad[i] * 0.75 + fine[i] * 0.25;
+    rough[i * 4 + 1] = Math.min(1, BALL_FINISH.roughness + (m - 0.5) * 0.14) * 255;
+    rough[i * 4 + 3] = 255;
   }
-  return out;
+  return dataTexture(rough, w, h, true, false);
+}
+
+/** Pixels per cap height of the engraving canvas. */
+const CAP_PX = 96;
+const MARGIN = 0.45; // cap heights around the word
+
+function traceGlyph(ctx: CanvasRenderingContext2D, strokes: GlyphCommand[][]) {
+  for (const stroke of strokes) {
+    ctx.beginPath();
+    for (const cmd of stroke) {
+      if (cmd[0] === "M") ctx.moveTo(cmd[1], cmd[2]);
+      else if (cmd[0] === "L") ctx.lineTo(cmd[1], cmd[2]);
+      else if (cmd[0] === "C") ctx.bezierCurveTo(cmd[1], cmd[2], cmd[3], cmd[4], cmd[5], cmd[6]);
+      else ctx.ellipse(cmd[1], cmd[2], cmd[3] - ENGRAVING_STROKE / 2, cmd[4] - ENGRAVING_STROKE / 2, 0, cmd[5], cmd[6], cmd[7] === 1);
+    }
+    ctx.stroke();
+  }
+}
+
+/** Horizontal then vertical box blur (in place), `passes` times. */
+function boxBlur(data: Float32Array, w: number, h: number, r: number, passes: number) {
+  const tmp = new Float32Array(data.length);
+  const n = 2 * r + 1;
+  for (let p = 0; p < passes; p++) {
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        let s = 0;
+        for (let k = -r; k <= r; k++) s += data[y * w + Math.min(w - 1, Math.max(0, x + k))];
+        tmp[y * w + x] = s / n;
+      }
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        let s = 0;
+        for (let k = -r; k <= r; k++) s += tmp[Math.min(h - 1, Math.max(0, y + k)) * w + x];
+        data[y * w + x] = s / n;
+      }
+  }
 }
 
 /**
- * Steel maps (DataTexture rows go from v = 0, the south pole, upwards):
- * colour (cavities darker), roughness (G) and normals (grooves + scratches).
+ * The engraving as one decal texture: RGB = tangent-space normal (x east, y
+ * north), A = relief (depth of the cavity, 0..1). Rows go from the bottom of
+ * the word (v = 0) upwards. Size in radians of arc on the ball.
  */
-function steelMaps(w: number) {
-  const h = w / 2;
-  const rand = rng(0x5eed);
-  const height = new Float32Array(w * h);
-  const scratch = new Float32Array(w * h);
-  const groove = new Float32Array(w * h);
+function engravingDecal(maxAnisotropy: number) {
+  const layout = layoutEngraving();
+  const units = { w: layout.width + MARGIN * 2, h: 1 + MARGIN * 2 };
+  const w = Math.ceil(units.w * CAP_PX), h = Math.ceil(units.h * CAP_PX);
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = ENGRAVING_STROKE;
+  ctx.lineJoin = "miter";
+  ctx.lineCap = "butt";
+  [...ENGRAVING_TEXT].forEach((ch, i) => {
+    ctx.setTransform(CAP_PX, 0, 0, CAP_PX, (MARGIN + layout.x[i]) * CAP_PX, MARGIN * CAP_PX);
+    traceGlyph(ctx, GLYPHS[ch].strokes);
+  });
+  const pixels = ctx.getImageData(0, 0, w, h).data;
+  const relief = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) relief[i] = pixels[i * 4] / 255;
+  // Bevelled walls: the cut is a little narrower at the bottom than at the surface.
+  boxBlur(relief, w, h, Math.max(1, Math.round(CAP_PX * 0.025)), 2);
 
-  // Engraved striations: parallel circles around the ball (constant latitude).
-  const grooveHalf = Math.max(1.2, h / 300); // ≈ 0.7 mm wide on a 72 mm ball
-  for (const offset of GROOVE_OFFSETS) {
-    const row = (Math.asin(offset) / Math.PI + 0.5) * h;
-    for (let y = Math.floor(row - grooveHalf * 2); y <= Math.ceil(row + grooveHalf * 2); y++) {
-      if (y < 0 || y >= h) continue;
-      const d = Math.abs(y + 0.5 - row) / grooveHalf;
-      const g = d < 1 ? Math.cos((d * Math.PI) / 2) : 0;
-      const shoulder = d < 2 ? Math.max(0, 1 - Math.abs(d - 1.15) / 0.35) * 0.12 : 0;
-      for (let x = 0; x < w; x++) {
-        height[y * w + x] += -g * 2.4 + shoulder;
-        groove[y * w + x] = Math.max(groove[y * w + x], g);
-      }
-    }
-  }
-
-  // Fine lathe marks: very shallow concentric rings (the satin "turned" finish).
+  const depth = CAP_PX * 0.05; // px: walls ≈ 45°
+  const out = new Uint8Array(w * h * 4);
+  const at = (x: number, y: number) => relief[Math.min(h - 1, Math.max(0, y)) * w + Math.min(w - 1, Math.max(0, x))];
   for (let y = 0; y < h; y++) {
-    const lat = Math.abs((y + 0.5) / h - 0.5) * 2;
-    const ring = (Math.sin(y * 2.7) * 0.025 + Math.sin(y * 0.93 + 1.3) * 0.02) * (1 - Math.max(0, lat - 0.7) / 0.3);
-    for (let x = 0; x < w; x++) height[y * w + x] += ring;
-  }
-
-  // Micro-scratches from play: short random strokes, wrapped around the seam.
-  const strokes = Math.round(w * 1.7);
-  for (let s = 0; s < strokes; s++) {
-    let x = rand() * w, y = h * (0.08 + rand() * 0.84);
-    const angle = rand() * Math.PI * 2;
-    const len = 4 + rand() ** 2 * w * 0.05;
-    const depth = 0.08 + rand() * 0.25;
-    const sx = Math.cos(angle) / Math.max(Math.cos(((y / h) - 0.5) * Math.PI), 0.2), sy = Math.sin(angle);
-    for (let t = 0; t < len; t++) {
-      const xi = ((Math.round(x) % w) + w) % w, yi = Math.round(y);
-      if (yi < 0 || yi >= h) break;
-      const fade = Math.sin((t / len) * Math.PI);
-      height[yi * w + xi] -= depth * fade;
-      scratch[yi * w + xi] = Math.min(1, scratch[yi * w + xi] + depth * fade * 2);
-      x += sx;
-      y += sy;
-    }
-  }
-  // A few deeper dents (the ball has been played with).
-  for (let s = 0; s < 14; s++) {
-    const cx = rand() * w, cy = h * (0.15 + rand() * 0.7), r = 2 + rand() * 4;
-    for (let y = Math.floor(cy - r); y <= cy + r; y++)
-      for (let x = Math.floor(cx - r * 1.5); x <= cx + r * 1.5; x++) {
-        if (y < 0 || y >= h) continue;
-        const d = Math.hypot((x - cx) / 1.5, y - cy) / r;
-        if (d < 1) height[y * w + ((x % w) + w) % w] -= (1 - d * d) * 0.6;
-      }
-  }
-
-  const mottle = valueNoise(w, h, 9, rand);
-  const fine = valueNoise(w, h, 64, rand);
-  const color = new Uint8Array(w * h * 4);
-  const rough = new Uint8Array(w * h * 4);
-  for (let i = 0; i < w * h; i++) {
-    const m = mottle[i] * 0.7 + fine[i] * 0.3;
-    // Steel F0 ≈ 0.56 linear (sRGB ≈ 196), slightly blue-grey; cavities darker.
-    const tone = (1 - groove[i] * 0.55) * (0.93 + m * 0.07) * (1 - scratch[i] * 0.06);
-    color[i * 4] = 190 * tone;
-    color[i * 4 + 1] = 195 * tone;
-    color[i * 4 + 2] = 203 * tone;
-    color[i * 4 + 3] = 255;
-    const r = 0.15 + m * 0.12 + scratch[i] * 0.16 + groove[i] * 0.3;
-    rough[i * 4] = 0;
-    rough[i * 4 + 1] = Math.min(1, r) * 255;
-    rough[i * 4 + 2] = 0;
-    rough[i * 4 + 3] = 255;
-  }
-  return {
-    map: dataTexture(color, w, h, true, true),
-    roughnessMap: dataTexture(rough, w, h, true, false),
-    normalMap: dataTexture(normalsFromHeight(height, w, h, 1.6), w, h, true, false),
-  };
-}
-
-/** Pebbled synthetic leather (tiled normal map). */
-function leatherNormal(size: number) {
-  const rand = rng(0x1ea7);
-  const a = valueNoise(size, size, 48, rand);
-  const b = valueNoise(size, size, 112, rand);
-  const height = new Float32Array(size * size);
-  for (let i = 0; i < height.length; i++) height[i] = Math.abs(a[i] - 0.5) * 1.2 + b[i] * 0.6;
-  // Square texture tiled on the sphere: no latitude correction needed for a fine grain.
-  const out = new Uint8Array(size * size * 4);
-  for (let y = 0; y < size; y++)
-    for (let x = 0; x < size; x++) {
-      const dx = (height[y * size + ((x + 1) % size)] - height[y * size + ((x - 1 + size) % size)]) * 2;
-      const dy = (height[((y + 1) % size) * size + x] - height[((y - 1 + size) % size) * size + x]) * 2;
-      const l = Math.hypot(dx, dy, 1), i = (y * size + x) * 4;
-      out[i] = ((-dx / l) * 0.5 + 0.5) * 255;
-      out[i + 1] = ((-dy / l) * 0.5 + 0.5) * 255;
+    const row = h - 1 - y; // texture row 0 = bottom of the canvas
+    for (let x = 0; x < w; x++) {
+      // Height = -depth × relief. East slope from columns, north slope from rows (canvas y goes down).
+      const dEast = (-(at(x + 1, y) - at(x - 1, y)) / 2) * depth;
+      const dNorth = (-(at(x, y - 1) - at(x, y + 1)) / 2) * depth;
+      const l = Math.hypot(dEast, dNorth, 1);
+      const i = (row * w + x) * 4;
+      out[i] = ((-dEast / l) * 0.5 + 0.5) * 255;
+      out[i + 1] = ((-dNorth / l) * 0.5 + 0.5) * 255;
       out[i + 2] = ((1 / l) * 0.5 + 0.5) * 255;
-      out[i + 3] = 255;
+      out[i + 3] = at(x, y) * 255;
     }
-  const t = dataTexture(out, size, size, true, false);
-  t.wrapT = RepeatWrapping;
-  t.repeat.set(10, 5);
-  return t;
+  }
+  const texture = dataTexture(out, w, h, false, false);
+  texture.anisotropy = maxAnisotropy;
+  return { texture, size: new Vector2(units.w * ENGRAVING_CAP, units.h * ENGRAVING_CAP) };
 }
 
-const PANEL_PARS = /* glsl */ `
+/** Elevation of the ball camera above the floor (see frameBallCamera). */
+const CAMERA_ELEVATION = (14 * Math.PI) / 180;
+
+/**
+ * Where the engraving sits, in the ball's own space: centre `c` (unit vector),
+ * `e` (reading direction) and `n` (top of the letters). It faces the camera
+ * when the ball is at rest (REST_SPIN), slightly below and left of centre and
+ * rising to the right, like the reference photo.
+ */
+export function engravingFrame(): { c: Vector3; e: Vector3; n: Vector3 } {
+  const toCamera = new Vector3(0, Math.sin(CAMERA_ELEVATION), Math.cos(CAMERA_ELEVATION));
+  const right = new Vector3(1, 0, 0);
+  const up = new Vector3().crossVectors(toCamera, right).normalize();
+  const c = toCamera.clone().addScaledVector(right, -0.03).addScaledVector(up, -0.08).normalize();
+  const e = right.clone().multiplyScalar(Math.cos(ENGRAVING_ANGLE)).addScaledVector(up, Math.sin(ENGRAVING_ANGLE));
+  e.addScaledVector(c, -e.dot(c)).normalize();
+  const n = new Vector3().crossVectors(c, e).normalize();
+  const rest = new Quaternion().copy(TILT_Q).multiply(new Quaternion().setFromAxisAngle(AXIS_Y, REST_SPIN)).invert();
+  return { c: c.applyQuaternion(rest), e: e.applyQuaternion(rest), n: n.applyQuaternion(rest) };
+}
+
+const ENGRAVING_PARS = /* glsl */ `
 varying vec3 vOsPos;
-uniform vec3 uPent[12];
-uniform vec3 uHex[20];
-uniform vec3 uWhite;
-uniform vec3 uBlack;
-float osPanelEdge(vec3 p, out float pent) {
-  float bp = -2.0;
-  for (int i = 0; i < 12; i++) bp = max(bp, dot(p, uPent[i]));
-  float h1 = -2.0;
-  float h2 = -2.0;
-  for (int i = 0; i < 20; i++) {
-    float d = dot(p, uHex[i]);
-    if (d > h1) { h2 = h1; h1 = d; } else if (d > h2) { h2 = d; }
-  }
-  float aP = acos(clamp(bp, -1.0, 1.0)) + 0.0387;
-  float aH1 = acos(clamp(h1, -1.0, 1.0)) - 0.0387;
-  float aH2 = acos(clamp(h2, -1.0, 1.0)) - 0.0387;
-  pent = step(aP, aH1);
-  return pent > 0.5 ? aH1 - aP : min(aH2 - aH1, aP - aH1);
-}
-vec3 osBump(vec3 pos, vec3 nrm, float h) {
-  vec3 sx = dFdx(pos);
-  vec3 sy = dFdy(pos);
-  vec3 r1 = cross(sy, nrm);
-  vec3 r2 = cross(nrm, sx);
-  float det = dot(sx, r1);
-  vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
-  return normalize(abs(det) * nrm - grad);
-}
+varying vec3 vDecE;
+varying vec3 vDecN;
+uniform sampler2D uDecal;
+uniform vec2 uDecSize;
+uniform vec3 uDecC;
+uniform vec3 uDecE;
+uniform vec3 uDecN;
 `;
 
-function inject(src: string, chunk: string, code: string, before = false): string {
+function inject(src: string, chunk: string, code: string): string {
   const tag = `#include <${chunk}>`;
   if (!src.includes(tag)) throw new Error(`three shader chunk missing: ${chunk}`);
-  return src.replace(tag, before ? `${code}\n${tag}` : `${tag}\n${code}`);
+  return src.replace(tag, `${tag}\n${code}`);
 }
 
-function footballMaterial(leather: Texture) {
-  const material = new MeshPhysicalMaterial({
-    color: 0xffffff,
-    roughness: 0.42,
-    metalness: 0,
-    clearcoat: 0.55,
-    clearcoatRoughness: 0.32,
-    normalMap: leather,
-    normalScale: new Vector2(0.22, 0.22),
-    sheen: 0.15,
+function steelMaterial(textureSize: number, maxAnisotropy: number) {
+  const roughnessMap = polishMap(Math.max(256, textureSize / 4));
+  const decal = engravingDecal(maxAnisotropy);
+  const frame = engravingFrame();
+  const material = new MeshStandardMaterial({
+    // The finish colour is the steel's reflectance (F0), taken as is: a very dark silver mirror.
+    color: new Color().setHex(parseInt(BALL_FINISH.color.slice(1), 16), LinearSRGBColorSpace),
+    metalness: BALL_FINISH.metalness,
+    roughness: 1,
+    roughnessMap,
+    envMapIntensity: 1.8,
   });
   material.onBeforeCompile = (shader) => {
-    shader.uniforms.uPent = { value: PENTAGON_CENTERS.map((v) => new Vector3(...v)) };
-    shader.uniforms.uHex = { value: HEXAGON_CENTERS.map((v) => new Vector3(...v)) };
-    shader.uniforms.uWhite = { value: new Color(0.86, 0.87, 0.88) };
-    shader.uniforms.uBlack = { value: new Color(0.012, 0.013, 0.016) };
-    shader.vertexShader = inject(shader.vertexShader, "common", "varying vec3 vOsPos;");
-    shader.vertexShader = inject(shader.vertexShader, "begin_vertex", "vOsPos = position;");
-    shader.fragmentShader = inject(shader.fragmentShader, "common", PANEL_PARS);
+    shader.uniforms.uDecal = { value: decal.texture };
+    shader.uniforms.uDecSize = { value: decal.size };
+    shader.uniforms.uDecC = { value: frame.c };
+    shader.uniforms.uDecE = { value: frame.e };
+    shader.uniforms.uDecN = { value: frame.n };
+    shader.vertexShader = inject(shader.vertexShader, "common", "varying vec3 vOsPos;\nvarying vec3 vDecE;\nvarying vec3 vDecN;\nuniform vec3 uDecE;\nuniform vec3 uDecN;");
+    shader.vertexShader = inject(shader.vertexShader, "begin_vertex", "vOsPos = position;\nvDecE = normalMatrix * uDecE;\nvDecN = normalMatrix * uDecN;");
+    shader.fragmentShader = inject(shader.fragmentShader, "common", ENGRAVING_PARS);
     shader.fragmentShader = inject(
       shader.fragmentShader,
       "color_fragment",
       /* glsl */ `
       vec3 osP = normalize(vOsPos);
-      float osPent;
-      float osEdge = osPanelEdge(osP, osPent);
-      float osSeam = 1.0 - smoothstep(0.004, 0.02, osEdge);
-      diffuseColor.rgb = mix(uWhite, uBlack, osPent) * mix(1.0, 0.35, osSeam);
+      float osC = dot(osP, uDecC);
+      vec2 osUv = vec2(atan(dot(osP, uDecE), osC), atan(dot(osP, uDecN), osC)) / uDecSize + 0.5;
+      float osIn = step(0.0, osC) * step(0.0, osUv.x) * step(osUv.x, 1.0) * step(0.0, osUv.y) * step(osUv.y, 1.0);
+      vec4 osDec = texture2D(uDecal, clamp(osUv, 0.0, 1.0));
+      float osCavity = osDec.a * osIn;
+      diffuseColor.rgb *= 1.0 - 0.45 * osCavity;
       `,
     );
-    shader.fragmentShader = inject(
-      shader.fragmentShader,
-      "roughnessmap_fragment",
-      "roughnessFactor = mix(roughnessFactor, 0.85, osSeam);",
-    );
-    // Panels are slightly cushioned: they dip into the seams.
+    shader.fragmentShader = inject(shader.fragmentShader, "roughnessmap_fragment", "roughnessFactor = mix(roughnessFactor, 0.55, osCavity);");
     shader.fragmentShader = inject(
       shader.fragmentShader,
       "normal_fragment_maps",
-      "normal = osBump(-vViewPosition, normal, 0.022 * (smoothstep(0.0, 0.11, osEdge) - 1.0));",
+      /* glsl */ `
+      vec3 osT = normalize(vDecE - normal * dot(vDecE, normal));
+      vec3 osB = normalize(vDecN - normal * dot(vDecN, normal));
+      vec3 osTn = osDec.xyz * 2.0 - 1.0;
+      normal = normalize(mix(normal, osTn.x * osT + osTn.y * osB + osTn.z * normal, osIn));
+      `,
     );
   };
-  return material;
+  return { material, textures: [roughnessMap, decal.texture] };
 }
 
 /** Soft contact shadow + a faint blue bounce from the floor, drawn under the ball. */
@@ -326,7 +307,7 @@ function radialTexture(stops: [number, string][]) {
 }
 
 /**
- * Neon studio reflected by the balls: a dark room, one big softbox (the key
+ * Neon studio reflected by the ball: a dark room, one big softbox (the key
  * highlight), a cool fill, a blue horizon band and blue tubes, and a glowing
  * floor grid underneath.
  */
@@ -371,37 +352,20 @@ export function createEnvironment(renderer: WebGLRenderer, colors: StageColors) 
   return target;
 }
 
-export type BallLookIndex = number; // LOOK_INDEX of ballGeometry: 0 steel, 1 panels, 2 plain
-
 export type BallModel = {
   group: Group;
   /** The ball itself (rotate it). */
   ball: Mesh;
-  setLook(look: BallLookIndex, accent: Color): void;
   dispose(): void;
 };
 
 /** Builds the ball (radius 1, resting on y = -1) with its contact shadow. */
-export function createBall(look: BallLookIndex, accent: Color, opts: { textureSize: number; maxAnisotropy: number }): BallModel {
+export function createBall(accent: Color, opts: { textureSize: number; maxAnisotropy: number }): BallModel {
   const group = new Group();
-  const geometry = new SphereGeometry(1, 160, 112);
-  const maps = steelMaps(opts.textureSize);
-  for (const t of Object.values(maps)) t.anisotropy = opts.maxAnisotropy;
-  const steel = new MeshPhysicalMaterial({
-    ...maps,
-    metalness: 1,
-    roughness: 1,
-    normalScale: new Vector2(0.9, 0.9),
-    anisotropy: 0.3,
-    anisotropyRotation: 0,
-    envMapIntensity: 1.6,
-  });
-  const leather = leatherNormal(256);
-  const football = footballMaterial(leather);
-  const plain = new MeshPhysicalMaterial({ color: accent, roughness: 0.3, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.12 });
-  const materials = [steel, football, plain];
+  const geometry = new SphereGeometry(1, 128, 96);
+  const steel = steelMaterial(opts.textureSize, opts.maxAnisotropy);
 
-  const ball = new Mesh(geometry, materials[look] ?? plain);
+  const ball = new Mesh(geometry, steel.material);
   group.add(ball);
 
   const shadowTex = radialTexture([
@@ -433,16 +397,10 @@ export function createBall(look: BallLookIndex, accent: Color, opts: { textureSi
   return {
     group,
     ball,
-    setLook(next, color) {
-      ball.material = materials[next] ?? plain;
-      plain.color.copy(color);
-      bounceM.color.copy(color);
-    },
     dispose() {
       geometry.dispose();
-      materials.forEach((m) => m.dispose());
-      Object.values(maps).forEach((t) => t.dispose());
-      leather.dispose();
+      steel.material.dispose();
+      steel.textures.forEach((t) => t.dispose());
       [shadowTex, shadowG, shadowM, bounceTex, bounceG, bounceM].forEach((d) => d.dispose());
     },
   };
@@ -470,8 +428,7 @@ export function frameBallCamera(cam: PerspectiveCamera): void {
   cam.aspect = 1;
   cam.updateProjectionMatrix();
   const d = 1 / (0.62 * Math.tan((cam.fov * Math.PI) / 360));
-  const elev = (14 * Math.PI) / 180;
-  cam.position.set(0, d * Math.sin(elev) - 0.12, d * Math.cos(elev));
+  cam.position.set(0, d * Math.sin(CAMERA_ELEVATION) - 0.12, d * Math.cos(CAMERA_ELEVATION));
   cam.lookAt(0, -0.12, 0);
 }
 
@@ -482,7 +439,7 @@ const PITCH_Q = new Quaternion();
 const AXIS_Y = new Vector3(0, 1, 0);
 const AXIS_X = new Vector3(1, 0, 0);
 
-/** Orientation of the ball: a slight tilt (grooves visible), a spin around the vertical and a drag pitch. */
+/** Orientation of the ball: a slight tilt (engraving facing the camera at rest), a spin around the vertical and a drag pitch. */
 export function poseBall(ball: Mesh, spin: number, pitch = 0): void {
   SPIN_Q.setFromAxisAngle(AXIS_Y, spin);
   PITCH_Q.setFromAxisAngle(AXIS_X, pitch);

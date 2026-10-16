@@ -1,9 +1,8 @@
 "use client";
 
 import { createContext, use, useEffect, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
-import { Icon } from "@orgasport/ui";
 import { cn } from "@/components/ui/cn";
-import { LOOK_INDEX, ballLookFor, type BallLook, type StageSport } from "./ballGeometry";
+import type { StageSport } from "./ballGeometry";
 import { REDUCED_MOTION_QUERY, canRun3D, readDeviceHints, whenIdle } from "./loadPolicy";
 import type { HeroHandle } from "./heroScene3d";
 import styles from "./landingStyles";
@@ -16,15 +15,14 @@ import styles from "./landingStyles";
  * idle and the hero visible, then fades in over the static one: same horizon,
  * ball drawn in the same rectangle, no layout shift. The section exposes its
  * state in `data-ball` ("static" → "loading" → "3d"; stays "static" when 3D is
- * not allowed). The sport chips set `data-sport` (accent) and the ball look.
+ * not allowed). The ball is always the dark steel pétanque ball engraved
+ * « ORGASPORT » (no sport switch); `data-sport` follows the device's sport
+ * preference for the accent colour of the scene.
  */
 
 type Mode = "static" | "loading" | "3d";
 
 type HeroState = {
-  sports: StageSport[];
-  active: number;
-  choose: (index: number) => void;
   mode: Mode;
   anchorRef: RefObject<HTMLDivElement | null>;
 };
@@ -41,26 +39,16 @@ const subscribeNever = () => () => {};
 const readPageSport = () => document.documentElement.getAttribute("data-sport");
 
 export function SportHero({ sports, className, children }: { sports: StageSport[]; className?: string; children: ReactNode }) {
-  // The device's sport preference (set on <html> before the first paint) picks the first ball.
+  // The device's sport preference (set on <html> before the first paint) gives the accent.
   const pageSport = useSyncExternalStore(subscribeNever, readPageSport, () => null);
-  const [chosen, setChosen] = useState<number | null>(null);
-  const preferred = sports.findIndex((s) => s.accentToken === pageSport || s.slug === pageSport);
-  const active = chosen ?? Math.max(0, preferred);
-  const look = ballLookFor(sports[active]?.icon ?? "");
+  const active = Math.max(0, sports.findIndex((s) => s.accentToken === pageSport || s.slug === pageSport));
 
   const sectionRef = useRef<HTMLElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const horizonRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HeroHandle | null>(null);
-  const lookRef = useRef(LOOK_INDEX[look]);
   const [mode, setMode] = useState<Mode>("static");
-
-  // Chip change: the 3D scene switches ball and markings and re-reads the accent of the new data-sport.
-  useEffect(() => {
-    lookRef.current = LOOK_INDEX[look];
-    sceneRef.current?.setLook(LOOK_INDEX[look]);
-  }, [look, active]);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -91,7 +79,6 @@ export function SportHero({ sports, className, children }: { sports: StageSport[
             anchor,
             colorSource: section,
             horizon: horizonRef.current,
-            look: lookRef.current,
             onReady: () => setMode("3d"),
             onLost: () => {
               teardown();
@@ -143,7 +130,7 @@ export function SportHero({ sports, className, children }: { sports: StageSport[
   }, []);
 
   return (
-    <HeroContext value={{ sports, active, choose: setChosen, mode, anchorRef }}>
+    <HeroContext value={{ mode, anchorRef }}>
       <section
         ref={sectionRef}
         data-scheme="stage"
@@ -187,58 +174,26 @@ function StaticFloor() {
   );
 }
 
-const STILLS: Partial<Record<BallLook, string>> = { steel: "/vitrine/ball.webp", panels: "/vitrine/football.webp" };
+/** The pre-rendered still of the ball (scripts/render-hero-balls.mjs). */
+const STILL = "/vitrine/ball.webp";
 
 /** The ball's place in the layout: the pre-rendered still, then the 3D ball drawn in the same square. */
 export function BallSpot({ description, className }: { description: string; className?: string }) {
-  const { sports, active, anchorRef } = useHero();
-  const sport = sports[active];
-  const still = STILLS[ballLookFor(sport.icon)];
+  const { anchorRef } = useHero();
   return (
-    <div ref={anchorRef} className={cn(styles.ballSpot, className)} role="img" aria-label={description.replace("{sport}", sport.name)}>
-      {still ? (
-        // eslint-disable-next-line @next/next/no-img-element -- a fixed, pre-sized still: no optimizer round trip
-        <img key={still} src={still} alt="" width={560} height={560} decoding="async" className={styles.still} />
-      ) : (
-        <span className={cn(styles.still, styles.plainBall)} />
-      )}
+    <div ref={anchorRef} className={cn(styles.ballSpot, className)} role="img" aria-label={description}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- a fixed, pre-sized still: no optimizer round trip */}
+      <img src={STILL} alt="" width={560} height={560} decoding="async" className={styles.still} />
     </div>
   );
 }
 
-export type SportChipsLabels = { eyebrow: string; chips: string; hint: string };
-
-export function SportChips({ labels, className }: { labels: SportChipsLabels; className?: string }) {
-  const { sports, active, choose, mode } = useHero();
-  const hint = <p className={cn("text-sm text-ink-soft", mode !== "3d" && "invisible")}>{labels.hint}</p>;
-  // A single sport offered (pétanque only): no sport to choose, only the drag hint.
-  if (sports.length < 2) return <div className={cn("grid justify-items-center text-center", className)}>{hint}</div>;
+/** Under the ball: how to turn it, shown once the 3D ball is ready. */
+export function BallHint({ hint, className }: { hint: string; className?: string }) {
+  const { mode } = useHero();
   return (
-    <div className={cn("grid justify-items-center gap-2 text-center", className)}>
-      <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">{labels.eyebrow}</p>
-      <div role="group" aria-label={labels.chips} className="flex flex-wrap justify-center gap-2">
-        {sports.map((s, i) => {
-          const on = i === active;
-          return (
-            <button
-              key={s.slug}
-              type="button"
-              data-sport={s.accentToken}
-              aria-pressed={on}
-              onClick={() => choose(i)}
-              className={cn(
-                styles.chip,
-                "inline-flex min-h-12 items-center gap-2 rounded-full border-2 px-4 text-base font-bold",
-                on ? "border-accent bg-accent text-on-accent" : "border-line bg-surface text-ink hover:border-accent",
-              )}
-            >
-              <Icon name={s.icon} size={22} />
-              {s.name}
-            </button>
-          );
-        })}
-      </div>
-      {hint}
+    <div className={cn("grid justify-items-center text-center", className)}>
+      <p className={cn("text-sm text-ink-soft", mode !== "3d" && "invisible")}>{hint}</p>
     </div>
   );
 }

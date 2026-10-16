@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { canRun3D } from "./loadPolicy";
-import { HEXAGON_CENTERS, ICO_EDGES, PENTAGON_CENTERS } from "./ballGeometry";
 
 const capable = { reducedMotion: false, webgl2: true, cores: 8, memory: 8, saveData: false };
 
@@ -16,13 +15,5 @@ describe("canRun3D", () => {
     expect(canRun3D({ ...capable, cores: 2 })).toBe(false);
     expect(canRun3D({ ...capable, cores: undefined })).toBe(false);
     expect(canRun3D({ ...capable, memory: 2 })).toBe(false);
-  });
-});
-
-describe("football geometry", () => {
-  it("has 12 pentagons, 20 hexagons and 30 icosahedron edges", () => {
-    expect(PENTAGON_CENTERS).toHaveLength(12);
-    expect(HEXAGON_CENTERS).toHaveLength(20);
-    expect(ICO_EDGES).toHaveLength(30);
   });
 });

@@ -5,7 +5,7 @@ import { Icon, LogoMark, Wordmark } from "@orgasport/ui";
 import { fmt, getMessages } from "@/i18n";
 import { FindDrawForm } from "@/components/draw/FindDrawForm";
 import { SiteFooter } from "@/components/vitrine/SiteFooter";
-import { BallSpot, SportChips, SportHero } from "@/components/vitrine/SportHero";
+import { BallHint, BallSpot, SportHero } from "@/components/vitrine/SportHero";
 import styles from "@/components/vitrine/landingStyles";
 import { cn } from "@/components/ui/cn";
 import { ButtonLink } from "@/components/ui/Button";
@@ -78,7 +78,7 @@ export default function LandingPage() {
             </div>
             <div className="order-3 grid gap-1">
               <BallSpot description={h.ballDescription} />
-              <SportChips labels={{ eyebrow: h.stageEyebrow, chips: h.chipsLabel, hint: h.dragHint }} />
+              <BallHint hint={h.dragHint} />
             </div>
           </div>
           <div className="contents lg:col-start-1 lg:row-start-1 lg:grid lg:gap-6">

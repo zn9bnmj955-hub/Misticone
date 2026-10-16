@@ -2,8 +2,7 @@
  * The landing's 3D hero (plain three.js, loaded lazily by SportHero after the
  * page is idle and visible; never on the critical path). One WebGL canvas:
  *
- * - a night boulodrome seen from a drone: neon lane lines (pétanque) or pitch
- *   markings (football) drawn by one floor shader with a built-in glow (lines and
+ * - a night boulodrome seen from a drone: neon pétanque lanes drawn by one floor shader with a built-in glow (lines and
  *   floor are the same surface: nothing to z-fight), floodlight pylons with light
  *   cones, light particles, stars;
  * - the photorealistic ball (ballModel.ts) drawn in a second pass inside the
@@ -52,15 +51,11 @@ export type HeroOptions = {
   colorSource: HTMLElement;
   /** Static horizon line of the CSS scene (the 3D horizon is aligned on it). */
   horizon: HTMLElement | null;
-  /** LOOK_INDEX of the first ball. */
-  look: number;
   onReady: () => void;
   onLost: () => void;
 };
 
 export type HeroHandle = {
-  /** Switches the ball (and the floor markings) and re-reads the accent colour. */
-  setLook(look: number): void;
   dispose(): void;
 };
 
@@ -73,7 +68,6 @@ void main() {
 }`;
 
 const FLOOR_FRAG = /* glsl */ `
-uniform float uPitch;
 uniform vec3 uLine;
 uniform vec3 uAccent;
 varying vec3 vWorld;
@@ -98,18 +92,8 @@ void main() {
 
   // Pétanque: lanes 4 m wide, 15 m long.
   float lanes = max(neon(dist(p.x, 4.0), 0.035), neon(dist(p.y + 7.5, 15.0), 0.035) * 0.8);
-  // Football: touchlines, halfway line, centre circle, penalty boxes, mowing stripes.
-  vec2 q = p - vec2(0.0, -24.0);
-  float pitch = neon(abs(abs(q.x) - 30.0), 0.06);
-  pitch = max(pitch, neon(abs(q.y), 0.06));
-  pitch = max(pitch, neon(abs(length(q) - 9.15), 0.06));
-  pitch = max(pitch, neon(abs(abs(q.y) - 45.0), 0.06));
-  vec2 box = abs(q) - vec2(20.0, 28.5);
-  pitch = max(pitch, neon(abs(max(box.x, -box.y)), 0.05) * step(abs(q.x), 20.1) * step(28.4, abs(q.y)));
-  float stripes = step(0.5, fract(q.y / 10.0)) * 0.05 * step(abs(q.x), 30.0) * step(abs(q.y), 45.0);
-  float marks = mix(lanes, pitch, uPitch);
 
-  vec3 col = uLine * (minor + marks) + uAccent * (stripes * uPitch);
+  vec3 col = uLine * (minor + lanes);
   // Light pool in front of the camera.
   col += uAccent * 0.02 * exp(-dot(p - vec2(0.0, -4.0), p - vec2(0.0, -4.0)) * 0.004);
   float fog = exp(-far * 0.028);
@@ -216,9 +200,7 @@ export function mountHeroScene(host: HTMLElement, options: HeroOptions): HeroHan
   host.appendChild(canvas);
 
   const colors: StageColors = readStageColors(options.colorSource);
-  const lineColor = new Color();
-  const mixLine = () => lineColor.copy(colors.line).lerp(colors.accent, 0.35);
-  mixLine();
+  const lineColor = colors.line.clone().lerp(colors.accent, 0.35);
 
   // ---- Night boulodrome ------------------------------------------------------
   const scene = new Scene();
@@ -226,7 +208,6 @@ export function mountHeroScene(host: HTMLElement, options: HeroOptions): HeroHan
   const track = <T extends { dispose(): void }>(d: T) => (disposables.push(d), d);
 
   const floorUniforms = {
-    uPitch: { value: options.look === 1 ? 1 : 0 },
     uLine: { value: lineColor },
     uAccent: { value: colors.accent },
   };
@@ -296,7 +277,7 @@ export function mountHeroScene(host: HTMLElement, options: HeroOptions): HeroHan
   const ballScene = new Scene();
   const env = createEnvironment(renderer, colors);
   ballScene.environment = env.texture;
-  const ballModel = createBall(options.look, colors.accent, {
+  const ballModel = createBall(colors.accent, {
     textureSize: coarse ? 1024 : 2048,
     maxAnisotropy: Math.min(8, renderer.capabilities.getMaxAnisotropy()),
   });
@@ -366,9 +347,6 @@ export function mountHeroScene(host: HTMLElement, options: HeroOptions): HeroHan
   const onVisibility = () => schedule();
   document.addEventListener("visibilitychange", onVisibility);
 
-  let pitchTarget = floorUniforms.uPitch.value;
-  let morph = 0; // 0..1 progress of a look switch (scale dip)
-  let pendingLook: number | null = null;
   let frame = 0;
   let last = performance.now();
   let ready = false;
@@ -390,7 +368,6 @@ export function mountHeroScene(host: HTMLElement, options: HeroOptions): HeroHan
     last = now;
     pointer.x = damp(pointer.x, target.x, 2.5, dt);
     pointer.y = damp(pointer.y, target.y, 2.5, dt);
-    floorUniforms.uPitch.value = damp(floorUniforms.uPitch.value, pitchTarget, 3, dt);
 
     // Drone camera: pointer parallax + dolly while the hero scrolls away (no clock-driven drift).
     const rect = host.getBoundingClientRect();
@@ -409,24 +386,13 @@ export function mountHeroScene(host: HTMLElement, options: HeroOptions): HeroHan
     renderer.clear();
     renderer.render(scene, camera);
 
-    // Ball: spin, drag inertia, look switch.
+    // Ball: spin and drag inertia.
     if (!drag) {
       velocity = damp(velocity, 0.35, 1.5, dt);
       pitchAngle = damp(pitchAngle, 0, 1.2, dt);
       spinAngle += velocity * dt;
     }
-    if (pendingLook !== null || morph > 0) {
-      morph += dt / 0.7;
-      if (pendingLook !== null && morph >= 0.5) {
-        ballModel.setLook(pendingLook, colors.accent);
-        pendingLook = null;
-      }
-      if (morph >= 1) morph = 0;
-    }
-    const dip = morph > 0 ? 1 - Math.sin(morph * Math.PI) * 0.12 : 1;
-    poseBall(ballModel.ball, spinAngle + (morph > 0 ? Math.sin(morph * Math.PI) * 2.5 : 0), pitchAngle);
-    ballModel.ball.scale.setScalar(dip);
-    ballModel.ball.position.y = dip - 1;
+    poseBall(ballModel.ball, spinAngle, pitchAngle);
 
     const a = anchor.getBoundingClientRect();
     const size = Math.max(a.width, a.height);
@@ -463,18 +429,6 @@ export function mountHeroScene(host: HTMLElement, options: HeroOptions): HeroHan
   schedule();
 
   return {
-    setLook(next) {
-      readStageColors(options.colorSource, colors);
-      mixLine();
-      poleMaterial.color.copy(lineColor).multiplyScalar(0.55);
-      beamColor.copy(colors.light).lerp(colors.accent, 0.5);
-      particleColor.copy(colors.light).lerp(colors.accent, 0.6);
-      headMaterial.color.copy(beamColor);
-      pitchTarget = next === 1 ? 1 : 0;
-      pendingLook = next;
-      morph = morph > 0 ? morph : 0.0001;
-      schedule();
-    },
     dispose() {
       disposed = true;
       if (frame) cancelAnimationFrame(frame);
