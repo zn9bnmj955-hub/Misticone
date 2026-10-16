@@ -50,8 +50,11 @@ export const GLYPHS: Readonly<Record<string, Glyph>> = {
   G: {
     width: 1.1,
     strokes: [
-      [["E", 0.57, 0.5, 0.57, 0.5, -0.62, 0.3, 1]],
-      [["M", 0.6, 0.6], ["L", 1.12, 0.6], ["L", 1.12, 0.92]],
+      // Arc open on the right: it stops high at the top, and low enough to meet the stem.
+      [["E", 0.57, 0.5, 0.57, 0.5, -0.88, 0.62, 1]],
+      // A clear bar going in towards the centre, and a stem down to the end of the arc.
+      [["M", 0.55, 0.55], ["L", 1.1, 0.55]],
+      [["M", 0.99, 0.55], ["L", 0.99, 0.8]],
     ],
   },
   A: {

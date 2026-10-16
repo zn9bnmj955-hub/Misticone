@@ -36,6 +36,23 @@ describe("landing ball: ORGASPORT engraving", () => {
     expect(width).toBeGreaterThan(9);
   });
 
+  it("draws a G that cannot be read as a C: a clear inward bar, a stem, an open arc", () => {
+    const [arc, bar, stem] = GLYPHS.G.strokes;
+    const [, , , , , start, end] = arc[0] as [string, number, number, number, number, number, number, number];
+    // The arc stops high on the right at the top (well above the bar) and leaves the opening.
+    expect(Math.sin(start)).toBeLessThan(-0.7);
+    // Horizontal bar going in towards the centre, at least half a cap height long.
+    const [[, bx0, by0], [, bx1, by1]] = bar as [string, number, number][];
+    expect(by0).toBe(by1);
+    expect(Math.min(bx0, bx1)).toBeLessThanOrEqual(0.6);
+    expect(Math.abs(bx1 - bx0)).toBeGreaterThanOrEqual(0.5);
+    // Vertical stem from the bar down to the end of the arc.
+    const [[, sx0, sy0], [, sx1, sy1]] = stem as [string, number, number][];
+    expect(sx0).toBe(sx1);
+    expect(sy0).toBe(by0);
+    expect(sy1).toBeGreaterThanOrEqual(0.5 + 0.5 * Math.sin(end) - 0.1);
+  });
+
   it("uses no external font", () => {
     expect(source("ballModel.ts")).not.toMatch(/\bfont\s*=|fillText|strokeText|FontFace|fonts\.googleapis/);
   });
