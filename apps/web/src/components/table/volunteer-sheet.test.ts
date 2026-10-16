@@ -24,3 +24,19 @@ describe("volunteer sheet (K2)", () => {
     expect(spacedPin("0042")).toBe("0042");
   });
 });
+
+describe("single table PIN by default at payment (K2)", () => {
+  it("a new tournament form gives exactly one volunteer PIN to the publication", async () => {
+    const { requireSport } = await import("@orgasport/sports");
+    const { buildPublication, defaultForm } = await import("@/lib/tournament-form");
+    const { generatePins } = await import("@/lib/payments/pins");
+    const sport = requireSport("petanque");
+    const form = { ...defaultForm(sport, { club: { name: "AS Test" }, person: { name: "Alex" }, nowMs: Date.parse("2026-10-12T10:00:00Z") }), name: "Grand prix" };
+    expect(form.pinCount).toBe(1);
+    const pins = generatePins(form.pinCount);
+    const pub = buildPublication(form, sport, { organizerUserId: "u1", pins, pinLabel: (n) => `Bénévole ${n}` });
+    const withPin = pub.staff.filter((s) => s.pin);
+    expect(withPin).toHaveLength(1);
+    expect(withPin[0]!.pin).toMatch(/^\d{6}$/);
+  });
+});
