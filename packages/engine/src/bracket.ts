@@ -1,17 +1,14 @@
 import { fail } from "./errors";
-import { FINISHED, matchesOfRound, roundsOf, winnerTeams } from "./queries";
+import { FINISHED, isFixedTree, matchesOfRound, roundsOf, teamsInRound, winnerTeams } from "./queries";
 import type { Transaction } from "./tx";
 import type { EngineContext, EngineState, Match, Phase, Round } from "./types";
+
+export { isFixedTree, teamsInRound };
 
 /**
  * Fixed brackets ("tableau fixe"): the whole tree exists from the draw. The
  * match at round r, position p is fed by round r-1, positions 2p-1 and 2p.
  */
-
-export function isFixedTree(state: EngineState, round: Round): boolean {
-  if (round.phase === "final") return true;
-  return round.phase === "elimination" && state.tournament.config.bracketMode === "fixed";
-}
 
 export const PHASE_RANK: Record<Phase, number> = { pool: 0, league: 0, swiss: 0, melee: 0, elimination: 1, final: 2 };
 
@@ -132,13 +129,6 @@ export function unpropagateFixed(tx: Transaction, matchId: string, ctx: EngineCo
   const sideB = f2 && FINISHED.has(f2.status) && f2.id !== m.id ? winnerTeams(f2) : [];
   void side;
   tx.update("match", parent.id, { sideA, sideB, status: "pending", winner: null, venueId: null, scheduledAt: null, queuedAt: null });
-}
-
-/** Number of teams that start a round (for "final", "semi-final"… labels). */
-export function teamsInRound(state: EngineState, round: Round): number {
-  const ms = matchesOfRound(state, round.id);
-  if (isFixedTree(state, round)) return ms.length * 2;
-  return ms.reduce((n, m) => n + (m.sideA.length ? 1 : 0) + (m.sideB.length ? 1 : 0), 0);
 }
 
 export type Stage = "final" | "semifinal" | "quarterfinal" | "round_of_16" | "round";

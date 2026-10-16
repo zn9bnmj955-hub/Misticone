@@ -19,9 +19,13 @@ export {
   winnerTeams,
   loserTeams,
   ACTIVE_ON_VENUE,
+  largestPowerOfTwo,
+  isOfficeBye,
+  roundLabel,
+  type RoundLabel,
 } from "./queries";
 export { stageOf, isFinalPhaseMatch, isFixedTree, compareRounds, teamsInRound, type Stage } from "./bracket";
-export { canDrawNext, poolLabels, poolTeams, poolMatches, poolRanking, isPoolComplete, qualifiers, totalRounds } from "./formats";
+export { canDrawNext, eliminationDrawPlan, type EliminationDrawPlan, poolLabels, poolTeams, poolMatches, poolRanking, isPoolComplete, qualifiers, totalRounds } from "./formats";
 export { computeStats, rankTeams, eliminationRanking, type TeamStats, type RankedTeam } from "./standings";
 export { autoAssignVenues, venueQueue, queuePosition, estimatePlan, slotMinutes, type Plan, type PlanInput, type PlanRound } from "./venues";
 export { applyCommand, isTournamentComplete, teamScoreCode, type Command, type CommandType, type CommandResult, type PlayerInput } from "./commands";

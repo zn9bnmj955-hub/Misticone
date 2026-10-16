@@ -2,7 +2,7 @@ import fc from "fast-check";
 import { beforeEach, describe, expect, it } from "vitest";
 import { applyCommand, isTournamentComplete } from "./commands";
 import { poolLabels, poolRanking, qualifiers } from "./formats";
-import { isFinished, matchesOfRound, pairKey, roundsOf } from "./queries";
+import { isFinished, isOfficeBye, matchesOfRound, pairKey, roundsOf } from "./queries";
 import { eliminationRanking } from "./standings";
 import { exec, makeState, PLAYABLE_STATUSES, playToEnd, randomScore, resetOps } from "./test-helpers";
 import { createIdGenerator, createRng } from "./rng";
@@ -57,15 +57,17 @@ describe("single elimination — fixed bracket", () => {
 });
 
 describe("single elimination — new draw every round", () => {
-  it("odd rounds give one bye and nobody gets two byes while others got none", () => {
-    let s = makeState({ teams: 23, config: { bracketMode: "redraw", consolation: { enabled: false, losersOfRound: 1 } } });
+  // Lot 2 (M2): after the cadrage point there is no exempt any more but places
+  // « d'office » (several in the cadrage round), so only exempts are counted here.
+  it("odd rounds give one exempt and nobody gets two exempts while others got none", () => {
+    let s = makeState({ teams: 23, config: { bracketMode: "redraw", cadrage: { afterRound: 2 }, consolation: { enabled: false, losersOfRound: 1 } } });
     s = playToEnd(s, "redraw");
-    const byes = all(s).filter((m) => m.status === "bye");
+    const byes = all(s).filter((m) => m.status === "bye" && !isOfficeBye(s, m));
     const perTeam = new Map<string, number>();
     byes.forEach((m) => perTeam.set(m.sideA[0]!, (perTeam.get(m.sideA[0]!) ?? 0) + 1));
     expect(Math.max(...perTeam.values())).toBe(1);
     for (const r of roundsOf(s, "main")) {
-      expect(matchesOfRound(s, r.id).filter((m) => m.status === "bye").length).toBeLessThanOrEqual(1);
+      expect(matchesOfRound(s, r.id).filter((m) => m.status === "bye" && !isOfficeBye(s, m)).length).toBeLessThanOrEqual(1);
     }
     expect(championOf(s).length).toBe(1);
     expect(s.tournament.status).toBe("finished");

@@ -1,11 +1,13 @@
-import { compareRounds, isFixedTree, isWalkover, propagateFixed, unpropagateFixed } from "./bracket";
+import { compareRounds, isWalkover, propagateFixed, unpropagateFixed } from "./bracket";
 import { fail } from "./errors";
 import {
   byeCount,
   eligibleTeams,
   hasResult,
   isFinished,
+  isFixedTree,
   isRoundComplete,
+  largestPowerOfTwo,
   lastRound,
   loserTeams,
   matchesOfRound,
@@ -16,6 +18,7 @@ import {
   winnerTeams,
 } from "./queries";
 import {
+  cadragePairing,
   distributeInPools,
   fixedBracketFirstRound,
   meleeSides,
@@ -28,7 +31,7 @@ import {
 import { createRng } from "./rng";
 import { eliminationRanking, rankTeams } from "./standings";
 import type { Transaction } from "./tx";
-import type { Bracket, EngineContext, EngineState, Match, Phase, Round, RoundStatus, Team } from "./types";
+import type { Bracket, EngineContext, EngineState, Match, Phase, Round, RoundKind, RoundStatus, Team } from "./types";
 
 export interface DrawContext extends EngineContext {
   /** Base seed of this draw; sub-draws derive their own seed from it. */
@@ -61,12 +64,13 @@ export function totalRounds(state: EngineState, phase: "swiss" | "melee", partic
 // Entity helpers
 // ---------------------------------------------------------------------------
 
-function newRound(tx: Transaction, ctx: DrawContext, bracket: Bracket, phase: Phase, number: number, status: RoundStatus): Round {
+function newRound(tx: Transaction, ctx: DrawContext, bracket: Bracket, phase: Phase, number: number, status: RoundStatus, kind?: RoundKind): Round {
   return tx.create("round", {
     id: ctx.newId(),
     bracket,
     phase,
     number,
+    ...(kind && { kind }),
     status,
     seed: status === "pending" ? null : `${ctx.seed}:${bracket}:${phase}:${number}`,
     drawnAt: status === "pending" ? null : ctx.now,
@@ -140,33 +144,80 @@ function buildFixedTree(tx: Transaction, ctx: DrawContext, bracket: Bracket, pha
   for (const m of r1) if (m.status === "bye") propagateFixed(tx, m.id, ctx);
 }
 
-function drawRedrawRound(tx: Transaction, ctx: DrawContext, bracket: Bracket, phase: Phase, number: number, teams: Team[], avoidSameClub: boolean): void {
-  const rng = createRng(`${ctx.seed}:${bracket}:${phase}:${number}`);
-  const { pairs, bye } = randomPairing(teams.map(toPairing), rng, {
-    avoidSameClub,
-    byes: (id) => byeCount(tx.state, id, bracket),
-  });
-  const round = newRound(tx, ctx, bracket, phase, number, "drawn");
-  pairs.forEach(([a, b], i) => newMatch(tx, ctx, round, i + 1, [a], [b]));
-  if (bye) newMatch(tx, ctx, round, pairs.length + 1, [bye], []);
+export interface EliminationDrawPlan {
+  /** Games played in the round. */
+  matches: number;
+  /** Teams that go through « d'office » (cadrage, or safety net after it). */
+  office: number;
+  /** Team sitting out before the cadrage point (odd count). */
+  exempt: number;
+  kind: RoundKind;
 }
 
+/**
+ * Single rule for a new-draw elimination round (A, B or C), with T teams
+ * still in, after `playedRounds` rounds of this bracket:
+ * - before the cadrage point (fewer than k games, no pools): full draw, one
+ *   exempt if T is odd;
+ * - at the cadrage point and after (or right after the pools): if T is a
+ *   power of two, full draw; else T − P games and 2P − T teams « d'office »,
+ *   so that P teams are left. The round at the cadrage point is a « cadrage »;
+ *   a later one (double forfeit, withdrawal) keeps its normal name.
+ */
+export function eliminationDrawPlan(T: number, playedRounds: number, k: number, fromPools: boolean): EliminationDrawPlan {
+  if (!fromPools && playedRounds < k) return { matches: Math.floor(T / 2), office: 0, exempt: T % 2, kind: "partie" };
+  const P = largestPowerOfTwo(Math.max(1, T));
+  if (P === T) return { matches: T / 2, office: 0, exempt: 0, kind: "partie" };
+  const atPoint = fromPools ? playedRounds === 0 : playedRounds === k;
+  return { matches: T - P, office: 2 * P - T, exempt: 0, kind: atPoint ? "cadrage" : "partie" };
+}
+
+function drawRedrawRound(tx: Transaction, ctx: DrawContext, bracket: Bracket, phase: Phase, number: number, teams: PairingTeam[], avoidSameClub: boolean): void {
+  const rng = createRng(`${ctx.seed}:${bracket}:${phase}:${number}`);
+  const plan = eliminationDrawPlan(teams.length, number - 1, tx.state.tournament.config.cadrage.afterRound, phase === "final");
+  let pairs: [string, string][];
+  let singles: string[];
+  if (plan.office > 0) {
+    ({ pairs, office: singles } = cadragePairing(teams, largestPowerOfTwo(teams.length), rng, { avoidSameClub }));
+  } else {
+    const drawn = randomPairing(teams, rng, { avoidSameClub, byes: (id) => byeCount(tx.state, id, bracket) });
+    pairs = drawn.pairs;
+    singles = drawn.bye ? [drawn.bye] : [];
+  }
+  const round = newRound(tx, ctx, bracket, phase, number, "drawn", plan.kind);
+  pairs.forEach(([a, b], i) => newMatch(tx, ctx, round, i + 1, [a], [b]));
+  singles.forEach((id, i) => newMatch(tx, ctx, round, pairs.length + i + 1, [id], []));
+}
+
+/**
+ * Elimination bracket (A, B, C or the final phase after pools). A fixed tree
+ * is drawn once; otherwise each round is a new draw following
+ * `eliminationDrawPlan`.
+ */
 function drawElimination(tx: Transaction, ctx: DrawContext, bracket: Bracket, phase: Phase, entrants: () => PairingTeam[], firstRoundOpts: { avoidSameClub: boolean; seeding: boolean }): void {
   const state = tx.state;
   const rounds = roundsOf(state, bracket, phase);
-  const fixed = phase === "final" || state.tournament.config.bracketMode === "fixed";
   if (rounds.length === 0) {
     const teams = entrants();
     if (teams.length < 2) fail("NOT_ENOUGH_TEAMS", { count: teams.length });
-    if (fixed) return buildFixedTree(tx, ctx, bracket, phase, teams, firstRoundOpts);
-    return drawRedrawRound(tx, ctx, bracket, phase, 1, teams.map((t) => state.teams[t.id]!), firstRoundOpts.avoidSameClub);
+    if (state.tournament.config.bracketMode === "fixed") return buildFixedTree(tx, ctx, bracket, phase, teams, firstRoundOpts);
+    // « Même club évité » (or « pas sa poule » for the final phase): first draw of the bracket only.
+    return drawRedrawRound(tx, ctx, bracket, phase, 1, teams, firstRoundOpts.avoidSameClub);
   }
-  if (fixed) fail("ROUND_ALREADY_DRAWN");
+  if (isFixedTree(state, rounds[0]!)) fail("ROUND_ALREADY_DRAWN");
   const last = rounds[rounds.length - 1]!;
   if (!isRoundComplete(state, last.id)) fail("ROUND_INCOMPLETE", { round: last.number });
   const winners = [...new Set(matchesOfRound(state, last.id).flatMap(winnerTeams))].filter(stillIn(state));
   if (winners.length < 2) fail("NOTHING_TO_DRAW");
-  drawRedrawRound(tx, ctx, bracket, phase, last.number + 1, winners.map((id) => state.teams[id]!), false);
+  drawRedrawRound(tx, ctx, bracket, phase, last.number + 1, winners.map((id) => toPairing(state.teams[id]!)), false);
+}
+
+/** A new-draw bracket can draw its next round: last round over and at least two winners still in. */
+function canContinueElimination(state: EngineState, bracket: Bracket, phase: Phase): boolean {
+  const rounds = roundsOf(state, bracket, phase);
+  if (isFixedTree(state, rounds[0]!)) return false;
+  const last = rounds[rounds.length - 1]!;
+  return isRoundComplete(state, last.id) && matchesOfRound(state, last.id).flatMap(winnerTeams).filter(stillIn(state)).length >= 2;
 }
 
 // ---------------------------------------------------------------------------
@@ -315,7 +366,8 @@ function drawFinalPhase(tx: Transaction, ctx: DrawContext): void {
   const labels = poolLabels(state);
   if (!labels.every((l) => isPoolComplete(state, l))) fail("ROUND_INCOMPLETE");
   const q = qualifiers(state).filter((x) => stillIn(state)(x.id));
-  // Pool winners are seeded; runners-up are drawn, never against their own pool.
+  // Never against a team of its own pool in the first final round. A fixed
+  // tree seeds the pool winners; a new draw (pétanque) is 100 % random.
   const teams: PairingTeam[] = q.map((x) => ({ id: x.id, club: `pool:${x.pool}`, seed: x.place === 1 ? labels.indexOf(x.pool) + 1 : null }));
   drawElimination(tx, ctx, "main", "final", () => teams, { avoidSameClub: true, seeding: true });
 }
@@ -442,7 +494,7 @@ export function drawNext(tx: Transaction, ctx: DrawContext, bracket: Bracket): v
       });
     case "pools_then_bracket":
       if (roundsOf(state, "main", "pool").length === 0) return drawPools(tx, ctx);
-      if (roundsOf(state, "main", "final").length) fail("ROUND_ALREADY_DRAWN");
+      if (roundsOf(state, "main", "final").length) return drawElimination(tx, ctx, "main", "final", () => [], { avoidSameClub: false, seeding: false });
       return drawFinalPhase(tx, ctx);
     case "swiss":
       return drawSwiss(tx, ctx);
@@ -466,21 +518,17 @@ export function canDrawNext(state: EngineState, bracket: Bracket): boolean {
         return false;
       }
     }
-    if (cfg.bracketMode === "fixed") return false;
-    const last = rounds[rounds.length - 1]!;
-    return isRoundComplete(state, last.id) && matchesOfRound(state, last.id).flatMap(winnerTeams).filter(stillIn(state)).length >= 2;
+    return canContinueElimination(state, "consolation", "elimination");
   }
   switch (cfg.format) {
     case "single_elimination": {
       const rounds = roundsOf(state, "main", "elimination");
       if (rounds.length === 0) return eligibleTeams(state).length >= 2;
-      if (cfg.bracketMode === "fixed") return false;
-      const last = rounds[rounds.length - 1]!;
-      return isRoundComplete(state, last.id) && matchesOfRound(state, last.id).flatMap(winnerTeams).filter(stillIn(state)).length >= 2;
+      return canContinueElimination(state, "main", "elimination");
     }
     case "pools_then_bracket": {
       if (roundsOf(state, "main", "pool").length === 0) return eligibleTeams(state).length >= 3;
-      if (roundsOf(state, "main", "final").length) return false;
+      if (roundsOf(state, "main", "final").length) return canContinueElimination(state, "main", "final");
       const labels = poolLabels(state);
       // A final needs two qualifiers still in: otherwise the pool winner wins.
       return labels.length > 0 && labels.every((l) => isPoolComplete(state, l)) && qualifiers(state).filter((x) => stillIn(state)(x.id)).length >= 2;
@@ -588,7 +636,7 @@ export function swapInLaterMatches(tx: Transaction, m: Match, oldWinners: string
 export function assertNothingDrawnAfter(state: EngineState, m: Match): void {
   const round = state.rounds[m.roundId]!;
   const nextRoundDrawn =
-    round.phase === "elimination" &&
+    (round.phase === "elimination" || round.phase === "final") &&
     !isFixedTree(state, round) &&
     Object.values(state.rounds).some((r) => r.bracket === round.bracket && r.phase === round.phase && r.number > round.number);
   if (nextRoundDrawn || laterMatchesWith(state, m, [...m.sideA, ...m.sideB]).length) fail("NEXT_ROUND_DRAWN");

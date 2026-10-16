@@ -108,6 +108,35 @@ export function randomPairing(
 }
 
 /**
+ * Cadrage: from T teams, 2(T − P) play and the 2P − T others go through
+ * « d'office », so that P teams are left (P = largest power of two <= T).
+ * Who plays is 100 % random (shuffle with the seed, the first 2(T − P) play).
+ * With same-club avoidance, a club holding more than half of the players
+ * gives one of them a place d'office in exchange for a team of another club,
+ * so that a clean pairing exists.
+ */
+export function cadragePairing(teams: PairingTeam[], P: number, rng: Rng, opts: { avoidSameClub: boolean }): { pairs: Pair[]; office: string[] } {
+  const playing = 2 * Math.max(0, teams.length - P);
+  const shuffled = rng.shuffle(teams);
+  const play = shuffled.slice(0, playing);
+  const office = shuffled.slice(playing);
+  if (opts.avoidSameClub) {
+    for (let guard = 0; guard < play.length; guard++) {
+      const counts = new Map<string, number>();
+      for (const t of play) if (t.club) counts.set(t.club, (counts.get(t.club) ?? 0) + 1);
+      const crowded = [...counts.entries()].find(([, n]) => n > play.length / 2)?.[0];
+      if (!crowded) break;
+      const j = office.findIndex((t) => t.club !== crowded);
+      if (j === -1) break;
+      const i = play.findIndex((t) => t.club === crowded);
+      [play[i], office[j]] = [office[j]!, play[i]!];
+    }
+  }
+  const { pairs } = randomPairing(play, rng, { avoidSameClub: opts.avoidSameClub });
+  return { pairs, office: office.map((t) => t.id) };
+}
+
+/**
  * Seed order of a power-of-two bracket: position i (0-based) receives seed
  * order[i]. 1 and 2 can only meet in the final, 1-4 in the semis, etc.
  */
