@@ -37,6 +37,21 @@ test.describe("assistant", () => {
     await expect(page.getByRole("list", { name: "Questions suggérées" }).getByRole("button", { name: "Comment marche le PIN des bénévoles ?" })).toBeVisible();
   });
 
+  test("the help sheets answer « PIN » and rules questions, a rulebook sheet cites its version (A2)", async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.goto("/assistant");
+    const conversation = page.getByRole("list", { name: "Conversation avec l'assistant" });
+    const ask = async (question: string) => {
+      await page.getByLabel("Votre question").fill(question);
+      await page.getByRole("button", { name: "Envoyer" }).click();
+      await expect(conversation).toContainText(question);
+      await expect(conversation).toHaveAttribute("aria-busy", "false", { timeout: 30_000 });
+      return conversation.getByRole("listitem").last();
+    };
+    await expect(await ask("Comment marche le PIN des bénévoles ?")).toContainText(/PIN/);
+    await expect(await ask("Que dit le règlement officiel quand le but est nul ?")).toContainText(/Règlement en vigueur au \d{1,2}(er)? \S+ \d{4}/);
+  });
+
   test("the admin sees usage, adds a knowledge document, finds it, then deletes it", async ({ page }) => {
     test.setTimeout(120_000);
     await signIn(page, "admin@demo.orgasport.fr");
@@ -46,6 +61,9 @@ test.describe("assistant", () => {
     const stamp = Date.now().toString(36);
     const title = `Test e2e ${stamp}`;
     const word = `zorbiflette${stamp}`;
+
+    // Rulebook sheets show the version they summarise (A2).
+    await expect(page.getByRole("list", { name: "Documents" }).getByText(/^Règlement en vigueur au /).first()).toBeVisible();
 
     const create = page.locator('[aria-labelledby="admin-ai-kb-new"]');
     await create.getByLabel("Titre").fill(title);
