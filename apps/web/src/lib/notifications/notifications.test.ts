@@ -216,6 +216,35 @@ describe("cadrage, Office, B/C and pause", () => {
     expect(eventsFromChanges(move.changes, move.state).map((e) => e.kind)).toEqual(["your_turn"]);
   });
 
+  it("C on « opt_in »: « Inscription au concours C confirmée. » once (B and C entries each confirmed); C draws name the bracket", () => {
+    const s = tournament(8, 8, {
+      consolation: { enabled: true, source: "losers_round_1", entry: "opt_in", feeCents: null, losersOfRound: 1 },
+      consolationC: { enabled: true, entry: "opt_in", feeCents: null },
+    });
+    const run = runner(s);
+    const team = Object.values(s.teams)[0]!;
+    const inB = run({ type: "team.enterBracket", teamId: team.id, bracket: "consolation", enter: true }, "b");
+    const inC = runner(inB.state)({ type: "team.enterBracket", teamId: team.id, bracket: "consolation_c", enter: true }, "c");
+    const events = eventsFromChanges(inC.changes, inC.state);
+    expect(events).toEqual([{ kind: "bracket_entry", key: `entry:${team.id}:consolation_c`, bracket: "consolation_c", teamIds: [team.id] }]);
+    expect(renderBody(requireSport("petanque"), "bracket_entry", { bracket: m.notifications.brackets.consolation_c })).toBe("Inscription au concours C confirmée.");
+  });
+
+  it("C automatic: its draws are announced as « concours C, … »", () => {
+    const s = tournament(13, 8, {
+      consolation: { enabled: true, source: "losers_round_1", entry: "auto", feeCents: null, losersOfRound: 1 },
+      consolationC: { enabled: true, entry: "auto", feeCents: null },
+    });
+    const run = runner(s);
+    const events: NotifyEvent[] = [];
+    const r1 = run({ type: "round.draw", bracket: "main", seed: "x" }, "draw");
+    events.push(...eventsFromChanges(r1.changes, r1.state));
+    const after = playAll(r1.state, run, events, "s");
+    const cDraws = events.filter((e): e is Extract<NotifyEvent, { kind: "draw_published" }> => e.kind === "draw_published" && after.rounds[e.roundId]!.bracket === "consolation_c");
+    expect(cDraws.length).toBeGreaterThan(0);
+    for (const d of cDraws) expect(roundText(after, after.rounds[d.roundId]!, m)).toMatch(/^concours C, /);
+  });
+
   it("deduplication keys are unique over a whole tournament with cadrage, B, C and pause", () => {
     const s = tournament(13, 4, {
       consolation: { enabled: true, source: "losers_round_1", entry: "auto", feeCents: null, losersOfRound: 1 },
