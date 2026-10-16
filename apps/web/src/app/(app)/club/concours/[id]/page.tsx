@@ -10,6 +10,7 @@ import { buttonClass } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Note, Section, Skeleton } from "@/components/ui/Section";
 import { NoClub } from "@/components/club/NoClub";
+import { PinHelp } from "@/components/table/PinHelp";
 import { countTeams, formatLongDate } from "@/components/club/model";
 import { getManagedTournament, listManagedRegistrations, listTournamentPayments, listTournamentStaff } from "@/lib/data/clubs";
 import { formatDay, formatEuros, formatTime } from "@/lib/format";
@@ -171,6 +172,7 @@ async function Manage({ params }: { params: Params }) {
           </ul>
         )}
         {staff.some((s) => !s.user_id && !s.email) && <Note>{t.staff.pinNote}</Note>}
+        <PinHelp audience="organizer" tableUrl={`/c/${code}/table`} />
       </Section>
 
       <Section title={t.payment.title}>
