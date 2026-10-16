@@ -62,6 +62,16 @@ test.describe("demo data", () => {
     expect(homogeneous.every((x) => x.club_name)).toBe(true);
   });
 
+  test("the public pages show the cadrage, « Office », « (N.H.) » and the concours C", async ({ request }) => {
+    const kq = await (await request.get("/c/7KQ2")).text();
+    expect(kq).toContain("Résultats Cadrage");
+    expect(kq).toContain("Office");
+    expect(kq).toContain("(N.H.)");
+    expect(kq).toContain("Concours B");
+    const c4 = await (await request.get("/c/C4DR")).text();
+    for (const text of ["Concours A", "Concours B", "Concours C", "Office"]) expect(c4, text).toContain(text);
+  });
+
   test("C4DR: finished with a cadrage in the A, the B and the C", async ({ request }) => {
     const rs = await rounds(request, "C4DR");
     for (const bracket of ["main", "consolation", "consolation_c"]) {
