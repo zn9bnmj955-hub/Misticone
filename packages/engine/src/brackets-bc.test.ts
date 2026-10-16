@@ -94,6 +94,27 @@ describe("concours B and C", () => {
     expect(compareRounds(c1!, b1!)).toBeGreaterThan(0);
   });
 
+  it("changing a winner of the B's 1st game swaps the teams in the C; refused once that C game is played", () => {
+    let s = makeState({ teams: 13, config: BC });
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "a" });
+    for (const m of matchesOfRound(s, roundsOf(s, "main")[0]!.id)) if (m.status !== "bye") s = exec(s, { type: "match.score", matchId: m.id, scoreA: 13, scoreB: 5 });
+    for (const m of matchesOfRound(s, roundsOf(s, "consolation")[0]!.id)) if (m.status !== "bye") s = exec(s, { type: "match.score", matchId: m.id, scoreA: 13, scoreB: 5 });
+    const c1 = roundsOf(s, "consolation_c")[0]!;
+    const inC = (st: EngineState) => matchesOfRound(st, c1.id).flatMap((m) => [...m.sideA, ...m.sideB]);
+    // A team that plays (not the exempt) in the C's 1st game, and the B game it lost.
+    const cm = matchesOfRound(s, c1.id).find((m) => m.status !== "bye")!;
+    const oldLoser = cm.sideA[0]!;
+    const b = matchesOfRound(s, roundsOf(s, "consolation")[0]!.id).find((m) => m.sideB[0] === oldLoser)!;
+    const oldWinner = b.sideA[0]!;
+    expect(inC(s)).toContain(oldLoser);
+    const fixed = exec(s, { type: "match.score", matchId: b.id, scoreA: 5, scoreB: 13 });
+    expect(inC(fixed)).toContain(oldWinner);
+    expect(inC(fixed)).not.toContain(oldLoser);
+    // Once the C game with that team is played, the correction must be undone there first.
+    const played = exec(s, { type: "match.score", matchId: cm.id, scoreA: 13, scoreB: 9 });
+    expect(() => exec(played, { type: "match.score", matchId: b.id, scoreA: 5, scoreB: 13 })).toThrow(/NEXT_MATCH_PLAYED|NEXT_ROUND_DRAWN/);
+  });
+
   it("a team that withdrew before the B's draw is not drawn in it", () => {
     let s = makeState({ teams: 8, config: { ...BC, autoNextRound: false } });
     s = exec(s, { type: "round.draw", bracket: "main", seed: "a" });
