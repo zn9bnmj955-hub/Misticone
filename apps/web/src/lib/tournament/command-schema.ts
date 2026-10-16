@@ -30,7 +30,8 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("team.setStatus"), teamId: id, status: z.enum(["registered", "waitlist", "checked_in", "forfeit", "withdrawn"]) }),
   z.object({ type: z.literal("team.lateEntry"), teamId: id }),
-  z.object({ type: z.literal("round.draw"), bracket: z.enum(["main", "consolation"]), seed: z.string().min(1).max(100) }),
+  z.object({ type: z.literal("team.enterBracket"), teamId: id, bracket: z.enum(["consolation", "consolation_c"]), enter: z.boolean() }),
+  z.object({ type: z.literal("round.draw"), bracket: z.enum(["main", "consolation", "consolation_c"]), seed: z.string().min(1).max(100) }),
   z.object({ type: z.literal("round.redraw"), roundId: id, seed: z.string().min(1).max(100) }),
   z.object({
     type: z.literal("match.swapTeams"),
