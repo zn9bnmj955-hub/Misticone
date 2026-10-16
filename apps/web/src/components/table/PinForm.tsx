@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { getMessages } from "@/i18n";
 import { Btn } from "./ui";
+import { PinHelp } from "./PinHelp";
 
 export function PinForm({ code }: { code: string }) {
   const t = getMessages().table;
@@ -10,9 +11,9 @@ export function PinForm({ code }: { code: string }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   return (
-    <div className="mx-auto grid max-w-md gap-6 pt-6">
+    <div className="mx-auto grid max-w-md grid-cols-[minmax(0,1fr)] gap-6 pt-6">
       <form
-        className="grid gap-4 rounded-[var(--radius-lg)] border-2 border-ink bg-surface p-5"
+        className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-[var(--radius-lg)] border-2 border-ink bg-surface p-5"
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
@@ -30,7 +31,7 @@ export function PinForm({ code }: { code: string }) {
         </label>
         <input
           id="pin"
-          className="h-16 rounded-[var(--radius)] border-2 border-line bg-bg px-4 text-center text-4xl font-black tracking-[0.4em] tabular"
+          className="h-16 w-full min-w-0 rounded-[var(--radius)] border-2 border-line bg-bg px-4 text-center text-4xl font-black tracking-[0.4em] tabular"
           inputMode="numeric"
           autoComplete="one-time-code"
           pattern="[0-9]*"
@@ -48,6 +49,7 @@ export function PinForm({ code }: { code: string }) {
           {t.pinSubmit}
         </Btn>
       </form>
+      <PinHelp audience="volunteer" />
       <p className="text-center text-ink-soft">
         {t.orLogin}{" "}
         <Link className="font-bold text-ink underline" href={`/connexion?next=${encodeURIComponent(`/c/${code}/table`)}`}>
