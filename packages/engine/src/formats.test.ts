@@ -1,11 +1,12 @@
 import fc from "fast-check";
 import { beforeEach, describe, expect, it } from "vitest";
-import { isTournamentComplete } from "./commands";
+import { applyCommand, isTournamentComplete } from "./commands";
 import { poolLabels, poolRanking, qualifiers } from "./formats";
 import { isFinished, matchesOfRound, pairKey, roundsOf } from "./queries";
 import { eliminationRanking } from "./standings";
 import { exec, makeState, PLAYABLE_STATUSES, playToEnd, randomScore, resetOps } from "./test-helpers";
-import { createRng } from "./rng";
+import { createIdGenerator, createRng } from "./rng";
+import { applyChanges, invertChanges } from "./tx";
 import type { EngineState, Match } from "./types";
 
 beforeEach(() => resetOps());
@@ -254,6 +255,24 @@ describe("a pool qualifier who withdraws (lot 2, M3)", () => {
     const m = all(s).find((x) => s.rounds[x.roundId]!.phase === "final" && [...x.sideA, ...x.sideB].includes(second))!;
     expect(m.status).toBe("forfeit");
     expect(finalTeams(s).size).toBe(4);
+  });
+
+  it("a forfeit qualifier is replaced too, and undoing the withdrawal gives the place back", () => {
+    const s = pools(false);
+    const [first, second, third] = poolRanking(s, "A");
+    const before = qualifiers(s);
+    const forfeit = exec(s, { type: "team.setStatus", teamId: second!, status: "forfeit" });
+    expect(qualifiers(forfeit).filter((x) => x.pool === "A").map((x) => x.id)).toEqual([first, third]);
+    const ctx = { now: "2026-10-12T14:00:00.000Z", newId: createIdGenerator("wd-undo"), seed: "wd-undo" };
+    const { state: out, changes } = applyCommand(s, { type: "team.setStatus", teamId: second!, status: "withdrawn" }, ctx);
+    expect(qualifiers(out).filter((x) => x.pool === "A").map((x) => x.id)).toEqual([first, third]);
+    const back = applyChanges(out, invertChanges(changes));
+    expect(back).toEqual(s);
+    expect(qualifiers(back)).toEqual(before);
+    const drawn = exec(back, { type: "round.draw", bracket: "main", seed: "final" });
+    const inFinal = finalTeams(drawn);
+    expect(inFinal.has(second!)).toBe(true);
+    expect(inFinal.has(third!)).toBe(false);
   });
 
   it("a team already playing the consolation bracket is not promoted", () => {
