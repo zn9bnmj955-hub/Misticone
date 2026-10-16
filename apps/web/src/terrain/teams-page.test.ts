@@ -1,0 +1,143 @@
+import { gzipSync } from "node:zlib";
+import { beforeEach, describe, expect, it } from "vitest";
+import { canDrawNext, matchesOfRound, roundsOf, type EngineState } from "@orgasport/engine";
+import { requireSport } from "@orgasport/sports";
+import type { TournamentMeta } from "@/lib/tournament/load";
+import { exec, makeState, PLAYABLE_STATUSES, playToEnd, resetOps } from "../../../../packages/engine/src/test-helpers";
+import { renderTeamsPage } from "./teams-page";
+
+/** Lot 2, T3: « Résultats par équipes » and list of registered teams (/c/CODE/equipes). */
+
+const meta = {
+  short_code: "7KQ2",
+  name: "Concours test",
+  status: "live",
+  starts_at: "2026-10-12T12:00:00Z",
+  city: "Aubagne",
+  team_format: "triplette",
+  name_display: "full",
+} as unknown as TournamentMeta;
+
+const petanque = requireSport("petanque");
+
+beforeEach(() => resetOps());
+
+/** Three players per team; even teams of one club, odd teams « N.H. ». Private fields are slipped in to prove they never show. */
+function withPlayers(s: EngineState): EngineState {
+  const players: EngineState["players"] = {};
+  for (const t of Object.values(s.teams)) {
+    for (const k of [1, 2, 3]) {
+      const id = `p-${t.number}-${k}`;
+      const club = t.number % 2 === 0 ? { number: "0340901", name: "Boule du Cap Agde" } : { number: `01302${k}${k}`, name: `Club ${k}` };
+      players[id] = {
+        id,
+        teamId: t.id,
+        firstName: ["Jean", "Élodie", "Paul"][k - 1]!,
+        lastName: `${String.fromCharCode(90 - (t.number % 26))}orro${t.number}`,
+        position: k,
+        club,
+        ...({ licence: `LIC-SECRET-${t.number}${k}`, email: `joueur${t.number}@exemple.fr`, phone: "0611223344" } as object),
+      };
+    }
+  }
+  return { ...s, players };
+}
+
+const page = (state: EngineState, o: Partial<TournamentMeta> = {}) => renderTeamsPage({ meta: { ...meta, ...o } as TournamentMeta, sport: petanque, state });
+
+function scoreAll(s: EngineState, roundId: string, except = 0): EngineState {
+  const games = matchesOfRound(s, roundId).filter((x) => PLAYABLE_STATUSES.has(x.status));
+  for (const x of games.slice(0, games.length - except)) s = exec(s, { type: "match.score", matchId: x.id, scoreA: 13, scoreB: 5 });
+  return s;
+}
+
+function thirteen(): EngineState {
+  let s = withPlayers(makeState({ teams: 13, config: { bracketMode: "redraw", cadrage: { afterRound: 1 }, consolation: { enabled: true, entry: "auto" } } }));
+  s = exec(s, { type: "round.draw", bracket: "main", seed: "t3" });
+  s = scoreAll(s, roundsOf(s, "main")[0]!.id);
+  if (canDrawNext(s, "main")) s = exec(s, { type: "round.draw", bracket: "main", seed: "t3-cadrage" });
+  return s;
+}
+
+const rows = (h: string) => h.match(/<tr id="e\d+">[\s\S]*?<\/tr>/g) ?? [];
+const rowOf = (h: string, n: number) => rows(h).find((r) => r.startsWith(`<tr id="e${n}">`))!;
+
+describe("« Résultats par équipes » (T3)", () => {
+  it("before the draw: list of registered teams, alphabetical, one anchor per team, no path column", () => {
+    const h = page(withPlayers(makeState({ teams: 6 })), { status: "published" });
+    expect(h).toContain("Liste des inscrits");
+    expect(h).toContain("(6 équipes)");
+    expect(h).not.toContain("<th>Parcours</th>");
+    const names = rows(h).map((r) => /<b>([^<]+)<br>/.exec(r.slice(r.indexOf("<td>")))![1]!);
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, "fr")));
+    expect(rows(h)).toHaveLength(6);
+    expect(h).toMatch(/<span class="st">(Inscrite|Pointée)<\/span>/);
+    // Alphabetical index points at the first team of each letter.
+    expect(h).toMatch(/<a href="#l-T">T<\/a> <a href="#l-U">U<\/a>/);
+    expect(h).toMatch(/<b id="l-T">6<\/b>/);
+  });
+
+  it("after the draw: club or (N.H.), status per bracket and path game by game", () => {
+    const h = page(thirteen());
+    expect(h).toContain("Résultats par équipes");
+    expect(h).toContain("<th>Parcours</th>");
+    expect(rows(h)).toHaveLength(13);
+    expect(h).toContain("(0340901/BOULE DU CAP AGDE)");
+    expect(h).toContain("(N.H.)");
+    expect(h).toMatch(/[A-Z]ORRO\d+ JEAN<br>[A-Z]ORRO\d+ ÉLODIE<br>/);
+    // Every team played the 1re partie (or was exempt): winners are in play, losers out and in the B.
+    const lost = rows(h).filter((r) => r.includes("Concours B : en lice"));
+    expect(lost).toHaveLength(6);
+    for (const r of lost) {
+      expect(r).toMatch(/1re partie : perdu 5-13 c\. \d+<br>B · 1re partie : à jouer T\.\d+ c\. /);
+      expect(r).not.toContain("Concours A :");
+    }
+    expect(rows(h).filter((r) => r.includes("Concours A : en lice"))).toHaveLength(7);
+    expect(h).toMatch(/1re partie : Exempt 13-7/);
+    expect(h).toMatch(/Cadrage : Office/);
+    expect(h).toMatch(/Cadrage : à jouer T\.\d+ c\. /);
+    expect(h).toMatch(/<b>gagné 13-5<\/b> c\. /);
+  });
+
+  it("winner of the final and teams out at a named round", () => {
+    const s = playToEnd(withPlayers(makeState({ teams: 8, config: { bracketMode: "redraw", consolation: { enabled: false } } })), "t3-8");
+    const h = page({ ...s, tournament: { ...s.tournament, status: "finished" } }, { status: "finished" });
+    expect(rows(h).filter((r) => r.includes("Concours A : vainqueur"))).toHaveLength(1);
+    expect(rows(h).filter((r) => r.includes("Concours A : éliminée en finale"))).toHaveLength(1);
+    expect(rows(h).filter((r) => r.includes("Concours A : éliminée en 1/2 finale"))).toHaveLength(2);
+    expect(rowOf(h, 1)).toBeTruthy();
+  });
+
+  it("never shows private data (licences, emails, phones)", () => {
+    const h = page(thirteen());
+    expect(h).not.toContain("LIC-SECRET");
+    expect(h).not.toContain("@exemple.fr");
+    expect(h).not.toContain("0611223344");
+  });
+
+  it("initials when the organizer chose them: full first names are not published", () => {
+    const h = page(thirteen(), { name_display: "initials" });
+    expect(h).not.toContain("ÉLODIE");
+    expect(h).not.toContain("Élodie");
+  });
+
+  it("works without JavaScript: no script except the theme line, no form", () => {
+    const h = page(thirteen());
+    const scripts = h.match(/<script>[\s\S]*?<\/script>/g) ?? [];
+    expect(scripts).toHaveLength(1);
+    expect(scripts[0]).toContain("os_theme");
+    expect(h).not.toContain("<form");
+  });
+
+  it("256 triplettes played to the end (A and B): under 100 KB", () => {
+    const s = playToEnd(
+      withPlayers(makeState({ teams: 256, config: { bracketMode: "redraw", cadrage: { afterRound: 1 }, consolation: { enabled: true, entry: "auto" } } })),
+      "t3-256",
+    );
+    const h = page({ ...s, tournament: { ...s.tournament, status: "finished" } }, { status: "finished" });
+    expect(rows(h)).toHaveLength(256);
+    const size = Buffer.byteLength(h);
+    expect(size).toBeLessThan(100 * 1024);
+    console.info(`T3 · 256 équipes : ${Math.round(size / 1024)} Ko, ${Math.round(gzipSync(h).length / 1024)} Ko compressés`);
+  });
+});

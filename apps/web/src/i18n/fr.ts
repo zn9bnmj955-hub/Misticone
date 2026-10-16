@@ -13,6 +13,7 @@ import { landing3d } from "./fr/landing3d";
 import { a11y } from "./fr/a11y";
 import { adminAssistant } from "./fr/adminAssistant";
 import { pinHelp } from "./fr/pinHelp";
+import { teamsPage } from "./fr/teamsPage";
 
 /**
  * French interface texts. Every visible string goes through this file so a
@@ -726,6 +727,7 @@ export const fr = {
   videos,
   adminAssistant,
   pinHelp,
+  teamsPage,
   landing3d,
   a11y,
 };
