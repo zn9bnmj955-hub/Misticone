@@ -522,6 +522,7 @@ export const fr = {
         "venue.add": "Terrain ajouté",
         "venue.update": "Terrain modifié",
         "tournament.setStatus": "Étape du concours",
+        "tournament.close": "Clôture définitive",
         undo: "Annulation",
       } as Record<string, string>,
     },
@@ -554,6 +555,7 @@ export const fr = {
     errors: {
       NOT_FOUND: "Élément introuvable (il a peut-être été supprimé).",
       TOURNAMENT_CLOSED: "Ce concours n'est pas ouvert.",
+      TOURNAMENT_FINISHED: "Le concours est terminé : seules les corrections de score, de forfait ou de nom d'équipe sont encore possibles.",
       TOURNAMENT_FULL: "Le concours est complet et n'a pas de liste d'attente.",
       INVALID_STATUS_CHANGE: "Changement d'étape impossible.",
       NOT_ENOUGH_TEAMS: "Pas assez d'équipes pointées pour tirer.",
