@@ -183,11 +183,19 @@ Tirages à l'heure prévue, rappels et envoi des notifications passent par l'adr
      );
    $$);
    ```
+   La suppression des données personnelles (noms, contacts, codes d'équipe, PIN, historique) des
+   concours clos depuis plus de 14 jours tourne une fois par jour, directement dans la base
+   (la tâche de chaque minute la lance aussi, par sécurité ; elle ne fait rien deux fois) :
+   ```sql
+   select cron.schedule('orgasport-purge', '23 3 * * *', $$ select public.purge_finished_tournaments(); $$);
+   ```
+   Les paiements, les factures et le code court du concours sont conservés ; la page publique
+   affiche alors « Résultats supprimés ».
 3. Vérification au bout de 2 minutes :
    `select status_code, content from net._http_response order by created desc limit 3;`
    doit afficher `200` et `{"drawn":…}`.
 
-Pour les arrêter : `select cron.unschedule('orgasport-tick');` et `select cron.unschedule('orgasport-news');`
+Pour les arrêter : `select cron.unschedule('orgasport-tick');`, `select cron.unschedule('orgasport-news');` et `select cron.unschedule('orgasport-purge');`
 
 ## Étape 9 — Votre compte administrateur
 
