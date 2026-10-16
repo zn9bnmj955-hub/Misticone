@@ -3,7 +3,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import type { Tables } from "@orgasport/db";
 import { createClient } from "@/lib/supabase/server";
-import { ALL_SPORTS, PREFS_COOKIE, SPORT_COOKIE, parsePrefs, type DevicePrefs } from "@/lib/prefs";
+import { ALL_SPORTS, PREFS_COOKIE, SPORT_COOKIE, normalizeSportFilter, onlyOfferedSports, parsePrefs, type DevicePrefs } from "@/lib/prefs";
 
 export type ViewerClub = Pick<Tables<"clubs">, "id" | "name" | "slug" | "logo_path"> & {
   role: Tables<"club_members">["role"];
@@ -58,15 +58,17 @@ export async function getDevicePrefs(): Promise<DevicePrefs | null> {
 export async function getSportFilter(): Promise<string> {
   const store = await cookies();
   const value = store.get(SPORT_COOKIE)?.value;
-  return value && /^[a-z0-9-]+$/.test(value) ? value : ALL_SPORTS;
+  return normalizeSportFilter(value && /^[a-z0-9-]+$/.test(value) ? value : null);
 }
 
 /** Sports for the personal feed: the selector if set, otherwise the chosen sports. */
 export async function getFeedSports(viewer: Viewer | null): Promise<string[] | null> {
   const filter = await getSportFilter();
   if (filter !== ALL_SPORTS) return [filter];
-  const fromProfile = viewer?.profile?.sports;
-  if (fromProfile && fromProfile.length > 0) return fromProfile;
+  // Sports no longer offered (football) are left out.
+  const fromProfile = onlyOfferedSports(viewer?.profile?.sports ?? []);
+  if (fromProfile.length > 0) return fromProfile;
   const prefs = await getDevicePrefs();
-  return prefs?.sports.length ? prefs.sports : null;
+  const fromDevice = onlyOfferedSports(prefs?.sports ?? []);
+  return fromDevice.length ? fromDevice : null;
 }

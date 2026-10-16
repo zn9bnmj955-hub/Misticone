@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import { InlineScript } from "@/components/ui/InlineScript";
 import { getMessages } from "@/i18n";
 import { env } from "@/lib/env";
-import { SPORT_COOKIE } from "@/lib/prefs";
+import { SPORT_COOKIE, offeredSportSlugs } from "@/lib/prefs";
 import "./globals.css";
 
 // Lightened by scripts/subset-fonts.py: upright text at normal width,
@@ -47,8 +47,9 @@ export const viewport: Viewport = {
   ],
 };
 
-// Applies the remembered theme and sport accent before the first paint.
-const BOOT = `(function(){try{var d=document.documentElement;var t=localStorage.getItem("os_theme");if(t==="light"||t==="dark")d.setAttribute("data-theme",t);var m=document.cookie.match(/(?:^|; )${SPORT_COOKIE}=([^;]+)/);if(m&&/^[a-z0-9-]+$/.test(m[1])&&m[1]!=="all")d.setAttribute("data-sport",m[1]);}catch(e){}})();`;
+// Applies the remembered theme and sport accent before the first paint
+// (only for a sport still offered: an old os_sport=football cookie is ignored).
+const BOOT = `(function(){try{var d=document.documentElement;var t=localStorage.getItem("os_theme");if(t==="light"||t==="dark")d.setAttribute("data-theme",t);var m=document.cookie.match(/(?:^|; )${SPORT_COOKIE}=([^;]+)/);if(m&&${JSON.stringify(offeredSportSlugs())}.indexOf(m[1])>=0)d.setAttribute("data-sport",m[1]);}catch(e){}})();`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
