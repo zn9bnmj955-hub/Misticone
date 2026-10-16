@@ -52,6 +52,25 @@ test.describe("assistant", () => {
     await expect(await ask("Que dit le règlement officiel quand le but est nul ?")).toContainText(/Règlement en vigueur au \d{1,2}(er)? \S+ \d{4}/);
   });
 
+  test("without an API key, the fallback answer quotes the « cadrage » and « PIN » help sheets (A2)", async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.goto("/assistant");
+    const conversation = page.getByRole("list", { name: "Conversation avec l'assistant" });
+    const ask = async (question: string) => {
+      await page.getByLabel("Votre question").fill(question);
+      await page.getByRole("button", { name: "Envoyer" }).click();
+      await expect(conversation).toContainText(question);
+      await expect(conversation).toHaveAttribute("aria-busy", "false", { timeout: 30_000 });
+      return conversation.getByRole("listitem").last();
+    };
+    const cadrage = await ask("Qu'est-ce que le cadrage ?");
+    await expect(cadrage).toContainText("Aide OrgaSport : le cadrage et les qualifiés d'office (Office)");
+    await expect(cadrage).toContainText(/qualifiée d'office/);
+    const pin = await ask("Comment marche le PIN des bénévoles ?");
+    await expect(pin).toContainText("Aide OrgaSport : le PIN des bénévoles");
+    await expect(pin).not.toContainText(/Règlement en vigueur au/);
+  });
+
   test("the admin sees usage, adds a knowledge document, finds it, then deletes it", async ({ page }) => {
     test.setTimeout(120_000);
     await signIn(page, "admin@demo.orgasport.fr");
