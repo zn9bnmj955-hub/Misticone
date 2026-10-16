@@ -20,6 +20,7 @@ import { cn } from "@/components/ui/cn";
 import { standings, type TeamView } from "@/terrain/view-model";
 import type { ScoringTable } from "./store";
 import { Btn, NumberInput, Panel, roundName, sideName, teamMap } from "./ui";
+import { PinHelp } from "./PinHelp";
 
 const m = () => getMessages().table;
 
@@ -724,7 +725,7 @@ export function AccessTab({ code, isAccount }: { code: string; isAccount: boolea
   return (
     <div className="grid gap-4">
       <Panel title={t.title}>
-        <p className="text-ink-soft">{t.text}</p>
+        <PinHelp audience="organizer" tableUrl={`/c/${code}/table`} />
         <form
           className="flex flex-wrap items-end gap-2"
           onSubmit={async (e) => {
