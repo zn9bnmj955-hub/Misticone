@@ -9,8 +9,8 @@
  *
  * Everything is procedural (seeded, so the pre-rendered fallback image made by
  * scripts/render-hero-balls.mjs is identical to what the browser draws). The
- * ball is lit by a small "neon studio" environment (PMREM) so the steel
- * reflects the blue lines of the scene. Colors come from the CSS tokens.
+ * ball is lit by a small neutral grey studio environment (PMREM): a dark
+ * silver satin sheen, with only a faint blue neon edge. Colors come from the CSS tokens.
  */
 import {
   CustomBlending,
@@ -253,7 +253,7 @@ function steelMaterial(textureSize: number, maxAnisotropy: number) {
     metalness: BALL_FINISH.metalness,
     roughness: 1,
     roughnessMap,
-    envMapIntensity: 1.8,
+    envMapIntensity: 1.3,
   });
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uDecal = { value: decal.texture };
@@ -307,9 +307,10 @@ function radialTexture(stops: [number, string][]) {
 }
 
 /**
- * Neon studio reflected by the ball: a dark room, one big softbox (the key
- * highlight), a cool fill, a blue horizon band and blue tubes, and a glowing
- * floor grid underneath.
+ * Studio reflected by the ball: a neutral grey room (so the steel stays a
+ * neutral dark silver, not night blue), one broad soft key light, a dim fill,
+ * a grey horizon band, and two thin blue neon tubes that only leave a faint
+ * edge on the rim.
  */
 export function createEnvironment(renderer: WebGLRenderer, colors: StageColors) {
   const scene = new Scene();
@@ -324,27 +325,32 @@ export function createEnvironment(renderer: WebGLRenderer, colors: StageColors) 
     disposables.push(g, m);
   };
   const roomG = new SphereGeometry(20, 32, 16);
-  const roomM = new MeshBasicMaterial({ color: colors.stage.clone().lerp(colors.light, 0.05), side: BackSide });
+  // Neutral grey of the same brightness as a token colour (no blue cast on the steel).
+  const grey = (c: Color) => {
+    const l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+    return new Color(l, l, l);
+  };
+  const roomM = new MeshBasicMaterial({ color: grey(colors.stage.clone().lerp(colors.light, 0.05)), side: BackSide });
   scene.add(new Mesh(roomG, roomM));
   disposables.push(roomG, roomM);
 
-  const white = colors.light;
-  add(26, 26, [0, 11, 0], white.clone().multiplyScalar(0.1)); // night sky glow (broad, soft)
-  add(10, 6, [-6, 7, 7], white.clone().multiplyScalar(6)); // key softbox
-  add(4, 9, [8.5, 2, 4], white.clone().multiplyScalar(3.2)); // fill strip
-  add(6, 2.5, [3, 6, -8], white.clone().multiplyScalar(1.2)); // back top
-  // Horizon: a pale band with the stadium glow, and blue neon tubes.
+  const white = grey(colors.light);
+  add(26, 26, [0, 11, 0], white.clone().multiplyScalar(0.25)); // night sky glow (broad, soft)
+  add(12, 8, [-6, 7, 7], white.clone().multiplyScalar(2.4)); // key softbox (broad and dim: a soft sheen)
+  add(4, 9, [8.5, 2, 4], white.clone().multiplyScalar(0.9)); // fill strip
+  add(6, 2.5, [3, 6, -8], white.clone().multiplyScalar(0.5)); // back top
+  // Horizon: a grey band, and blue neon tubes behind the ball (a faint edge on the rim only).
   for (let i = 0; i < 10; i++) {
     const a = (i / 10) * Math.PI * 2;
-    add(8, 0.6, [Math.cos(a) * 13, -0.6, Math.sin(a) * 13], white.clone().lerp(colors.line, 0.22).multiplyScalar(1.3));
+    add(8, 0.6, [Math.cos(a) * 13, -0.6, Math.sin(a) * 13], white.clone().multiplyScalar(0.55));
   }
-  add(0.35, 10, [-9, 1, -7], colors.accent.clone().multiplyScalar(2.6));
-  add(0.35, 10, [10, 1, -5], colors.accent.clone().multiplyScalar(2));
-  add(1.4, 1.4, [-3.5, 5, 8], white.clone().multiplyScalar(16)); // floodlight: the crisp highlight
-  add(2, 9, [-7, 2, -9], white.clone().lerp(colors.accent, 0.5).multiplyScalar(2.2)); // rim, back left
+  add(0.35, 10, [-9, 1, -7], colors.accent.clone().multiplyScalar(1.2));
+  add(0.35, 10, [10, 1, -5], colors.accent.clone().multiplyScalar(0.9));
+  add(3, 3, [-3.5, 5, 8], white.clone().multiplyScalar(3)); // floodlight: a soft, not blinding, highlight
+  add(2, 9, [-7, 2, -9], white.clone().multiplyScalar(0.7)); // rim, back left
   // Floor: dark ground lit by the neon pitch.
   add(30, 30, [0, -5.2, 0], white.clone().multiplyScalar(0.1), [0, 10, 0]);
-  add(14, 14, [0, -5, 0], colors.line.clone().multiplyScalar(0.05), [0, 10, 0]); // neon pitch glow below
+  add(14, 14, [0, -5, 0], grey(colors.line).multiplyScalar(0.05), [0, 10, 0]); // pitch glow below
   const pmrem = new PMREMGenerator(renderer);
   const target: WebGLRenderTarget = pmrem.fromScene(scene, 0.015);
   pmrem.dispose();

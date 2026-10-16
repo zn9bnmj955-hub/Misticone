@@ -16,6 +16,19 @@ describe("landing ball: smooth dark silver steel", () => {
     expect(BALL_FINISH.roughness).toBeLessThanOrEqual(0.3);
   });
 
+  it("reflects a neutral grey studio (no night-blue cast), with a soft highlight", () => {
+    const model = source("ballModel.ts");
+    const env = model.slice(model.indexOf("export function createEnvironment"), model.indexOf("export type BallModel"));
+    expect(env).toMatch(/roomM = new MeshBasicMaterial\(\{ color: grey\(/);
+    expect(env).toMatch(/const white = grey\(colors\.light\)/);
+    // Blue only on the two thin neon tubes (a faint rim), never on the room, the lights or the horizon.
+    expect(env.match(/colors\.(accent|line)\b(?!\))/g)?.filter((m) => m === "colors.accent")).toHaveLength(2);
+    expect(env).not.toMatch(/lerp\(colors\.(accent|line)/);
+    const gains = [...env.matchAll(/white\.clone\(\)\.multiplyScalar\(([\d.]+)\)/g)].map((m) => Number(m[1]));
+    expect(Math.max(...gains)).toBeLessThanOrEqual(3);
+    expect(Number(/envMapIntensity: ([\d.]+)/.exec(model)?.[1])).toBeLessThanOrEqual(1.5);
+  });
+
   it("has no grooves, no striations and no football left", () => {
     for (const name of ["GROOVE_OFFSETS", "HEXAGON_CENTERS", "PENTAGON_CENTERS", "ICO_EDGES", "LOOK_INDEX", "ballLookFor"])
       expect(geometry).not.toHaveProperty(name);
