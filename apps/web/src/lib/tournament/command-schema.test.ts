@@ -16,6 +16,12 @@ describe("command schema: final close of the link", () => {
     expect(commandSchema.safeParse({ type: "tournament.setStatus", status: "finished" }).success).toBe(true);
   });
 
+  it("accepts tournament.resume (two-day tournament), with or without a seed", () => {
+    expect(commandSchema.safeParse({ type: "tournament.resume" }).success).toBe(true);
+    expect(commandSchema.safeParse({ type: "tournament.resume", seed: "day2" }).success).toBe(true);
+    expect(commandSchema.safeParse({ type: "tournament.resume", seed: "" }).success).toBe(false);
+  });
+
   it("refuses an unknown command type", () => {
     expect(commandSchema.safeParse({ type: "tournament.reopen" }).success).toBe(false);
   });

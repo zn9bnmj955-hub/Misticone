@@ -524,6 +524,7 @@ export const fr = {
         "venue.update": "Terrain modifié",
         "tournament.setStatus": "Étape du concours",
         "tournament.close": "Clôture définitive",
+        "tournament.resume": "Reprise du concours (2e jour)",
         undo: "Annulation",
       } as Record<string, string>,
     },
