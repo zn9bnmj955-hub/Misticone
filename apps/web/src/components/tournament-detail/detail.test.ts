@@ -20,6 +20,7 @@ vi.mock("@/lib/weather", () => ({
 const { getSport } = await import("@orgasport/sports");
 const { PlacesGauge, RegistrationCta, StatusBadge } = await import("./RegistrationBox");
 const { WeatherTile } = await import("./WeatherTile");
+const { KeyFacts } = await import("./KeyFacts");
 type Detail = Parameters<typeof RegistrationCta>[0]["t"];
 
 const sport = getSport("petanque")!;
@@ -146,5 +147,26 @@ describe("weather tile", () => {
     const down = await html(WeatherTile({ t: base() }));
     expect(down).not.toContain("9 jours avant");
     expect(down).toContain("yr.no");
+  });
+});
+
+describe("key facts: concours B entry fee", () => {
+  const b = (consolation: Record<string, unknown>) => base({ config: { consolation } } as Partial<Detail>);
+  const facts = (t: Detail) => renderToStaticMarkup(createElement(KeyFacts, { t: t as never, sport }));
+
+  it("shows the B fee when teams sign up for the B", () => {
+    const out = facts(b({ enabled: true, entry: "opt_in", feeCents: 500 }));
+    expect(out).toContain("Concours B : 5");
+    expect(out).toContain("par équipe, sur place");
+  });
+
+  it("says nothing for an automatic, free or disabled B, nor an old config", () => {
+    for (const t of [
+      b({ enabled: true, entry: "auto", feeCents: 500 }),
+      b({ enabled: true, entry: "opt_in", feeCents: null }),
+      b({ enabled: false, entry: "opt_in", feeCents: 500 }),
+      b({ enabled: true, losersOfRound: 1 }),
+      base(),
+    ]) expect(facts(t)).not.toContain("Concours B");
   });
 });
