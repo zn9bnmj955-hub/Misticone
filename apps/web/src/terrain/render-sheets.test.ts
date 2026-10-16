@@ -141,3 +141,38 @@ describe("draw sheets on the public page (T2)", () => {
     console.info(`T2 · 256 équipes : ${Math.round(h.length / 1024)} Ko, ${Math.round(gz / 1024)} Ko compressés`);
   });
 });
+
+describe("draw sheets: exempt, single bracket and escaping (T2, testeur)", () => {
+  it("1re partie with 13 teams: one « Exempt » row, greyed, without venue, scored by byeScore", () => {
+    const sheets = tables(page(thirteen()));
+    const first = sheets[1]!; // newest first: Cadrage, then 1re partie
+    const rows = first.match(/<tr>[\s\S]*?<\/tr>/g)!.slice(1);
+    expect(rows).toHaveLength(7);
+    const exempt = rows.filter((r) => r.includes(">Exempt<"));
+    expect(exempt).toHaveLength(1);
+    expect(exempt[0]).toMatch(/^<tr><td class="c"><\/td>/);
+    expect(exempt[0]).toContain('<td class="l o">Exempt</td>');
+    expect(first).not.toContain(">Office<");
+  });
+
+  it("A only: no « Aller au concours » links and no section heading, but still the A anchor", () => {
+    let s = withPlayers(makeState({ teams: 8, config: { bracketMode: "redraw" } }));
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "solo" });
+    const h = page(s);
+    expect(h).toContain('id="concours-a"');
+    expect(h).not.toContain("Aller au concours");
+    expect(h).not.toContain('id="concours-b"');
+    expect(tables(h)).toHaveLength(1);
+  });
+
+  it("player names are escaped in the sheet cells", () => {
+    let s = makeState({ teams: 8, config: { bracketMode: "redraw" } });
+    const t0 = Object.values(s.teams)[0]!;
+    s = { ...s, players: { x: { id: "x", teamId: t0.id, firstName: "<img src=x onerror=alert(1)>", lastName: "o'<b>", position: 1 } } };
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "xss" });
+    const sheet = tables(page(s)).join("");
+    expect(sheet).not.toContain("<img");
+    expect(sheet).not.toContain("<b>");
+    expect(sheet).toContain("&lt;IMG");
+  });
+});
