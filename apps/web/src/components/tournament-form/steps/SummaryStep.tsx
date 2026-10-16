@@ -166,7 +166,16 @@ export function SummaryStep({
   if (form.format === "swiss" || form.format === "melee_rotation") formatExtras.push(fmt(s.roundsValue, { count: form.rounds ?? "?" }));
   if (form.format === "single_elimination") formatExtras.push(form.bracketMode === "redraw" ? w.draw.redraw : w.draw.fixed);
   if (form.format === "pools_then_bracket") formatExtras.push(fmt(s.poolsValue, { size: form.poolSize, qualifiers: form.poolQualifiers }));
-  if ((form.format === "single_elimination" || form.format === "pools_then_bracket") && form.consolation) formatExtras.push(w.draw.consolation);
+  const elimination = form.format === "single_elimination" || form.format === "pools_then_bracket";
+  if (form.format === "single_elimination" && form.bracketMode === "redraw") formatExtras.push(form.cadrageAfterRound === 2 ? s.cadrage2 : s.cadrage1);
+  if (form.format === "pools_then_bracket") formatExtras.push(s.cadragePools);
+  const brackets: string[] = [];
+  if (elimination && form.consolation) {
+    const fee = form.consolationFeeCents > 0 ? fmt(s.bracketFee, { amount: formatEuros(form.consolationFeeCents) }) : null;
+    brackets.push([w.draw.consolation, form.consolationEntry === "opt_in" ? w.draw.consolationOptIn : w.draw.consolationAuto, fee].filter(Boolean).join(", "));
+    if (form.consolationC) brackets.push(w.draw.consolationC);
+  }
+  const pauseLabel = { none: w.draw.pauseNone, before32: w.draw.pauseBefore32, before16: w.draw.pauseBefore16, before8: w.draw.pauseBefore8, before4: w.draw.pauseBefore4, afterPools: w.draw.pauseAfterPools }[form.pause];
   const drawRules = [form.avoidSameClub && w.draw.avoidSameClub, form.seeding && w.draw.seeding].filter(Boolean) as string[];
   const scoring = sport.scoring;
   const gameEnd =
@@ -235,6 +244,12 @@ export function SummaryStep({
       step: "draw",
       rows: [
         { label: s.format, value: [formatLabel(form.format), ...formatExtras].join(" · ") },
+        ...(elimination
+          ? [
+              { label: s.brackets, value: brackets.length ? brackets.join(" · ") : none },
+              { label: w.draw.pause, value: pauseLabel },
+            ]
+          : []),
         { label: s.drawRules, value: drawRules.length ? drawRules.join(" · ") : s.random },
         { label: s.gameEnd, value: gameEnd },
         { label: s.scoreEntry, value: form.scoreEntry === "captains" ? w.draw.scoreEntryCaptains : w.draw.scoreEntryTable },
