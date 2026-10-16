@@ -61,4 +61,19 @@ test.describe("pétanque only", () => {
     await page.waitForURL(/\/club\/concours\/[0-9a-f-]+\/modifier/);
     await expectNoFootball(page, new URL(page.url()).pathname);
   });
+  test("an old onboarding draft that chose football resumes on pétanque", async ({ page, baseURL }) => {
+    // Draft saved on the device before football was switched off, resumed after a magic link.
+    await page.goto("/");
+    await page.evaluate(() =>
+      localStorage.setItem("os_onboarding", JSON.stringify({ kind: "guest", step: "city", sports: ["football"] })),
+    );
+    await expectNoFootball(page, "/inscription/invite?reprendre=1");
+    await expect(page.getByRole("heading", { name: "Votre ville" })).toBeVisible();
+    await page.getByRole("button", { name: "Passer" }).click();
+    await page.getByRole("button", { name: "C'est parti" }).click();
+    await page.waitForURL("**/accueil");
+    const cookies = await page.context().cookies(baseURL ?? "http://localhost:3000");
+    expect(cookies.find((c) => c.name === "os_sport")?.value).toBe("petanque");
+    await expect(page.locator("html")).toHaveAttribute("data-sport", "petanque");
+  });
 });
