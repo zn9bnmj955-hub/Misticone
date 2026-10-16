@@ -149,3 +149,22 @@ describe("two-day pause — field not a power of two (testeur)", () => {
     expect(pausedAt(back)).toEqual({ phase: "elimination", round: 3, teams: 16 });
   });
 });
+
+describe("two-day pause — final phase after pools (testeur)", () => {
+  it("32 teams in pools, pause before 8 left: the 1/4 of the final phase waits for resume, the B too; undo of resume brings it back", () => {
+    const cfg: TestConfig = { format: "pools_then_bracket", bracketMode: "redraw", consolation: { enabled: true, entry: "auto", source: "pool_non_qualified" }, pause: { before: { remaining: 8 } } };
+    let s = exec(makeState({ teams: 32, config: cfg }), { type: "round.draw", bracket: "main", seed: "pp" });
+    s = playAll(s);
+    // 16 qualifiers -> 1/8 played on day 1 -> 8 left, held before the 1/4.
+    expect(roundsOf(s, "main", "final").map((r) => teamsInRound(s, r))).toEqual([16]);
+    expect(pausedAt(s)).toEqual({ phase: "final", round: 2, teams: 8 });
+    const b = count(s, "consolation");
+    expect(lastComplete(s, "consolation")).toBe(true);
+    expect(canDrawNext(s, "consolation")).toBe(true);
+    const r = applyCommand(s, { type: "tournament.resume", seed: "day2" }, { now: "2026-10-13T08:00:00.000Z", newId: createIdGenerator("resume") });
+    expect(roundsOf(r.state, "main", "final").map((x) => teamsInRound(r.state, x))).toEqual([16, 8]);
+    expect(count(r.state, "consolation")).toBe(b + 1);
+    expect(applyChanges(r.state, invertChanges(r.changes))).toEqual(s);
+    expect(playAll(r.state).tournament.status).toBe("finished");
+  });
+});
