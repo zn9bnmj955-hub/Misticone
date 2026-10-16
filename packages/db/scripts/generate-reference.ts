@@ -41,12 +41,18 @@ const out: string[] = [
       `insert into public.app_settings (key, value, description) values (${text(key)}, ${jsonb(value)}, ${text(description)}) on conflict (key) do nothing;`,
   ),
   "",
-  "-- Knowledge base of the assistant (added once per title).",
+  "-- Knowledge base of the assistant (added once per title; texts edited in the admin are kept).",
   ...KB_DOCS.map(
     (d) =>
-      `insert into public.kb_documents (title, sport_slug, source_url, body, published)\n` +
-      `  select ${text(d.title)}, ${text(d.sport)}, ${text(d.source)}, ${text(d.body)}, true\n` +
+      `insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)\n` +
+      `  select ${text(d.title)}, ${text(d.sport)}, ${text(d.source)}, ${text(d.kind)}, ${text(d.versionDate)}, ${text(d.reviewedAt)}, ${text(d.body)}, true\n` +
       `  where not exists (select 1 from public.kb_documents where title = ${text(d.title)});`,
+  ),
+  "-- Rulebook sheets added before they were dated: mark them as rules, with their dates.",
+  ...KB_DOCS.filter((d) => d.kind === "rules").map(
+    (d) =>
+      `update public.kb_documents set kind = 'rules', version_date = ${text(d.versionDate)}, reviewed_at = ${text(d.reviewedAt)}\n` +
+      `  where title = ${text(d.title)} and kind = 'help' and version_date is null;`,
   ),
   "",
   "-- Legal pages: empty placeholders, written later by the site owner.",

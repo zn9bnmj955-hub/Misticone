@@ -19,3 +19,44 @@ describe("pricing plans", () => {
     }
   });
 });
+
+// A2: the assistant's knowledge base covers each feature of the site and
+// summarises the official rules with their source and dates.
+describe("knowledge base", async () => {
+  const { KB_DOCS } = await import("./kb-content");
+  const { enabledSports } = await import("@orgasport/sports");
+
+  it("has a help sheet for each feature asked by the owner", () => {
+    const all = KB_DOCS.map((d) => `${d.title}\n${d.body}`).join("\n");
+    for (const topic of [/PIN/, /cadrage/i, /Office/, /N\.H\./, /concours B/, /concours C/, /2 jours/, /Clore définitivement/, /14 jours/]) {
+      expect(all).toMatch(topic);
+    }
+    expect(KB_DOCS.filter((d) => d.kind === "help").map((d) => d.title)).toEqual(
+      expect.arrayContaining([expect.stringMatching(/PIN/), expect.stringMatching(/cadrage/), expect.stringMatching(/N\.H\./)]),
+    );
+  });
+
+  it("dates every rulebook sheet and gives its source", () => {
+    const rules = KB_DOCS.filter((d) => d.kind === "rules");
+    expect(rules.length).toBeGreaterThan(0);
+    for (const d of rules) {
+      expect(d.source).toMatch(/^https:\/\//);
+      expect(d.versionDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(d.reviewedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+  });
+
+  it("only has sheets for enabled sports, with unique titles, and never an end time", () => {
+    const enabled = new Set(enabledSports().map((s) => s.slug));
+    for (const d of KB_DOCS) if (d.sport) expect(enabled).toContain(d.sport);
+    expect(new Set(KB_DOCS.map((d) => d.title)).size).toBe(KB_DOCS.length);
+    for (const d of KB_DOCS) expect(d.body).not.toMatch(/heure de fin (estimée|prévue)|finit vers/i);
+  });
+
+  it("is in the generated reference.sql and seed.sql", () => {
+    for (const file of ["reference.sql", "seed.sql"]) {
+      const sql = readFileSync(new URL(`../../../supabase/${file}`, import.meta.url), "utf8");
+      for (const d of KB_DOCS) expect(sql).toContain(d.title.replace(/'/g, "''"));
+    }
+  });
+});

@@ -3,9 +3,9 @@
 begin;
 
 -- Sports: the configuration follows the code, the on/off switch stays as set.
-insert into public.sports (slug, name, config, enabled, sort_order) values ('petanque', 'Pétanque', '{"slug":"petanque","name":"Pétanque","icon":"petanque","accentToken":"petanque","enabled":true,"sortOrder":10,"venue":{"kind":"field","noun":{"singular":"terrain","plural":"terrains"},"usage":"parallel"},"teamNoun":{"singular":"équipe","plural":"équipes"},"teamFormats":[{"id":"tete-a-tete","label":"Tête-à-tête","players":1,"substitutes":{"min":0,"max":0},"individualRegistration":false,"competitionFormats":["single_elimination","pools_then_bracket","swiss","round_robin"]},{"id":"doublette","label":"Doublette","players":2,"substitutes":{"min":0,"max":0},"individualRegistration":false,"competitionFormats":["single_elimination","pools_then_bracket","swiss","round_robin"]},{"id":"triplette","label":"Triplette","players":3,"substitutes":{"min":0,"max":1},"individualRegistration":false,"competitionFormats":["single_elimination","pools_then_bracket","swiss","round_robin"]},{"id":"melee-doublette","label":"Mêlée (doublettes tirées)","players":2,"substitutes":{"min":0,"max":0},"individualRegistration":true,"competitionFormats":["melee_rotation"]},{"id":"melee-triplette","label":"Mêlée (triplettes tirées)","players":3,"substitutes":{"min":0,"max":0},"individualRegistration":true,"competitionFormats":["melee_rotation"]}],"competitionFormats":["single_elimination","pools_then_bracket","swiss","round_robin","melee_rotation"],"categories":["all","seniors","veterans","women","mixed","youth"],"scoring":{"mode":"points","target":13,"timeLimitMinutes":null,"allowDraw":false},"typicalMatchMinutes":50,"changeoverMinutes":5,"ranking":{"criteria":["wins","point_diff","points_for","head_to_head","random"],"matchPoints":{"win":1,"draw":0,"loss":0}},"license":{"requiredByDefault":false,"federation":"FFPJP","numberPattern":"^[0-9]{6,10}$","numberHint":"6 à 10 chiffres, sans espace"},"defaults":{"teamFormat":"doublette","competitionFormat":"single_elimination","category":"all","maxTeams":64,"venues":32,"rounds":null,"feeCents":1000,"feePer":"team","consolation":true,"consolationFromRound":1,"consolationEntry":"auto","consolationC":false,"cadrageAfterRound":1,"byeScore":{"winner":13,"loser":7},"avoidSameClubFirstRound":true,"redrawEachRound":true,"poolSystem":"gsl","poolSize":4,"schedule":{"startTime":"14:30","registrationClosesBeforeMinutes":45,"checkInClosesBeforeMinutes":15}},"notifications":{"yourTurn":"À vous ! {venueLabel} {venue} · {time} · contre {opponent}","drawPublished":"Le tirage du tour {round} est publié.","scoreValidated":"Score validé : {score}.","tournamentStarting":"Jet du but à {time}. Bonne partie !","reminderDayBefore":"Demain : {tournament} à {time}, {place}.","notCheckedIn":"Votre équipe n''est pas encore pointée. Passez à la table de marque avant {time}."}}'::jsonb, true, 10)
+insert into public.sports (slug, name, config, enabled, sort_order) values ('petanque', 'Pétanque', '{"slug":"petanque","name":"Pétanque","icon":"petanque","accentToken":"petanque","enabled":true,"sortOrder":10,"venue":{"kind":"field","noun":{"singular":"terrain","plural":"terrains"},"usage":"parallel"},"teamNoun":{"singular":"équipe","plural":"équipes"},"teamFormats":[{"id":"tete-a-tete","label":"Tête-à-tête","players":1,"substitutes":{"min":0,"max":0},"individualRegistration":false,"competitionFormats":["single_elimination","pools_then_bracket","swiss","round_robin"]},{"id":"doublette","label":"Doublette","players":2,"substitutes":{"min":0,"max":0},"individualRegistration":false,"competitionFormats":["single_elimination","pools_then_bracket","swiss","round_robin"]},{"id":"triplette","label":"Triplette","players":3,"substitutes":{"min":0,"max":1},"individualRegistration":false,"competitionFormats":["single_elimination","pools_then_bracket","swiss","round_robin"]},{"id":"melee-doublette","label":"Mêlée (doublettes tirées)","players":2,"substitutes":{"min":0,"max":0},"individualRegistration":true,"competitionFormats":["melee_rotation"]},{"id":"melee-triplette","label":"Mêlée (triplettes tirées)","players":3,"substitutes":{"min":0,"max":0},"individualRegistration":true,"competitionFormats":["melee_rotation"]}],"competitionFormats":["single_elimination","pools_then_bracket","swiss","round_robin","melee_rotation"],"categories":["all","seniors","veterans","women","mixed","youth"],"scoring":{"mode":"points","target":13,"timeLimitMinutes":null,"allowDraw":false},"typicalMatchMinutes":50,"changeoverMinutes":5,"ranking":{"criteria":["wins","point_diff","points_for","head_to_head","random"],"matchPoints":{"win":1,"draw":0,"loss":0}},"license":{"requiredByDefault":false,"federation":"FFPJP","numberPattern":"^[0-9]{6,10}$","numberHint":"6 à 10 chiffres, sans espace"},"defaults":{"teamFormat":"doublette","competitionFormat":"single_elimination","category":"all","maxTeams":64,"venues":32,"rounds":null,"feeCents":1000,"feePer":"team","consolation":true,"consolationFromRound":1,"consolationEntry":"auto","consolationC":false,"cadrageAfterRound":1,"byeScore":{"winner":13,"loser":7},"avoidSameClubFirstRound":true,"redrawEachRound":true,"poolSystem":"gsl","poolSize":4,"schedule":{"startTime":"14:30","registrationClosesBeforeMinutes":45,"checkInClosesBeforeMinutes":15}},"notifications":{"yourTurn":"À vous ! {venueLabel} {venue} · {time} · contre {opponent}","drawPublished":"Tirage publié : {round}.","scoreValidated":"Score validé : {score}.","tournamentStarting":"Jet du but à {time}. Bonne partie !","reminderDayBefore":"Demain : {tournament} à {time}, {place}.","notCheckedIn":"Votre équipe n''est pas encore pointée. Passez à la table de marque avant {time}.","office":"Qualifiés d''office pour le tour suivant ({round}) : pas de partie à jouer.","bracketEntry":"Inscription au {bracket} confirmée.","paused":"Fin de la journée. Reprise demain : le prochain tirage sera publié sur la page du concours."}}'::jsonb, true, 10)
   on conflict (slug) do update set name = excluded.name, config = excluded.config, sort_order = excluded.sort_order, updated_at = now();
-insert into public.sports (slug, name, config, enabled, sort_order) values ('football', 'Football', '{"slug":"football","name":"Football","icon":"football","accentToken":"football","enabled":true,"sortOrder":20,"venue":{"kind":"pitch","noun":{"singular":"terrain","plural":"terrains"},"usage":"scheduled"},"teamNoun":{"singular":"équipe","plural":"équipes"},"teamFormats":[{"id":"foot-5","label":"Foot à 5","players":5,"substitutes":{"min":0,"max":3},"individualRegistration":false},{"id":"foot-7","label":"Foot à 7","players":7,"substitutes":{"min":0,"max":5},"individualRegistration":false},{"id":"foot-8","label":"Foot à 8","players":8,"substitutes":{"min":0,"max":5},"individualRegistration":false},{"id":"foot-11","label":"Foot à 11","players":11,"substitutes":{"min":0,"max":7},"individualRegistration":false}],"competitionFormats":["pools_then_bracket","round_robin","single_elimination","swiss"],"categories":["all","seniors","veterans","women","mixed","youth"],"scoring":{"mode":"time","durationMinutes":20,"periods":2,"allowDraw":true,"knockoutTieBreak":"penalties"},"typicalMatchMinutes":20,"changeoverMinutes":5,"ranking":{"criteria":["match_points","point_diff","points_for","head_to_head","random"],"matchPoints":{"win":3,"draw":1,"loss":0}},"license":{"requiredByDefault":false,"federation":"FFF","numberPattern":"^[0-9]{6,12}$","numberHint":"6 à 12 chiffres, sans espace"},"defaults":{"teamFormat":"foot-7","competitionFormat":"pools_then_bracket","category":"all","maxTeams":8,"venues":2,"rounds":null,"feeCents":5000,"feePer":"team","consolation":false,"consolationFromRound":null,"consolationEntry":"auto","consolationC":false,"cadrageAfterRound":1,"byeScore":null,"avoidSameClubFirstRound":false,"redrawEachRound":false,"poolSystem":"round_robin","poolSize":4,"schedule":{"startTime":"09:30","registrationClosesBeforeMinutes":60,"checkInClosesBeforeMinutes":30}},"notifications":{"yourTurn":"Match dans {minutes} min, {venueLabel} {venue} · contre {opponent}","drawPublished":"Le calendrier des matchs est publié.","scoreValidated":"Score validé : {score}.","tournamentStarting":"Coup d''envoi à {time}. Bon tournoi !","reminderDayBefore":"Demain : {tournament} à {time}, {place}.","notCheckedIn":"Votre équipe n''est pas encore pointée. Passez à la table de marque avant {time}."}}'::jsonb, true, 20)
+insert into public.sports (slug, name, config, enabled, sort_order) values ('football', 'Football', '{"slug":"football","name":"Football","icon":"football","accentToken":"football","enabled":false,"sortOrder":20,"venue":{"kind":"pitch","noun":{"singular":"terrain","plural":"terrains"},"usage":"scheduled"},"teamNoun":{"singular":"équipe","plural":"équipes"},"teamFormats":[{"id":"foot-5","label":"Foot à 5","players":5,"substitutes":{"min":0,"max":3},"individualRegistration":false},{"id":"foot-7","label":"Foot à 7","players":7,"substitutes":{"min":0,"max":5},"individualRegistration":false},{"id":"foot-8","label":"Foot à 8","players":8,"substitutes":{"min":0,"max":5},"individualRegistration":false},{"id":"foot-11","label":"Foot à 11","players":11,"substitutes":{"min":0,"max":7},"individualRegistration":false}],"competitionFormats":["pools_then_bracket","round_robin","single_elimination","swiss"],"categories":["all","seniors","veterans","women","mixed","youth"],"scoring":{"mode":"time","durationMinutes":20,"periods":2,"allowDraw":true,"knockoutTieBreak":"penalties"},"typicalMatchMinutes":20,"changeoverMinutes":5,"ranking":{"criteria":["match_points","point_diff","points_for","head_to_head","random"],"matchPoints":{"win":3,"draw":1,"loss":0}},"license":{"requiredByDefault":false,"federation":"FFF","numberPattern":"^[0-9]{6,12}$","numberHint":"6 à 12 chiffres, sans espace"},"defaults":{"teamFormat":"foot-7","competitionFormat":"pools_then_bracket","category":"all","maxTeams":8,"venues":2,"rounds":null,"feeCents":5000,"feePer":"team","consolation":false,"consolationFromRound":null,"consolationEntry":"auto","consolationC":false,"cadrageAfterRound":1,"byeScore":null,"avoidSameClubFirstRound":false,"redrawEachRound":false,"poolSystem":"round_robin","poolSize":4,"schedule":{"startTime":"09:30","registrationClosesBeforeMinutes":60,"checkInClosesBeforeMinutes":30}},"notifications":{"yourTurn":"Match dans {minutes} min, {venueLabel} {venue} · contre {opponent}","drawPublished":"Le calendrier des matchs est publié.","scoreValidated":"Score validé : {score}.","tournamentStarting":"Coup d''envoi à {time}. Bon tournoi !","reminderDayBefore":"Demain : {tournament} à {time}, {place}.","notCheckedIn":"Votre équipe n''est pas encore pointée. Passez à la table de marque avant {time}.","office":"Qualifiés d''office pour le tour suivant ({round}) : pas de match à jouer.","bracketEntry":"Inscription au {bracket} confirmée.","paused":"Fin de la journée. Reprise demain : le prochain tirage sera publié sur la page du tournoi."}}'::jsonb, false, 20)
   on conflict (slug) do update set name = excluded.name, config = excluded.config, sort_order = excluded.sort_order, updated_at = now();
 
 -- Starting prices (edit them in /admin/tarifs).
@@ -24,9 +24,9 @@ insert into public.app_settings (key, value, description) values ('ai.enabled', 
 insert into public.app_settings (key, value, description) values ('ai.usd_to_eur', '0.92'::jsonb, 'Taux de conversion dollar → euro pour le suivi des coûts') on conflict (key) do nothing;
 insert into public.app_settings (key, value, description) values ('ai.pricing', '{}'::jsonb, 'Prix par million de jetons (vide = prix par défaut du modèle)') on conflict (key) do nothing;
 
--- Knowledge base of the assistant (added once per title).
-insert into public.kb_documents (title, sport_slug, source_url, body, published)
-  select 'Pétanque : déroulement d''une partie', 'petanque', 'https://www.ffpjp.org', 'Une partie de pétanque oppose deux équipes : tête-à-tête (1 joueur contre 1, 3 boules chacun), doublette (2 contre 2, 3 boules par joueur) ou triplette (3 contre 3, 2 boules par joueur).
+-- Knowledge base of the assistant (added once per title; texts edited in the admin are kept).
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Pétanque : déroulement d''une partie', 'petanque', 'https://www.ffpjp.org', 'rules', '2026-10-16', '2026-10-16', 'Une partie de pétanque oppose deux équipes : tête-à-tête (1 joueur contre 1, 3 boules chacun), doublette (2 contre 2, 3 boules par joueur) ou triplette (3 contre 3, 2 boules par joueur).
 
 Une partie se joue en 13 points : la première équipe qui atteint 13 points gagne. C''est ce qu''on appelle souvent « la partie en 13 ». Certains concours fixent un autre score ou une limite de temps : le règlement du concours prime.
 
@@ -46,15 +46,15 @@ Pointer, c''est lancer sa boule pour qu''elle s''arrête le plus près possible 
 
 Perdre 13 à 0, c''est « être fanny » : une tradition populaire, sans conséquence au classement.', true
   where not exists (select 1 from public.kb_documents where title = 'Pétanque : déroulement d''une partie');
-insert into public.kb_documents (title, sport_slug, source_url, body, published)
-  select 'Pétanque : matériel', 'petanque', 'https://www.ffpjp.org', 'En compétition officielle, les boules sont en métal, d''un diamètre de 70,5 à 80 millimètres et d''un poids de 650 à 800 grammes. Elles portent les marques du fabricant et un numéro.
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Pétanque : matériel', 'petanque', 'https://www.ffpjp.org', 'rules', '2026-10-16', '2026-10-16', 'En compétition officielle, les boules sont en métal, d''un diamètre de 70,5 à 80 millimètres et d''un poids de 650 à 800 grammes. Elles portent les marques du fabricant et un numéro.
 
 Le but (cochonnet) est en bois ou en matière synthétique, d''environ 30 millimètres de diamètre.
 
 Pour un concours amical, chacun peut jouer avec ses boules de loisir ; pour un concours officiel réservé aux licenciés, les boules doivent être homologuées.', true
   where not exists (select 1 from public.kb_documents where title = 'Pétanque : matériel');
-insert into public.kb_documents (title, sport_slug, source_url, body, published)
-  select 'Pétanque : formats de concours', 'petanque', null, 'Élimination directe : les équipes sont tirées au sort par paires, le vainqueur continue, le perdant est éliminé (ou va au concours complémentaire). Avec un nouveau tirage à chaque tour, les rencontres du tour suivant sont tirées au sort parmi les gagnants ; avec un tableau fixe, le parcours jusqu''à la finale est connu dès le départ.
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Pétanque : formats de concours', 'petanque', null, 'help', null, null, 'Élimination directe : les équipes sont tirées au sort par paires, le vainqueur continue, le perdant est éliminé (ou va au concours complémentaire). Avec un nouveau tirage à chaque tour, les rencontres du tour suivant sont tirées au sort parmi les gagnants ; avec un tableau fixe, le parcours jusqu''à la finale est connu dès le départ.
 
 Concours complémentaire : un second tableau pour les équipes éliminées tôt (par exemple les perdants du premier tour), pour que tout le monde joue plusieurs parties.
 
@@ -64,21 +64,12 @@ Système suisse (parties fixes avec classement) : chaque équipe joue le même n
 
 Mêlée tournante : chacun s''inscrit seul, les équipes sont refaites à chaque partie, et le classement est individuel.
 
-Exempt : quand le nombre d''équipes est impair, une équipe ne joue pas un tour et le gagne automatiquement (score de forfait, par défaut 13 à 0).', true
+Exempt : quand le nombre d''équipes est impair avant le cadrage, une équipe ne joue pas la partie et la gagne automatiquement 13 à 7 (jamais deux fois la même équipe). Un forfait, lui, se compte 13 à 0.
+
+Cadrage : après la 1re partie (ou la 2e, au choix de l''organisateur), un tour de cadrage ramène le nombre d''équipes à 4, 8, 16, 32 ou 64 ; les parties suivantes se jouent sans exempt. Voir la fiche « le cadrage et les qualifiés d''office ».', true
   where not exists (select 1 from public.kb_documents where title = 'Pétanque : formats de concours');
-insert into public.kb_documents (title, sport_slug, source_url, body, published)
-  select 'Football à 7 : règles courantes en tournoi', 'football', 'https://www.fff.fr', 'Au football à 7, chaque équipe aligne 7 joueurs dont un gardien, sur un terrain plus petit qu''au football à 11. Les remplacements sont en général libres et illimités (« remplacements volants »).
-
-Les matchs de tournoi sont courts : souvent 2 mi-temps de 10 minutes, ou un seul temps de 15 à 20 minutes. La durée exacte est fixée par le règlement du tournoi.
-
-En phase de poules, une victoire rapporte en général 3 points, un match nul 1 point et une défaite 0 point. En cas d''égalité au classement, on regarde la différence de buts, puis les buts marqués, puis la confrontation directe.
-
-En phase à élimination directe, un match nul est souvent départagé par une séance de tirs au but.
-
-Les règles de hors-jeu, de remise en jeu et de contacts varient d''un tournoi à l''autre (catégories jeunes, loisir, entreprise) : le règlement du tournoi prime toujours.', true
-  where not exists (select 1 from public.kb_documents where title = 'Football à 7 : règles courantes en tournoi');
-insert into public.kb_documents (title, sport_slug, source_url, body, published)
-  select 'Aide OrgaSport : retrouver son match', null, null, 'Chaque concours a un code de 4 caractères (par exemple 7KQ2), écrit sur l''affiche avec un QR code. Sur l''accueil d''OrgaSport, tapez le code dans « Retrouver mon tirage » ou scannez le QR code.
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Aide OrgaSport : retrouver son match', null, null, 'help', null, null, 'Chaque concours a un code de 4 caractères (par exemple 7KQ2), écrit sur l''affiche avec un QR code. Sur l''accueil d''OrgaSport, tapez le code dans « Retrouver mon tirage » ou scannez le QR code.
 
 Sur la page du concours, tapez votre numéro d''équipe ou votre nom dans « Trouver mon équipe » : vous voyez votre prochain match, votre terrain, l''heure et votre adversaire, puis l''historique de vos parties. La page fonctionne même sans connexion internet rapide et sur un vieux téléphone.
 
@@ -88,8 +79,8 @@ Avec un compte joueur, le bouton « Mon tirage » ouvre directement votre procha
 
 Pour être prévenu quand votre match est prêt (« À vous ! Terrain 12 · 15 h 40 »), touchez « Me prévenir quand c''est à moi ». Sur iPhone, il faut d''abord ajouter le site à l''écran d''accueil (bouton Partager, puis « Sur l''écran d''accueil »).', true
   where not exists (select 1 from public.kb_documents where title = 'Aide OrgaSport : retrouver son match');
-insert into public.kb_documents (title, sport_slug, source_url, body, published)
-  select 'Aide OrgaSport : s''inscrire à un concours', null, null, 'Ouvrez l''onglet « Concours », choisissez un concours, puis touchez « S''inscrire ». Le formulaire s''adapte au concours : nombre de joueurs, numéro de licence si le concours est réservé aux licenciés, contact du capitaine, acceptation du règlement.
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Aide OrgaSport : s''inscrire à un concours', null, null, 'help', null, null, 'Ouvrez l''onglet « Concours », choisissez un concours, puis touchez « S''inscrire ». Le formulaire s''adapte au concours : nombre de joueurs, numéro de licence si le concours est réservé aux licenciés, contact du capitaine, acceptation du règlement.
 
 Le numéro de licence sert uniquement à l''organisateur : il n''est jamais affiché publiquement. Le contact du capitaine (téléphone ou email) n''est visible que par l''organisateur.
 
@@ -97,8 +88,8 @@ Après l''inscription, vous recevez votre numéro d''équipe, un fichier pour l'
 
 L''inscription (la mise) se règle sur place, à la table de marque, le jour du concours. Pensez à pointer votre équipe à la table de marque avant l''heure limite indiquée.', true
   where not exists (select 1 from public.kb_documents where title = 'Aide OrgaSport : s''inscrire à un concours');
-insert into public.kb_documents (title, sport_slug, source_url, body, published)
-  select 'Aide OrgaSport : organiser un concours (lien concours)', null, null, 'Un club achète un « lien concours » pour chaque concours. Depuis l''espace club, touchez « Créer un concours » : un formulaire en étapes propose des réglages par défaut adaptés au sport, et le brouillon est enregistré automatiquement.
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Aide OrgaSport : organiser un concours (lien concours)', null, null, 'help', null, null, 'Un club achète un « lien concours » pour chaque concours. Depuis l''espace club, touchez « Créer un concours » : un formulaire en étapes propose des réglages par défaut adaptés au sport, et le brouillon est enregistré automatiquement.
 
 Les étapes : qui gère le concours, informations générales (date, heure, adresse), participants, argent (mise, dotation), déroulement et tirage, terrains, communication, puis récapitulatif et paiement. Un club pressé peut passer directement au récapitulatif avec les réglages par défaut.
 
@@ -106,10 +97,10 @@ Le bouton « Aide-moi à choisir » propose un format adapté au nombre d''équi
 
 Le paiement se fait sur la page sécurisée de Stripe (carte bancaire, Apple Pay, Google Pay). Aucune donnée bancaire ne passe par OrgaSport. Le concours est publié automatiquement dès que Stripe confirme le paiement, avec son lien court, son QR code et son affiche A4.
 
-Les codes PIN des bénévoles de la table de marque sont envoyés par email à l''organisateur au moment de la publication.', true
+Un code PIN de table de marque est créé au paiement et envoyé par email à l''organisateur ; d''autres PIN peuvent être ajoutés ensuite (voir la fiche « le PIN des bénévoles »).', true
   where not exists (select 1 from public.kb_documents where title = 'Aide OrgaSport : organiser un concours (lien concours)');
-insert into public.kb_documents (title, sport_slug, source_url, body, published)
-  select 'Aide OrgaSport : la table de marque', null, null, 'La table de marque s''ouvre depuis la page du concours (/c/CODE/table), avec le compte de l''organisateur ou un code PIN donné aux bénévoles.
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Aide OrgaSport : la table de marque', null, null, 'help', null, null, 'La table de marque s''ouvre depuis la page du concours (/c/CODE/table), avec le compte de l''organisateur ou un code PIN donné aux bénévoles.
 
 Elle permet de pointer les équipes, d''inscrire sur place, de lancer le tirage (ou de le laisser se faire automatiquement à l''heure prévue), d''attribuer les terrains, de saisir les scores et de voir le classement.
 
@@ -119,6 +110,89 @@ Toute action peut être corrigée : échanger deux équipes, refaire le tirage d
 
 Si le réseau coupe, les saisies restent sur l''appareil et partent automatiquement au retour du réseau. Un témoin « En ligne » ou « Hors ligne » reste toujours visible. En secours, l''onglet Impression imprime le tirage, les feuilles de match et le classement.', true
   where not exists (select 1 from public.kb_documents where title = 'Aide OrgaSport : la table de marque');
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Pétanque : règlement officiel — but nul, boules nulles et mesure', 'petanque', 'https://www.ffpjp.org', 'rules', '2026-10-16', '2026-10-16', 'Ce résumé suit le règlement officiel de la pétanque publié par la fédération (FFPJP, traduction du règlement international FIPJP). En cas de doute, le texte officiel et le règlement du concours font foi, et l''arbitre tranche.
+
+Boule nulle : une boule qui sort du terrain autorisé est « morte » et ne compte plus pour la mène. Une boule arrêtée par un spectateur ou un arbitre reste à l''endroit où elle s''est arrêtée ; une boule arrêtée volontairement par un joueur de l''équipe qui l''a lancée est annulée.
+
+But nul : si le but sort du terrain ou devient invisible après un tir, la mène est nulle si les deux équipes ont encore des boules à jouer. Si une seule équipe a encore des boules, elle marque autant de points qu''il lui reste de boules. Si aucune équipe n''a plus de boules, la mène est nulle.
+
+Mesure : la mesure d''un point revient au joueur qui a joué la dernière boule ou à l''un de ses coéquipiers ; les adversaires peuvent ensuite mesurer à leur tour. Il est interdit de déplacer les boules ou le but pendant la mesure ; en cas de désaccord, on appelle l''arbitre.
+
+Égalité : si les deux boules les plus proches de chaque équipe sont à égale distance du but, la mène est nulle quand plus personne n''a de boule à jouer ; sinon, l''équipe qui a joué la dernière rejoue, puis l''autre, jusqu''à ce que l''une reprenne le point.
+
+Comportement : un joueur doit se tenir à l''écart (à au moins 2 mètres) pendant que l''adversaire joue, et ne pas le gêner. Les sanctions (avertissement, annulation de la boule jouée ou de la suivante, exclusion) sont décidées par l''arbitre selon le règlement.', true
+  where not exists (select 1 from public.kb_documents where title = 'Pétanque : règlement officiel — but nul, boules nulles et mesure');
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Aide OrgaSport : les fonctions du site', null, null, 'help', null, null, 'OrgaSport gère un concours du début à la fin : inscriptions, tirage, terrains, scores et résultats en direct. Il est réservé à la pétanque pour l''instant ; d''autres sports seront ajoutés plus tard.
+
+Pour les joueurs, sans compte : le catalogue des concours (onglet « Concours »), l''inscription en ligne quand l''organisateur l''a ouverte, « Retrouver mon tirage » avec le code ou le QR code de l''affiche, les notifications « À vous ! » et l''ajout du concours à son agenda. Le compte joueur ajoute le fil « Pour vous », les concours suivis et le bouton « Mon tirage » qui ouvre directement le prochain match.
+
+Pour les clubs : l''espace club (tableau de bord, membres, annonces, factures, statistiques), la création d''un concours en quelques minutes, le paiement d''un « lien concours » par concours, l''affiche A4 avec QR code, la table de marque et les PIN des bénévoles.
+
+Le prix du lien concours est affiché au récapitulatif, avant le paiement ; un code promo peut s''appliquer. L''inscription des équipes (la mise) se règle toujours sur place : OrgaSport ne fait pas payer les joueurs.
+
+L''assistant répond aux questions sur le sport et sur le site. Les informations officielles d''un concours (horaires, tirage, terrains, résultats) viennent toujours de la base du concours. OrgaSport ne donne jamais d''heure de fin.', true
+  where not exists (select 1 from public.kb_documents where title = 'Aide OrgaSport : les fonctions du site');
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Aide OrgaSport : le PIN des bénévoles', null, null, 'help', null, null, 'Le PIN est un code à donner à un bénévole qui n''a pas de compte : il ouvre la table de marque de ce concours seulement, pendant 24 h, sur son téléphone ou son ordinateur. L''organisateur peut le révoquer à tout moment.
+
+Un PIN de table est créé automatiquement au paiement du concours et envoyé par email à l''organisateur. D''autres PIN peuvent être ajoutés depuis la gestion du concours dans l''espace club, par exemple un par bénévole.
+
+En 3 étapes : l''organisateur crée le PIN, il le donne au bénévole (de vive voix ou avec la fiche bénévole à imprimer, qui porte le QR code de la table de marque et le PIN en grand), puis le bénévole ouvre /c/CODE/table (ou scanne le QR code) et tape le PIN.
+
+Le PIN n''est jamais écrit dans une adresse web. Après trop d''essais faux, la saisie est bloquée un moment sur l''appareil, pour éviter qu''on devine le code. Révoquer un PIN déconnecte les appareils qui l''utilisaient.', true
+  where not exists (select 1 from public.kb_documents where title = 'Aide OrgaSport : le PIN des bénévoles');
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Aide OrgaSport : le cadrage et les qualifiés d''office (Office)', 'petanque', null, 'help', null, null, 'Le cadrage sert à arriver à un nombre d''équipes « rond » (4, 8, 16, 32, 64…) pour que les parties suivantes se jouent sans exempt. L''organisateur le place après la 1re partie (par défaut) ou après la 2e. Avec des poules, il se fait tout de suite après les poules.
+
+Avant le cadrage, le tirage est intégral et au hasard. Si le nombre d''équipes est impair, une équipe est exempte : elle gagne la partie 13 à 7, et ce n''est jamais deux fois la même équipe.
+
+Au cadrage, s''il reste par exemple 7 équipes, 3 parties se jouent (6 équipes) et 1 équipe est qualifiée d''office : elle passe au tour suivant sans jouer. Sur les tirages, elle apparaît face à « Office ». Les équipes qui jouent le cadrage sont tirées au sort.
+
+Exemples : 13 équipes donnent 6 parties et 1 exempt, il en reste 7 ; puis cadrage de 3 parties et 1 d''office, il en reste 4. Avec 100 équipes, il en reste 50, puis 18 parties de cadrage et 14 d''office, il en reste 32.
+
+Si un double forfait ou un retrait laisse un nombre qui n''est pas « rond », le tour suivant crée automatiquement des places d''office, sans tour supplémentaire. Après le cadrage, les tours s''appellent 1/16, 1/8, 1/4, 1/2 et finale.', true
+  where not exists (select 1 from public.kb_documents where title = 'Aide OrgaSport : le cadrage et les qualifiés d''office (Office)');
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Aide OrgaSport : N.H. (équipe non homogène)', 'petanque', null, 'help', null, null, 'À côté du nom d''une équipe, OrgaSport affiche son club : « (n° du club / NOM DU CLUB) » quand tous les joueurs sont du même club, ou « (N.H.) » quand l''équipe mélange des joueurs de clubs différents. N.H. veut dire « non homogène ».
+
+Le club de chaque joueur (numéro et nom) est une information publique ; le numéro de licence, lui, reste privé et n''est jamais affiché.
+
+L''option « Éviter deux équipes du même club au 1er tour » s''appuie sur ce club. Une équipe N.H. n''a pas de club pour cette règle. Les noms des joueurs s''affichent en « NOM Prénom », en majuscules pour le nom.', true
+  where not exists (select 1 from public.kb_documents where title = 'Aide OrgaSport : N.H. (équipe non homogène)');
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Aide OrgaSport : concours B et C', 'petanque', null, 'help', null, null, 'Le concours B (complémentaire) permet aux équipes éliminées tôt de continuer à jouer. Sans poules, il reçoit les perdants de la 1re partie du concours A (l''exempt de la 1re partie n''y va pas). Avec poules, il reçoit les équipes non qualifiées des poules.
+
+Le concours C, en option, reçoit les perdants de la 1re partie du B. Il n''est possible que si le B compte au moins 4 équipes au départ.
+
+Inscription au B ou au C : automatique (toutes les équipes concernées jouent) ou volontaire (seules les équipes inscrites à la table de marque jouent, et l''organisateur lance lui-même le 1er tirage quand tout est encaissé). Le droit d''inscription au B est indiqué pour information et se règle sur place.
+
+Le B et le C ont leur propre cadrage, comme le A, et leur 1re partie est toujours un tirage intégral.', true
+  where not exists (select 1 from public.kb_documents where title = 'Aide OrgaSport : concours B et C');
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Aide OrgaSport : concours sur 2 jours', 'petanque', null, 'help', null, null, 'Un concours peut se jouer sur 2 jours : l''organisateur choisit à la création où le concours s''arrête le soir (avant les 1/16, les 1/8, les 1/4, les 1/2, ou après les poules).
+
+Arrivé à ce point, le tirage automatique s''arrête : les concours A, B et C se mettent en pause en même temps. Les joueurs sont prévenus de la reprise.
+
+Le lendemain, la table de marque relance le concours (bouton de reprise, ou un tirage manuel) et l''enchaînement automatique reprend. Le concours reste « en cours » pendant la nuit, et OrgaSport ne donne aucune heure de fin.', true
+  where not exists (select 1 from public.kb_documents where title = 'Aide OrgaSport : concours sur 2 jours');
+insert into public.kb_documents (title, sport_slug, source_url, kind, version_date, reviewed_at, body, published)
+  select 'Aide OrgaSport : clôture du concours et suppression des résultats', null, null, 'help', null, null, 'Quand la finale est jouée, le concours est « terminé » : l''organisateur peut encore corriger un score, un forfait ou annuler une action. Le lien concours sert pour un seul concours.
+
+La clôture est définitive : par le bouton « Clore définitivement » à la table de marque, ou automatiquement 24 h après la finale. Ensuite plus aucune action n''est possible : ni correction, ni inscription, ni saisie de score par les capitaines.
+
+Les résultats restent visibles 14 jours après la fin du concours. Ensuite, les noms des joueurs, les contacts, les codes des équipes, les PIN et l''historique des actions sont supprimés, et la page affiche « Résultats supprimés ». Les paiements, les factures et des statistiques anonymes sont conservés.
+
+Le code court d''un concours (par exemple 7KQ2) n''est jamais réattribué à un autre concours.', true
+  where not exists (select 1 from public.kb_documents where title = 'Aide OrgaSport : clôture du concours et suppression des résultats');
+-- Rulebook sheets added before they were dated: mark them as rules, with their dates.
+update public.kb_documents set kind = 'rules', version_date = '2026-10-16', reviewed_at = '2026-10-16'
+  where title = 'Pétanque : déroulement d''une partie' and kind = 'help' and version_date is null;
+update public.kb_documents set kind = 'rules', version_date = '2026-10-16', reviewed_at = '2026-10-16'
+  where title = 'Pétanque : matériel' and kind = 'help' and version_date is null;
+update public.kb_documents set kind = 'rules', version_date = '2026-10-16', reviewed_at = '2026-10-16'
+  where title = 'Pétanque : règlement officiel — but nul, boules nulles et mesure' and kind = 'help' and version_date is null;
 
 -- Legal pages: empty placeholders, written later by the site owner.
 insert into public.legal_pages (slug, title, body, published) values ('mentions-legales', 'Mentions légales', '', false) on conflict (slug) do nothing;

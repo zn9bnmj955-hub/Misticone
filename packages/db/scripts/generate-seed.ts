@@ -638,7 +638,17 @@ insert(
 // Assistant knowledge base (chunked automatically by a trigger).
 insert(
   "public.kb_documents",
-  KB_DOCS.map((d) => ({ id: uuid(), title: d.title, sport_slug: d.sport, source_url: d.source, body: d.body, published: true })),
+  KB_DOCS.map((d) => ({
+    id: uuid(),
+    title: d.title,
+    sport_slug: d.sport,
+    source_url: d.source,
+    kind: d.kind,
+    version_date: d.versionDate ?? null,
+    reviewed_at: d.reviewedAt ?? null,
+    body: d.body,
+    published: true,
+  })),
 );
 // News feed demo: one clearly fictional source (real feeds are added in the admin).
 // Enabled so its items show in the feed; the hourly fetch just fails on example.org.

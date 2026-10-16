@@ -1,17 +1,41 @@
 /**
- * Knowledge base of the assistant (demo content, editable in the admin).
+ * Knowledge base of the assistant (editable in the admin).
  * Plain-language summaries written for OrgaSport — not copies of official
  * texts. Paragraphs are separated by blank lines: each paragraph becomes a
  * searchable chunk. The official rules of the federation and the rules of
  * each tournament always prevail.
+ *
+ * Two kinds of sheets:
+ * - "help": how the site works (one sheet per feature);
+ * - "rules": summary of an official rulebook, with its source, the date of
+ *   the version it summarises (the assistant cites « règlement en vigueur au
+ *   … ») and the date of the last review (the admin is warned after 12
+ *   months). Only enabled sports have rulebook sheets: the others are added
+ *   the day they are switched on.
+ *
+ * TO CHECK by a person before production: each rulebook summary against the
+ * official text at its source, then set `versionDate` / `reviewedAt`.
  */
-export type KbDoc = { title: string; sport: string | null; source: string | null; body: string };
+export type KbDoc = {
+  title: string;
+  sport: string | null;
+  source: string | null;
+  kind: "help" | "rules";
+  /** ISO date: the official version the summary follows (required for "rules"). */
+  versionDate?: string;
+  /** ISO date: last review of the summary (required for "rules"). */
+  reviewedAt?: string;
+  body: string;
+};
+
+/** Official rules of pétanque (FFPJP, French translation of the FIPJP rules). */
+const PETANQUE_RULES = { source: "https://www.ffpjp.org", kind: "rules", versionDate: "2026-10-16", reviewedAt: "2026-10-16" } as const;
 
 export const KB_DOCS: KbDoc[] = [
   {
     title: "Pétanque : déroulement d'une partie",
     sport: "petanque",
-    source: "https://www.ffpjp.org",
+    ...PETANQUE_RULES,
     body: `Une partie de pétanque oppose deux équipes : tête-à-tête (1 joueur contre 1, 3 boules chacun), doublette (2 contre 2, 3 boules par joueur) ou triplette (3 contre 3, 2 boules par joueur).
 
 Une partie se joue en 13 points : la première équipe qui atteint 13 points gagne. C'est ce qu'on appelle souvent « la partie en 13 ». Certains concours fixent un autre score ou une limite de temps : le règlement du concours prime.
@@ -35,7 +59,7 @@ Perdre 13 à 0, c'est « être fanny » : une tradition populaire, sans conséqu
   {
     title: "Pétanque : matériel",
     sport: "petanque",
-    source: "https://www.ffpjp.org",
+    ...PETANQUE_RULES,
     body: `En compétition officielle, les boules sont en métal, d'un diamètre de 70,5 à 80 millimètres et d'un poids de 650 à 800 grammes. Elles portent les marques du fabricant et un numéro.
 
 Le but (cochonnet) est en bois ou en matière synthétique, d'environ 30 millimètres de diamètre.
@@ -46,6 +70,7 @@ Pour un concours amical, chacun peut jouer avec ses boules de loisir ; pour un c
     title: "Pétanque : formats de concours",
     sport: "petanque",
     source: null,
+    kind: "help",
     body: `Élimination directe : les équipes sont tirées au sort par paires, le vainqueur continue, le perdant est éliminé (ou va au concours complémentaire). Avec un nouveau tirage à chaque tour, les rencontres du tour suivant sont tirées au sort parmi les gagnants ; avec un tableau fixe, le parcours jusqu'à la finale est connu dès le départ.
 
 Concours complémentaire : un second tableau pour les équipes éliminées tôt (par exemple les perdants du premier tour), pour que tout le monde joue plusieurs parties.
@@ -56,26 +81,15 @@ Système suisse (parties fixes avec classement) : chaque équipe joue le même n
 
 Mêlée tournante : chacun s'inscrit seul, les équipes sont refaites à chaque partie, et le classement est individuel.
 
-Exempt : quand le nombre d'équipes est impair, une équipe ne joue pas un tour et le gagne automatiquement (score de forfait, par défaut 13 à 0).`,
-  },
-  {
-    title: "Football à 7 : règles courantes en tournoi",
-    sport: "football",
-    source: "https://www.fff.fr",
-    body: `Au football à 7, chaque équipe aligne 7 joueurs dont un gardien, sur un terrain plus petit qu'au football à 11. Les remplacements sont en général libres et illimités (« remplacements volants »).
+Exempt : quand le nombre d'équipes est impair avant le cadrage, une équipe ne joue pas la partie et la gagne automatiquement 13 à 7 (jamais deux fois la même équipe). Un forfait, lui, se compte 13 à 0.
 
-Les matchs de tournoi sont courts : souvent 2 mi-temps de 10 minutes, ou un seul temps de 15 à 20 minutes. La durée exacte est fixée par le règlement du tournoi.
-
-En phase de poules, une victoire rapporte en général 3 points, un match nul 1 point et une défaite 0 point. En cas d'égalité au classement, on regarde la différence de buts, puis les buts marqués, puis la confrontation directe.
-
-En phase à élimination directe, un match nul est souvent départagé par une séance de tirs au but.
-
-Les règles de hors-jeu, de remise en jeu et de contacts varient d'un tournoi à l'autre (catégories jeunes, loisir, entreprise) : le règlement du tournoi prime toujours.`,
+Cadrage : après la 1re partie (ou la 2e, au choix de l'organisateur), un tour de cadrage ramène le nombre d'équipes à 4, 8, 16, 32 ou 64 ; les parties suivantes se jouent sans exempt. Voir la fiche « le cadrage et les qualifiés d'office ».`,
   },
   {
     title: "Aide OrgaSport : retrouver son match",
     sport: null,
     source: null,
+    kind: "help",
     body: `Chaque concours a un code de 4 caractères (par exemple 7KQ2), écrit sur l'affiche avec un QR code. Sur l'accueil d'OrgaSport, tapez le code dans « Retrouver mon tirage » ou scannez le QR code.
 
 Sur la page du concours, tapez votre numéro d'équipe ou votre nom dans « Trouver mon équipe » : vous voyez votre prochain match, votre terrain, l'heure et votre adversaire, puis l'historique de vos parties. La page fonctionne même sans connexion internet rapide et sur un vieux téléphone.
@@ -90,6 +104,7 @@ Pour être prévenu quand votre match est prêt (« À vous ! Terrain 12 · 15 h
     title: "Aide OrgaSport : s'inscrire à un concours",
     sport: null,
     source: null,
+    kind: "help",
     body: `Ouvrez l'onglet « Concours », choisissez un concours, puis touchez « S'inscrire ». Le formulaire s'adapte au concours : nombre de joueurs, numéro de licence si le concours est réservé aux licenciés, contact du capitaine, acceptation du règlement.
 
 Le numéro de licence sert uniquement à l'organisateur : il n'est jamais affiché publiquement. Le contact du capitaine (téléphone ou email) n'est visible que par l'organisateur.
@@ -102,6 +117,7 @@ L'inscription (la mise) se règle sur place, à la table de marque, le jour du c
     title: "Aide OrgaSport : organiser un concours (lien concours)",
     sport: null,
     source: null,
+    kind: "help",
     body: `Un club achète un « lien concours » pour chaque concours. Depuis l'espace club, touchez « Créer un concours » : un formulaire en étapes propose des réglages par défaut adaptés au sport, et le brouillon est enregistré automatiquement.
 
 Les étapes : qui gère le concours, informations générales (date, heure, adresse), participants, argent (mise, dotation), déroulement et tirage, terrains, communication, puis récapitulatif et paiement. Un club pressé peut passer directement au récapitulatif avec les réglages par défaut.
@@ -110,12 +126,13 @@ Le bouton « Aide-moi à choisir » propose un format adapté au nombre d'équip
 
 Le paiement se fait sur la page sécurisée de Stripe (carte bancaire, Apple Pay, Google Pay). Aucune donnée bancaire ne passe par OrgaSport. Le concours est publié automatiquement dès que Stripe confirme le paiement, avec son lien court, son QR code et son affiche A4.
 
-Les codes PIN des bénévoles de la table de marque sont envoyés par email à l'organisateur au moment de la publication.`,
+Un code PIN de table de marque est créé au paiement et envoyé par email à l'organisateur ; d'autres PIN peuvent être ajoutés ensuite (voir la fiche « le PIN des bénévoles »).`,
   },
   {
     title: "Aide OrgaSport : la table de marque",
     sport: null,
     source: null,
+    kind: "help",
     body: `La table de marque s'ouvre depuis la page du concours (/c/CODE/table), avec le compte de l'organisateur ou un code PIN donné aux bénévoles.
 
 Elle permet de pointer les équipes, d'inscrire sur place, de lancer le tirage (ou de le laisser se faire automatiquement à l'heure prévue), d'attribuer les terrains, de saisir les scores et de voir le classement.
@@ -125,5 +142,112 @@ Saisie rapide d'un score : tapez le numéro du terrain puis les deux scores, par
 Toute action peut être corrigée : échanger deux équipes, refaire le tirage d'un tour, déplacer un match, déclarer un forfait, corriger un score. L'onglet Historique liste toutes les actions avec un bouton « Annuler ».
 
 Si le réseau coupe, les saisies restent sur l'appareil et partent automatiquement au retour du réseau. Un témoin « En ligne » ou « Hors ligne » reste toujours visible. En secours, l'onglet Impression imprime le tirage, les feuilles de match et le classement.`,
+  },
+  {
+    title: "Pétanque : règlement officiel — but nul, boules nulles et mesure",
+    sport: "petanque",
+    ...PETANQUE_RULES,
+    body: `Ce résumé suit le règlement officiel de la pétanque publié par la fédération (FFPJP, traduction du règlement international FIPJP). En cas de doute, le texte officiel et le règlement du concours font foi, et l'arbitre tranche.
+
+Boule nulle : une boule qui sort du terrain autorisé est « morte » et ne compte plus pour la mène. Une boule arrêtée par un spectateur ou un arbitre reste à l'endroit où elle s'est arrêtée ; une boule arrêtée volontairement par un joueur de l'équipe qui l'a lancée est annulée.
+
+But nul : si le but sort du terrain ou devient invisible après un tir, la mène est nulle si les deux équipes ont encore des boules à jouer. Si une seule équipe a encore des boules, elle marque autant de points qu'il lui reste de boules. Si aucune équipe n'a plus de boules, la mène est nulle.
+
+Mesure : la mesure d'un point revient au joueur qui a joué la dernière boule ou à l'un de ses coéquipiers ; les adversaires peuvent ensuite mesurer à leur tour. Il est interdit de déplacer les boules ou le but pendant la mesure ; en cas de désaccord, on appelle l'arbitre.
+
+Égalité : si les deux boules les plus proches de chaque équipe sont à égale distance du but, la mène est nulle quand plus personne n'a de boule à jouer ; sinon, l'équipe qui a joué la dernière rejoue, puis l'autre, jusqu'à ce que l'une reprenne le point.
+
+Comportement : un joueur doit se tenir à l'écart (à au moins 2 mètres) pendant que l'adversaire joue, et ne pas le gêner. Les sanctions (avertissement, annulation de la boule jouée ou de la suivante, exclusion) sont décidées par l'arbitre selon le règlement.`,
+  },
+  {
+    title: "Aide OrgaSport : les fonctions du site",
+    sport: null,
+    source: null,
+    kind: "help",
+    body: `OrgaSport gère un concours du début à la fin : inscriptions, tirage, terrains, scores et résultats en direct. Il est réservé à la pétanque pour l'instant ; d'autres sports seront ajoutés plus tard.
+
+Pour les joueurs, sans compte : le catalogue des concours (onglet « Concours »), l'inscription en ligne quand l'organisateur l'a ouverte, « Retrouver mon tirage » avec le code ou le QR code de l'affiche, les notifications « À vous ! » et l'ajout du concours à son agenda. Le compte joueur ajoute le fil « Pour vous », les concours suivis et le bouton « Mon tirage » qui ouvre directement le prochain match.
+
+Pour les clubs : l'espace club (tableau de bord, membres, annonces, factures, statistiques), la création d'un concours en quelques minutes, le paiement d'un « lien concours » par concours, l'affiche A4 avec QR code, la table de marque et les PIN des bénévoles.
+
+Le prix du lien concours est affiché au récapitulatif, avant le paiement ; un code promo peut s'appliquer. L'inscription des équipes (la mise) se règle toujours sur place : OrgaSport ne fait pas payer les joueurs.
+
+L'assistant répond aux questions sur le sport et sur le site. Les informations officielles d'un concours (horaires, tirage, terrains, résultats) viennent toujours de la base du concours. OrgaSport ne donne jamais d'heure de fin.`,
+  },
+  {
+    title: "Aide OrgaSport : le PIN des bénévoles",
+    sport: null,
+    source: null,
+    kind: "help",
+    body: `Le PIN est un code à donner à un bénévole qui n'a pas de compte : il ouvre la table de marque de ce concours seulement, pendant 24 h, sur son téléphone ou son ordinateur. L'organisateur peut le révoquer à tout moment.
+
+Un PIN de table est créé automatiquement au paiement du concours et envoyé par email à l'organisateur. D'autres PIN peuvent être ajoutés depuis la gestion du concours dans l'espace club, par exemple un par bénévole.
+
+En 3 étapes : l'organisateur crée le PIN, il le donne au bénévole (de vive voix ou avec la fiche bénévole à imprimer, qui porte le QR code de la table de marque et le PIN en grand), puis le bénévole ouvre /c/CODE/table (ou scanne le QR code) et tape le PIN.
+
+Le PIN n'est jamais écrit dans une adresse web. Après trop d'essais faux, la saisie est bloquée un moment sur l'appareil, pour éviter qu'on devine le code. Révoquer un PIN déconnecte les appareils qui l'utilisaient.`,
+  },
+  {
+    title: "Aide OrgaSport : le cadrage et les qualifiés d'office (Office)",
+    sport: "petanque",
+    source: null,
+    kind: "help",
+    body: `Le cadrage sert à arriver à un nombre d'équipes « rond » (4, 8, 16, 32, 64…) pour que les parties suivantes se jouent sans exempt. L'organisateur le place après la 1re partie (par défaut) ou après la 2e. Avec des poules, il se fait tout de suite après les poules.
+
+Avant le cadrage, le tirage est intégral et au hasard. Si le nombre d'équipes est impair, une équipe est exempte : elle gagne la partie 13 à 7, et ce n'est jamais deux fois la même équipe.
+
+Au cadrage, s'il reste par exemple 7 équipes, 3 parties se jouent (6 équipes) et 1 équipe est qualifiée d'office : elle passe au tour suivant sans jouer. Sur les tirages, elle apparaît face à « Office ». Les équipes qui jouent le cadrage sont tirées au sort.
+
+Exemples : 13 équipes donnent 6 parties et 1 exempt, il en reste 7 ; puis cadrage de 3 parties et 1 d'office, il en reste 4. Avec 100 équipes, il en reste 50, puis 18 parties de cadrage et 14 d'office, il en reste 32.
+
+Si un double forfait ou un retrait laisse un nombre qui n'est pas « rond », le tour suivant crée automatiquement des places d'office, sans tour supplémentaire. Après le cadrage, les tours s'appellent 1/16, 1/8, 1/4, 1/2 et finale.`,
+  },
+  {
+    title: "Aide OrgaSport : N.H. (équipe non homogène)",
+    sport: "petanque",
+    source: null,
+    kind: "help",
+    body: `À côté du nom d'une équipe, OrgaSport affiche son club : « (n° du club / NOM DU CLUB) » quand tous les joueurs sont du même club, ou « (N.H.) » quand l'équipe mélange des joueurs de clubs différents. N.H. veut dire « non homogène ».
+
+Le club de chaque joueur (numéro et nom) est une information publique ; le numéro de licence, lui, reste privé et n'est jamais affiché.
+
+L'option « Éviter deux équipes du même club au 1er tour » s'appuie sur ce club. Une équipe N.H. n'a pas de club pour cette règle. Les noms des joueurs s'affichent en « NOM Prénom », en majuscules pour le nom.`,
+  },
+  {
+    title: "Aide OrgaSport : concours B et C",
+    sport: "petanque",
+    source: null,
+    kind: "help",
+    body: `Le concours B (complémentaire) permet aux équipes éliminées tôt de continuer à jouer. Sans poules, il reçoit les perdants de la 1re partie du concours A (l'exempt de la 1re partie n'y va pas). Avec poules, il reçoit les équipes non qualifiées des poules.
+
+Le concours C, en option, reçoit les perdants de la 1re partie du B. Il n'est possible que si le B compte au moins 4 équipes au départ.
+
+Inscription au B ou au C : automatique (toutes les équipes concernées jouent) ou volontaire (seules les équipes inscrites à la table de marque jouent, et l'organisateur lance lui-même le 1er tirage quand tout est encaissé). Le droit d'inscription au B est indiqué pour information et se règle sur place.
+
+Le B et le C ont leur propre cadrage, comme le A, et leur 1re partie est toujours un tirage intégral.`,
+  },
+  {
+    title: "Aide OrgaSport : concours sur 2 jours",
+    sport: "petanque",
+    source: null,
+    kind: "help",
+    body: `Un concours peut se jouer sur 2 jours : l'organisateur choisit à la création où le concours s'arrête le soir (avant les 1/16, les 1/8, les 1/4, les 1/2, ou après les poules).
+
+Arrivé à ce point, le tirage automatique s'arrête : les concours A, B et C se mettent en pause en même temps. Les joueurs sont prévenus de la reprise.
+
+Le lendemain, la table de marque relance le concours (bouton de reprise, ou un tirage manuel) et l'enchaînement automatique reprend. Le concours reste « en cours » pendant la nuit, et OrgaSport ne donne aucune heure de fin.`,
+  },
+  {
+    title: "Aide OrgaSport : clôture du concours et suppression des résultats",
+    sport: null,
+    source: null,
+    kind: "help",
+    body: `Quand la finale est jouée, le concours est « terminé » : l'organisateur peut encore corriger un score, un forfait ou annuler une action. Le lien concours sert pour un seul concours.
+
+La clôture est définitive : par le bouton « Clore définitivement » à la table de marque, ou automatiquement 24 h après la finale. Ensuite plus aucune action n'est possible : ni correction, ni inscription, ni saisie de score par les capitaines.
+
+Les résultats restent visibles 14 jours après la fin du concours. Ensuite, les noms des joueurs, les contacts, les codes des équipes, les PIN et l'historique des actions sont supprimés, et la page affiche « Résultats supprimés ». Les paiements, les factures et des statistiques anonymes sont conservés.
+
+Le code court d'un concours (par exemple 7KQ2) n'est jamais réattribué à un autre concours.`,
   },
 ];
