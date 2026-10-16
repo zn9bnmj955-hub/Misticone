@@ -2,6 +2,9 @@
  * OrgaSport service worker.
  * Phase 2: keeps the last public tournament pages readable without network
  * (network first, cache as a fallback). Phase 5: push notifications (below).
+ * TM2: the scoring table (/c/CODE/table) asks, once opened online, to keep
+ * its page and every build file it loaded ("cache-page" message), so it can
+ * be reloaded without network; its state and outbox come from localStorage.
  */
 const CACHE = "terrain-v1";
 const STATIC = "static-v1";
@@ -15,24 +18,27 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  // Fingerprinted build files never change: cache first (lets the scoring
-  // table reload without network).
+  // Build files: network first (the browser's HTTP cache already serves the
+  // fingerprinted production files without network, and the dev server's
+  // unversioned files are never served stale), this cache when offline.
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(
-      caches.open(STATIC).then((cache) =>
-        cache.match(request).then(
-          (hit) =>
-            hit ||
-            fetch(request).then((response) => {
-              if (response.ok) cache.put(request, response.clone());
-              return response;
-            }),
-        ),
-      ),
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(STATIC).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.open(STATIC).then((cache) => cache.match(request)).then((hit) => hit || Response.error())),
     );
     return;
   }
   if (!TERRAIN.test(url.pathname)) return;
+  // React Server Components payloads (client navigation, prefetch): never
+  // answer them with a cached HTML page.
+  if (url.searchParams.has("_rsc") || request.headers.get("RSC")) return;
   const isFragment = url.searchParams.has("fragment");
   event.respondWith(
     fetch(request)
@@ -51,6 +57,34 @@ self.addEventListener("fetch", (event) => {
           .then((cache) => cache.match(request).then((hit) => hit || cache.match(url.pathname, { ignoreSearch: true })))
               .then((hit) => hit || new Response("Hors connexion", { status: 503, headers: { "content-type": "text/plain; charset=utf-8" } })),
       ),
+  );
+});
+
+// TM2: keep the page that is open right now (and its build files) for a
+// reload without network. Only terrain pages and fingerprinted build files.
+self.addEventListener("message", (event) => {
+  const data = event.data || {};
+  if (data.type !== "cache-page" || !Array.isArray(data.urls)) return;
+  const jobs = data.urls.slice(0, 200).map((raw) => {
+    let url;
+    try {
+      url = new URL(raw, self.location.origin);
+    } catch {
+      return null;
+    }
+    if (url.origin !== self.location.origin) return null;
+    const name = url.pathname.startsWith("/_next/static/") ? STATIC : TERRAIN.test(url.pathname) && !url.search ? CACHE : null;
+    if (!name) return null;
+    return caches.open(name).then((cache) =>
+      fetch(url.href, { credentials: "same-origin" }).then((response) => {
+        if (response.ok) return cache.put(url.href, response);
+      }),
+    );
+  });
+  event.waitUntil(
+    Promise.all(jobs.map((job) => job && job.catch(() => undefined))).then(() => {
+      if (event.source) event.source.postMessage({ type: "page-cached", path: data.path || null });
+    }),
   );
 });
 

@@ -74,6 +74,29 @@ export function newOpId(): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
 
+/**
+ * Keeps this page and every build file it loaded in the service worker's
+ * cache, so the table reopens without network after a first online opening
+ * (the engine state and the outbox are then read back from localStorage).
+ */
+export function keepForOffline(): void {
+  const nav = typeof navigator === "undefined" ? undefined : navigator;
+  if (!nav || !("serviceWorker" in nav)) return;
+  nav.serviceWorker
+    .register("/sw.js", { scope: "/" })
+    .then(() => nav.serviceWorker.ready)
+    .then((reg) => {
+      const files = performance
+        .getEntriesByType("resource")
+        .map((e) => e.name)
+        .filter((name) => name.includes("/_next/static/"));
+      reg.active?.postMessage({ type: "cache-page", path: location.pathname, urls: [location.pathname, ...files] });
+    })
+    .catch(() => {
+      // No service worker (private window, old browser): the printed sheets remain.
+    });
+}
+
 function applyLocal(state: EngineState, op: QueuedOp): EngineState {
   return applyCommand(state, op.command, { now: op.at, newId: createIdGenerator(op.clientOpId), seed: op.clientOpId }).state;
 }
@@ -122,6 +145,7 @@ export function useScoringTable(code: string) {
     setOutbox(queued);
     setOnline(navigator.onLine);
     /* eslint-enable react-hooks/set-state-in-effect */
+    if (navigator.onLine) keepForOffline();
   }, [code]);
 
   const fetchState = useCallback(async () => {

@@ -96,16 +96,4 @@ test.describe("scoring table on an old computer", () => {
     await expect(page.getByRole("status").filter({ hasText: "Hors ligne" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Scores/ })).toBeVisible();
   });
-
-  // TM2: the scoring table does not register the service worker itself, so a
-  // volunteer who opens /c/CODE/table directly loses the page on a reload
-  // without network (Chrome shows its "no internet" page).
-  test.fixme("reopens without network when opened directly", async ({ page, context }) => {
-    await pinLogin(page);
-    await page.reload();
-    await page.waitForLoadState("networkidle");
-    await context.setOffline(true);
-    await page.reload();
-    await expect(page.getByRole("button", { name: /Scores/ })).toBeVisible();
-  });
 });
