@@ -14,6 +14,15 @@ export function publicPlayerName(p: Person, mode: Enums<"name_display">): string
 }
 
 /**
+ * One player on a draw sheet (results-page style): « NOM PRÉNOM » in capitals,
+ * or the initials in the same order (« D. J. ») when the organizer hides names.
+ */
+export function publicPlayerLine(p: Person, mode: Enums<"name_display">): string {
+  if (mode === "initials") return `${initial(p.last_name)} ${initial(p.first_name)}`.trim();
+  return `${p.last_name.trim()} ${p.first_name.trim()}`.trim().toLocaleUpperCase("fr-FR");
+}
+
+/**
  * Short team label: its name if it has one (football), otherwise the players'
  * last names ("Dupont / Martin") or initials ("K. B. / J. M.").
  */
