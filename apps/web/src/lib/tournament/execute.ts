@@ -11,7 +11,7 @@ import {
   type Command,
   type EngineState,
 } from "@orgasport/engine";
-import { toDbChanges } from "@orgasport/db";
+import { toDbChanges, type DbChange } from "@orgasport/db";
 import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { env } from "@/lib/env";
@@ -61,14 +61,33 @@ export async function broadcastUpdate(code: string, version: number): Promise<vo
   }
 }
 
+type Status = EngineState["tournament"]["status"];
+
+/**
+ * `tournaments.finished_at`: set when the engine moves the tournament to
+ * "finished", cleared when a correction (or an undo) brings it back to play.
+ * Closing (finished -> archived) keeps it: retention counts from the final.
+ */
+export function stampFinishedAt(dbChanges: DbChange[], before: Status, after: Status, at: string): DbChange[] {
+  let finishedAt: string | null | undefined;
+  if (after === "finished" && before !== "finished") finishedAt = at;
+  else if (before === "finished" && after !== "finished" && after !== "archived") finishedAt = null;
+  if (finishedAt === undefined) return dbChanges;
+  return dbChanges.map((c) => (c.table === "tournaments" && c.op === "update" ? { ...c, values: { ...c.values, finished_at: finishedAt } } : c));
+}
+
+/** A closed tournament (archived) accepts nothing more, not even an undo. */
+const ARCHIVED: ExecuteResult = { ok: false, error: { code: "TOURNAMENT_ARCHIVED" }, status: 422 };
+
 async function persist(
   loaded: LoadedTournament,
   after: EngineState,
   changes: Change[],
   action: Record<string, unknown>,
+  at: string,
 ): Promise<{ ok: true; version: number; actionId: number; duplicate: boolean } | { ok: false; conflict: boolean; message: string }> {
   const admin = createAdminClient();
-  const dbChanges = toDbChanges(changes, after, loaded.meta.id);
+  const dbChanges = stampFinishedAt(toDbChanges(changes, after, loaded.meta.id), loaded.state.tournament.status, after.tournament.status, at);
   const { data, error } = await admin.rpc("apply_tournament_changes", {
     p_tournament: loaded.meta.id,
     p_expected_version: loaded.version,
@@ -108,10 +127,17 @@ export async function executeCommand(args: {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const loaded = await loadTournament(args.code, { secrets: true });
     if (!loaded) return { ok: false, error: { code: "NOT_FOUND" }, status: 404 };
+    const now = actionTime(args.at);
+    if (loaded.state.tournament.status === "archived") {
+      // A retried operation that was applied before the close is still a success.
+      const dup = await findAction(loaded.meta.id, args.clientOpId);
+      if (dup) return { ok: true, version: dup.state_version ?? loaded.version, actionId: dup.id, changes: [], duplicate: true };
+      return ARCHIVED;
+    }
     let result;
     try {
       result = applyCommand(loaded.state, args.command, {
-        now: actionTime(args.at),
+        now,
         newId: createIdGenerator(args.clientOpId),
         seed: args.clientOpId,
       });
@@ -132,7 +158,7 @@ export async function executeCommand(args: {
       payload: args.command,
       client_op_id: args.clientOpId,
       ...actorFields(args.actor, source),
-    });
+    }, now);
     if (saved.ok) {
       if (!saved.duplicate) {
         await broadcastUpdate(args.code, saved.version);
@@ -164,6 +190,7 @@ export async function undoAction(args: { code: string; actionId: number; clientO
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const loaded = await loadTournament(args.code, { secrets: true });
     if (!loaded) return { ok: false, error: { code: "NOT_FOUND" }, status: 404 };
+    if (loaded.state.tournament.status === "archived") return ARCHIVED;
     const { data: target } = await admin
       .from("tournament_actions")
       .select("id, type, changes, undone_at, created_at")
@@ -198,7 +225,7 @@ export async function undoAction(args: { code: string; actionId: number; clientO
       client_op_id: args.clientOpId,
       undoes: target.id,
       ...actorFields(args.actor, "table"),
-    });
+    }, new Date().toISOString());
     if (saved.ok) {
       if (!saved.duplicate) await broadcastUpdate(args.code, saved.version);
       return { ok: true, version: saved.version, actionId: saved.actionId, changes: inverse, duplicate: saved.duplicate };
