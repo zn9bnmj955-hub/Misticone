@@ -6,6 +6,7 @@ import {
   canDrawNext,
   deleteRound,
   drawNext,
+  isBracketEnabled,
   laterMatchesWith,
   poolTeams,
   qualificationSnapshot,
@@ -13,6 +14,7 @@ import {
   swapInLaterMatches,
   assertNothingDrawnAfter,
   type DrawContext,
+  type ExtraBracket,
 } from "./formats";
 import { ACTIVE_ON_VENUE, affiliationOf, hasResult, isFinished, loserTeams, matchesOfRound, roundsOf, teamAffiliation, teamClubFrom, winnerTeams } from "./queries";
 import { hash128 } from "./rng";
@@ -45,6 +47,8 @@ export type Command =
   | { type: "team.update"; teamId: string; name?: string | null; club?: string | null; seed?: number | null; players?: PlayerInput[] }
   | { type: "team.setStatus"; teamId: string; status: TeamStatus }
   | { type: "team.lateEntry"; teamId: string }
+  /** « opt_in » B or C: the team enters (or leaves) that bracket, before its first draw. */
+  | { type: "team.enterBracket"; teamId: string; bracket: ExtraBracket; enter: boolean }
   | { type: "round.draw"; bracket: Bracket; seed: string }
   | { type: "round.redraw"; roundId: string; seed: string }
   | { type: "match.swapTeams"; a: { matchId: string; side: Side }; b: { matchId: string; side: Side } }
@@ -307,6 +311,19 @@ function run(tx: Transaction, cmd: Command, ctx: DrawContext): void {
         return;
       }
       fail("NO_FREE_SLOT");
+    }
+    case "team.enterBracket": {
+      const team = state().teams[cmd.teamId] ?? fail("NOT_FOUND", { entity: "team" });
+      if ((cmd.bracket !== "consolation" && cmd.bracket !== "consolation_c") || !isBracketEnabled(state(), cmd.bracket)) {
+        fail("BRACKET_DISABLED", { bracket: String(cmd.bracket) });
+      }
+      // Entries close with the bracket's first draw (later: a forfeit).
+      if (roundsOf(state(), cmd.bracket).length) fail("ROUND_ALREADY_DRAWN");
+      const set = new Set(team.entries ?? []);
+      if (cmd.enter) set.add(cmd.bracket);
+      else set.delete(cmd.bracket);
+      tx.update("team", team.id, { entries: (["consolation", "consolation_c"] as const).filter((b) => set.has(b)) });
+      return;
     }
     case "round.draw": {
       if (cmd.bracket === "main" && !Object.values(state().rounds).some((r) => r.bracket === "main")) {

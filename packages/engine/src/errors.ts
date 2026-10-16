@@ -27,7 +27,9 @@ export type EngineErrorCode =
   | "SWAP_NOT_ALLOWED"
   | "NO_FREE_SLOT"
   | "TEAM_ALREADY_PLAYING"
-  | "UNDO_CONFLICT";
+  | "UNDO_CONFLICT"
+  /** The B (or the C) is not part of this tournament. */
+  | "BRACKET_DISABLED";
 
 export class EngineError extends Error {
   constructor(
