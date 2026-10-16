@@ -118,3 +118,34 @@ describe("two-day pause", () => {
     expect(pausedAt(back)).not.toBeNull();
   });
 });
+
+describe("two-day pause — field not a power of two (testeur)", () => {
+  it("40 teams, pause before 16 left: the cadrage is played on day 1, the 1/8 waits for resume", () => {
+    let s = exec(makeState({ teams: 40, config: { bracketMode: "redraw", pause: { before: { remaining: 16 } } } }), { type: "round.draw", bracket: "main", seed: "c40" });
+    s = playAll(s);
+    // 40 -> 20 -> cadrage (20 teams: 4 games + 12 « d'office ») -> 16, then held.
+    expect(roundsOf(s, "main").map((r) => teamsInRound(s, r))).toEqual([40, 20]);
+    expect(pausedAt(s)).toEqual({ phase: "elimination", round: 3, teams: 16 });
+    s = exec(s, { type: "tournament.resume", seed: "day2" });
+    expect(roundsOf(s, "main").map((r) => teamsInRound(s, r))).toEqual([40, 20, 16]);
+    s = playAll(s);
+    expect(s.tournament.status).toBe("finished");
+  });
+
+  it("41 teams (exempt in the 1st game), pause before 16 left: held before the 1/8 only", () => {
+    let s = exec(makeState({ teams: 41, config: { bracketMode: "redraw", pause: { before: { remaining: 16 } } } }), { type: "round.draw", bracket: "main", seed: "c41" });
+    s = playAll(s);
+    expect(pausedAt(s)?.teams).toBe(16);
+    expect(roundsOf(s, "main").map((r) => teamsInRound(s, r))).toEqual([41, 21]);
+  });
+
+  it("undoing the manual round.draw that resumed brings the pause back", () => {
+    let s = exec(makeState({ teams: 64, config: { ...ABC, pause: { before: { remaining: 16 } } } }), { type: "round.draw", bracket: "main", seed: "d1" });
+    s = playAll(s);
+    const r = applyCommand(s, { type: "round.draw", bracket: "main", seed: "m" }, { now: "2026-10-13T08:00:00.000Z", newId: createIdGenerator("manual") });
+    expect(pausedAt(r.state)).toBeNull();
+    const back = applyChanges(r.state, invertChanges(r.changes));
+    expect(back).toEqual(s);
+    expect(pausedAt(back)).toEqual({ phase: "elimination", round: 3, teams: 16 });
+  });
+});
