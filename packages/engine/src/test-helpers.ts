@@ -1,11 +1,17 @@
 import { requireSport, sportConfigSchema, type SportConfigInput } from "@orgasport/sports";
 import { applyCommand, type Command } from "./commands";
-import { defaultTournamentConfig, rulesFromSport } from "./config";
+import { defaultConsolationSource, defaultTournamentConfig, rulesFromSport } from "./config";
 import { canDrawNext } from "./formats";
 import { createIdGenerator, createRng } from "./rng";
 import type { EngineState, Match, TournamentConfig } from "./types";
 
 /** Test-only helpers (not exported by the package). */
+
+/** Test config: like a stored config, the B (consolation) may be given in part. */
+export type TestConfig = Omit<Partial<TournamentConfig>, "consolation" | "consolationC"> & {
+  consolation?: Partial<TournamentConfig["consolation"]>;
+  consolationC?: Partial<TournamentConfig["consolationC"]>;
+};
 
 export interface MakeStateOptions {
   teams: number;
@@ -16,7 +22,7 @@ export interface MakeStateOptions {
   reservedVenues?: number;
   clubs?: (i: number) => string | null;
   seeds?: (i: number) => number | null;
-  config?: Partial<TournamentConfig>;
+  config?: TestConfig;
   status?: EngineState["tournament"]["status"];
   maxTeams?: number | null;
   teamStatus?: "checked_in" | "registered";
@@ -24,7 +30,14 @@ export interface MakeStateOptions {
 
 export function makeState(o: MakeStateOptions): EngineState {
   const sport = o.sportConfig ? sportConfigSchema.parse(o.sportConfig) : requireSport(o.sport ?? "petanque");
-  const config: TournamentConfig = { ...defaultTournamentConfig(sport), ...o.config };
+  const base = defaultTournamentConfig(sport);
+  const format = o.config?.format ?? base.format;
+  const config: TournamentConfig = {
+    ...base,
+    ...o.config,
+    consolation: { ...base.consolation, source: defaultConsolationSource(format), ...o.config?.consolation },
+    consolationC: { ...base.consolationC, ...o.config?.consolationC },
+  };
   const state: EngineState = {
     tournament: { id: "t1", status: o.status ?? "check_in", startsAt: "2026-10-12T12:00:00.000Z", maxTeams: o.maxTeams ?? null, config },
     rules: rulesFromSport(sport, o.teamFormat),

@@ -3,7 +3,7 @@ export * from "./types";
 export * from "./errors";
 export { createRng, createIdGenerator, hash128, type Rng } from "./rng";
 export { Transaction, applyChanges, invertChanges, compactChanges, canInvert, conflictsWithLater, type Change } from "./tx";
-export { rulesFromSport, resolveConfig, defaultTournamentConfig, defaultForfeitScore, type StoredTournamentConfig } from "./config";
+export { rulesFromSport, resolveConfig, defaultTournamentConfig, defaultForfeitScore, defaultConsolationSource, type StoredTournamentConfig } from "./config";
 export { resolveScore } from "./scoring";
 export {
   isFinished,

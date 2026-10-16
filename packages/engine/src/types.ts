@@ -14,7 +14,9 @@ export type TournamentStatus =
   | "archived";
 
 export type TeamStatus = "registered" | "waitlist" | "checked_in" | "forfeit" | "withdrawn";
-export type Bracket = "main" | "consolation";
+/** main = concours A, consolation = concours B, consolation_c = concours C. */
+export type Bracket = "main" | "consolation" | "consolation_c";
+export type RoundKind = "partie" | "cadrage";
 export type RoundStatus = "pending" | "drawn" | "live" | "finished";
 export type Phase = "elimination" | "pool" | "final" | "swiss" | "league" | "melee";
 
@@ -41,6 +43,8 @@ export interface Team {
   seed: number | null;
   bracket: Bracket;
   checkedInAt: string | null;
+  /** Extra brackets (B, C) the team entered on its own ("opt_in" entry). Absent = none. */
+  entries?: Bracket[];
 }
 
 export interface Player {
@@ -49,6 +53,15 @@ export interface Player {
   firstName: string;
   lastName: string;
   position: number;
+  /** Player's club (public data; the licence stays private). Absent = unknown. */
+  club?: PlayerClub | null;
+}
+
+export interface PlayerClub {
+  /** Federation club number, e.g. "0340901". */
+  number: string;
+  /** Club name, e.g. "BOULE DU CAP AGDE". */
+  name: string;
 }
 
 export interface Venue {
@@ -64,6 +77,8 @@ export interface Round {
   bracket: Bracket;
   phase: Phase;
   number: number;
+  /** "cadrage" = the round that brings the field down to a power of two. Absent = "partie". */
+  kind?: RoundKind;
   status: RoundStatus;
   seed: string | null;
   drawnAt: string | null;
@@ -138,13 +153,36 @@ export interface SportRules {
 
 export type CompetitionFormat = "single_elimination" | "pools_then_bracket" | "swiss" | "round_robin" | "melee_rotation";
 
+/** Who goes to the B: losers of the A's 1st game (no pools) or pool non-qualifiers. */
+export type ConsolationSource = "losers_round_1" | "pool_non_qualified";
+/** auto = every eligible team plays; opt_in = only teams entered with team.enterBracket. */
+export type BracketEntry = "auto" | "opt_in";
+/**
+ * Two-day tournament: the automatic chain stops before this round.
+ * - before.remaining: before the round that leaves this many teams in the A;
+ * - "afterPools": once the pools are over, before the final phase;
+ * - afterRound: once this round of the A is over.
+ */
+export type PauseRule = null | { before: { remaining: 32 | 16 | 8 | 4 } } | "afterPools" | { afterRound: number };
+
 export interface TournamentConfig {
   format: CompetitionFormat;
   /** Elimination: fixed tree drawn once, or a new draw at each round. */
   bracketMode: "fixed" | "redraw";
   /** Number of rounds for swiss and mêlée tournante. */
   rounds: number | null;
-  consolation: { enabled: boolean; losersOfRound: number };
+  /** Elimination brackets: full draws for the first k games, then a "cadrage" to a power of two. */
+  cadrage: { afterRound: 1 | 2 };
+  /**
+   * Concours B. losersOfRound is the legacy setting (losers of that A round),
+   * kept so old stored configs still read the same. feeCents: entry fee, for
+   * information only (no online payment).
+   */
+  consolation: { enabled: boolean; source: ConsolationSource; entry: BracketEntry; feeCents: number | null; losersOfRound: number };
+  /** Concours C: losers of the B's 1st game. */
+  consolationC: { enabled: boolean; entry: BracketEntry; feeCents: number | null };
+  /** Two-day tournament pause, null = none. */
+  pause: PauseRule;
   draw: { avoidSameClubFirstRound: boolean; seeding: boolean };
   pools: { size: number; qualifiers: number; system: "gsl" | "round_robin" };
   /** Draw the next round automatically when the previous one is complete. */
@@ -154,8 +192,10 @@ export interface TournamentConfig {
   scoreEntry: "table" | "captains";
   /** Which matches may use venues reserved for finals. */
   reservedVenuesFrom: "final" | "semifinal";
-  /** Score given to the winner / loser of a forfeit or a bye. */
+  /** Score given to the winner / loser of a forfeit. */
   forfeitScore: { winner: number; loser: number };
+  /** Score given to a team exempt before the cadrage (pétanque 13-7), separate from the forfeit score. */
+  byeScore: { winner: number; loser: number };
   ranking: RankingCriterion[];
 }
 

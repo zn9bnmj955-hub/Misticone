@@ -4,8 +4,8 @@ import type { Command } from "./commands";
 import { EngineError } from "./errors";
 import { ACTIVE_ON_VENUE, hasResult } from "./queries";
 import { createRng } from "./rng";
-import { exec, makeState, playToEnd, randomScore, resetOps } from "./test-helpers";
-import type { EngineState, TournamentConfig } from "./types";
+import { exec, makeState, playToEnd, randomScore, resetOps, type TestConfig } from "./test-helpers";
+import type { EngineState } from "./types";
 
 /** Rules that must hold after any sequence of organizer actions. */
 function checkInvariants(s: EngineState) {
@@ -40,7 +40,7 @@ function checkInvariants(s: EngineState) {
   }
 }
 
-type Scenario = { sport: string; teamFormat?: string; config: Partial<TournamentConfig> };
+type Scenario = { sport: string; teamFormat?: string; config: TestConfig };
 const formats: Scenario[] = [
   { sport: "petanque", config: { format: "single_elimination", bracketMode: "fixed", consolation: { enabled: true, losersOfRound: 1 } } },
   { sport: "petanque", config: { format: "single_elimination", bracketMode: "redraw", consolation: { enabled: true, losersOfRound: 1 } } },

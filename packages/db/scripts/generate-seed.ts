@@ -358,7 +358,7 @@ engineStates.push(
 
 // 2. Live pétanque: 32 doublettes, round 2 in progress (code 7KQ2) ----------
 const t2 = uuid();
-const t2Config: TournamentConfig = { ...defaultTournamentConfig(petanqueSport), bracketMode: "redraw", consolation: { enabled: true, losersOfRound: 1 } };
+const t2Config: TournamentConfig = { ...defaultTournamentConfig(petanqueSport), bracketMode: "redraw", consolation: { ...defaultTournamentConfig(petanqueSport).consolation, enabled: true, losersOfRound: 1 } };
 tournaments.push({
   id: t2,
   ...common,
@@ -430,7 +430,7 @@ tournaments.push({
 
 // 3. Finished pétanque: 16 triplettes, fixed bracket --------------------------
 const t3 = uuid();
-const t3Config: TournamentConfig = { ...defaultTournamentConfig(petanqueSport), bracketMode: "fixed", consolation: { enabled: false, losersOfRound: 1 } };
+const t3Config: TournamentConfig = { ...defaultTournamentConfig(petanqueSport), bracketMode: "fixed", consolation: { ...defaultTournamentConfig(petanqueSport).consolation, enabled: false, losersOfRound: 1 } };
 tournaments.push({
   id: t3,
   ...common,
