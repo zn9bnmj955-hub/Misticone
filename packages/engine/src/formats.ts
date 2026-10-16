@@ -285,10 +285,26 @@ function gslProgress(tx: Transaction, ctx: EngineContext, label: string): void {
   }
 }
 
+/**
+ * Qualified teams of each pool. A team that withdrew or forfeited is set aside
+ * BEFORE the cut, so the next team of its pool takes the place — as long as
+ * the final phase does not include it yet. Once the final phase is drawn, the
+ * teams in it keep their place (a later forfeit is played as a forfeit), and a
+ * team already engaged in the consolation bracket is never promoted.
+ */
 export function qualifiers(state: EngineState): { id: string; pool: string; place: number }[] {
   const q = state.tournament.config.pools.qualifiers;
+  const inFinal = new Set<string>();
+  const inConsolation = new Set<string>();
+  for (const m of Object.values(state.matches)) {
+    const r = state.rounds[m.roundId];
+    const set = r?.bracket === "main" && r.phase === "final" ? inFinal : r?.bracket === "consolation" ? inConsolation : null;
+    if (set) for (const id of [...m.sideA, ...m.sideB]) set.add(id);
+  }
+  const eligible = (id: string) => inFinal.has(id) || (stillIn(state)(id) && !inConsolation.has(id));
   return poolLabels(state).flatMap((label) =>
     poolRanking(state, label)
+      .filter(eligible)
       .slice(0, q)
       .map((id, i) => ({ id, pool: label, place: i + 1 })),
   );

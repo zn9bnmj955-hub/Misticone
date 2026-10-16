@@ -4,7 +4,8 @@ import { isTournamentComplete } from "./commands";
 import { poolLabels, poolRanking, qualifiers } from "./formats";
 import { isFinished, matchesOfRound, pairKey, roundsOf } from "./queries";
 import { eliminationRanking } from "./standings";
-import { exec, makeState, playToEnd, resetOps } from "./test-helpers";
+import { exec, makeState, PLAYABLE_STATUSES, playToEnd, randomScore, resetOps } from "./test-helpers";
+import { createRng } from "./rng";
 import type { EngineState, Match } from "./types";
 
 beforeEach(() => resetOps());
@@ -204,6 +205,65 @@ describe("pools then final phase", () => {
     const consTeams = new Set(all(s).filter((m) => cons.some((r) => r.id === m.roundId)).flatMap((m) => [...m.sideA, ...m.sideB]));
     const q = new Set(qualifiers(s).map((x) => x.id));
     for (const id of consTeams) expect(q.has(id)).toBe(false);
+  });
+});
+
+describe("a pool qualifier who withdraws (lot 2, M3)", () => {
+  /** Plays every playable match without drawing anything else. */
+  function playPools(start: EngineState, seed: string): EngineState {
+    const rng = createRng(seed);
+    let s = start;
+    for (;;) {
+      const m = all(s).find((x) => PLAYABLE_STATUSES.has(x.status));
+      if (!m) return s;
+      s = exec(s, { type: "match.score", matchId: m.id, ...randomScore(s, () => rng.next(), false) });
+    }
+  }
+  const finalTeams = (s: EngineState) => new Set(all(s).filter((m) => s.rounds[m.roundId]!.phase === "final").flatMap((m) => [...m.sideA, ...m.sideB]));
+  const pools = (consolation: boolean) =>
+    playPools(
+      exec(makeState({ teams: 8, config: { format: "pools_then_bracket", autoNextRound: false, pools: { size: 4, qualifiers: 2, system: "gsl" }, consolation: { enabled: consolation, losersOfRound: 1 } } }), { type: "round.draw", bracket: "main", seed: "pools" }),
+      "wd",
+    );
+
+  it("pool of 4: the 2nd withdraws before the final draw, the 3rd takes the place", () => {
+    let s = pools(false);
+    expect(roundsOf(s, "main", "final").length).toBe(0);
+    const [first, second, third] = poolRanking(s, "A");
+    s = exec(s, { type: "team.setStatus", teamId: second!, status: "withdrawn" });
+    const qa = qualifiers(s).filter((x) => x.pool === "A");
+    expect(qa).toEqual([
+      { id: first, pool: "A", place: 1 },
+      { id: third, pool: "A", place: 2 },
+    ]);
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "final" });
+    const inFinal = finalTeams(s);
+    expect(inFinal.has(third!)).toBe(true);
+    expect(inFinal.has(second!)).toBe(false);
+    expect(inFinal.size).toBe(4);
+    s = playToEnd(s, "end");
+    expect(s.tournament.status).toBe("finished");
+  });
+
+  it("after the final draw nothing changes: the withdrawn qualifier loses by forfeit", () => {
+    let s = exec(pools(false), { type: "round.draw", bracket: "main", seed: "final" });
+    const before = qualifiers(s);
+    const second = poolRanking(s, "A")[1]!;
+    s = exec(s, { type: "team.setStatus", teamId: second, status: "withdrawn" });
+    expect(qualifiers(s)).toEqual(before);
+    const m = all(s).find((x) => s.rounds[x.roundId]!.phase === "final" && [...x.sideA, ...x.sideB].includes(second))!;
+    expect(m.status).toBe("forfeit");
+    expect(finalTeams(s).size).toBe(4);
+  });
+
+  it("a team already playing the consolation bracket is not promoted", () => {
+    let s = pools(true);
+    expect(roundsOf(s, "consolation").length).toBe(1);
+    const [, second] = poolRanking(s, "A");
+    s = exec(s, { type: "team.setStatus", teamId: second!, status: "withdrawn" });
+    expect(qualifiers(s).filter((x) => x.pool === "A").length).toBe(1);
+    s = playToEnd(s, "cons");
+    expect(s.tournament.status).toBe("finished");
   });
 });
 
