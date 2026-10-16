@@ -57,11 +57,12 @@ const IN_SCOPE = [
   "exempt", "complementaire", "b/c", "tirage", "club", "clubs", "orgasport", "site", "pin", "benevole", "benevoles",
   "table de marque", "inscription", "inscrire", "inscrit", "inscrits", "compte", "prix", "tarif", "tarifs", "payer", "paiement",
   "lien concours", "qr", "affiche", "notification", "notifications", "organiser", "organisateur", "resultat", "resultats",
-  "classement", "2 jours", "deux jours", "assistant",
+  "classement", "2 jours", "deux jours", "assistant", "reglements", "association", "pointage", "echauffement", "echauffer",
+  "competition", "competitions",
 ];
 // Clearly unrelated subjects (only refused when no in-scope word appears).
 const OFF_TOPIC = [
-  "politique", "election", "elections", "president", "gouvernement", "depute", "vote", "voter", "sante", "medecin", "maladie",
+  "politique", "election", "elections", "gouvernement", "depute", "vote", "voter", "medecin", "maladie",
   "medicament", "symptome", "symptomes", "devoir", "devoirs", "dissertation", "equation", "mathematiques", "python", "javascript",
   "programmation", "coder", "recette", "cuisine", "bitcoin", "crypto", "bourse", "horoscope", "religion", "poeme",
 ];
