@@ -412,6 +412,9 @@ describe("single-use link: finished, then closed", () => {
     const live = exec(makeState({ teams: 4, config: noConsolation }), { type: "round.draw", bracket: "main", seed: "x" });
     expect(live.tournament.status).toBe("live");
     expect(code(() => exec(live, { type: "tournament.close" }))).toBe("INVALID_STATUS_CHANGE");
+    // No side door: setStatus cannot archive, the tournament stays live.
+    expect(code(() => exec(live, { type: "tournament.setStatus", status: "archived" }))).toBe("INVALID_STATUS_CHANGE");
+    expect(live.tournament.status).toBe("live");
 
     const s = finished();
     const final = finalOf(s);

@@ -60,7 +60,7 @@ export const commandSchema: z.ZodType<Command> = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("tournament.setStatus"),
-    status: z.enum(["published", "registration_closed", "check_in", "live", "finished", "archived"]),
+    status: z.enum(["published", "registration_closed", "check_in", "live", "finished"]),
   }),
   z.object({ type: z.literal("tournament.close") }),
 ]) as unknown as z.ZodType<Command>;

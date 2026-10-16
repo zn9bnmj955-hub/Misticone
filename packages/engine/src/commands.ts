@@ -482,6 +482,8 @@ function run(tx: Transaction, cmd: Command, ctx: DrawContext): void {
     }
     case "tournament.setStatus": {
       if (!STATUS_FLOW.includes(t.status) || !STATUS_FLOW.includes(cmd.status)) fail("INVALID_STATUS_CHANGE");
+      // The only way to "archived" is tournament.close (finished tournaments only).
+      if (cmd.status === "archived") fail("INVALID_STATUS_CHANGE");
       tx.updateTournament({ status: cmd.status });
       return;
     }

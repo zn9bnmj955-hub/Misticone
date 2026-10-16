@@ -11,6 +11,11 @@ describe("command schema: final close of the link", () => {
     expect(req.success).toBe(true);
   });
 
+  it("refuses setStatus to archived: only tournament.close archives", () => {
+    expect(commandSchema.safeParse({ type: "tournament.setStatus", status: "archived" }).success).toBe(false);
+    expect(commandSchema.safeParse({ type: "tournament.setStatus", status: "finished" }).success).toBe(true);
+  });
+
   it("refuses an unknown command type", () => {
     expect(commandSchema.safeParse({ type: "tournament.reopen" }).success).toBe(false);
   });
