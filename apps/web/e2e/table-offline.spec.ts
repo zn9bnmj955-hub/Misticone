@@ -101,4 +101,27 @@ test.describe("scoring table without network", () => {
     }
   });
 
+  test("backup printing without network: draw sheets in the ppf layout (Terrain | Équipe | Équipe | Score)", async ({ page, context }) => {
+    await page.addInitScript(() => {
+      window.print = () => undefined;
+    });
+    await pinLogin(page);
+    await context.setOffline(true);
+    await page.getByRole("button", { name: /Impression/ }).click();
+    await page.getByRole("button", { name: /Tous les tours/ }).click();
+    const sheet = page.locator("#print-root");
+    await expect(sheet.locator("section").first()).toBeAttached();
+    const heads = await sheet.locator("thead tr").first().locator("th").allTextContents();
+    expect(heads.map((h) => h.trim())).toEqual(["Terrain", "Équipe", "Équipe", "Score"]);
+    const titles = await sheet.locator("h2").allTextContents();
+    expect(titles.length).toBeGreaterThan(1);
+    expect(titles.every((x) => /^(Concours [ABC] · )?Résultats /.test(x))).toBe(true);
+    // Newest round first, games in progress shown as "**", names "NOM PRÉNOM" in capitals.
+    expect(titles[0]).toContain("Concours A · Résultats Huitièmes");
+    expect(titles[1]).toContain("Concours A · Résultats Tour 1");
+    await expect(sheet.locator("td", { hasText: /^\*\*$/ }).first()).toBeAttached();
+    const name = ((await sheet.locator("tbody td:nth-child(2) div").first().textContent()) ?? "").trim();
+    expect(name).toMatch(/[A-Z]/);
+    expect(name).toBe(name.toUpperCase());
+  });
 });
