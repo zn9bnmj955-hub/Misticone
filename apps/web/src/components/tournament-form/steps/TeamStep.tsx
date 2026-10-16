@@ -6,6 +6,7 @@ import { fmt, getMessages } from "@/i18n";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { Group, Help, Stepper } from "../fields";
+import { PinHelp } from "@/components/table/PinHelp";
 import { fid, type StepProps } from "./types";
 
 const emailSchema = z.email().max(160);
@@ -99,6 +100,7 @@ export function TeamStep({ form, update, error }: StepProps) {
 
       <Group title={t.pins} text={form.organizer.email ? fmt(t.pinsText, { email: form.organizer.email }) : t.pinsTextNoEmail}>
         <Stepper id={fid("pinCount")} label={t.pinCount} value={form.pinCount} min={0} max={10} error={error("pinCount")} onChange={(pinCount) => update({ pinCount })} />
+        <PinHelp audience="organizer" />
       </Group>
 
       <Group title={`${t.referee} (${w.optional})`}>
