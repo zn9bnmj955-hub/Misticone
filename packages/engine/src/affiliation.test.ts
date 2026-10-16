@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { matchesOfRound, roundsOf, teamAffiliation } from "./queries";
+import { applyCommand } from "./commands";
+import { createIdGenerator } from "./rng";
+import { applyChanges, invertChanges } from "./tx";
 import { exec, makeState, resetOps } from "./test-helpers";
 import type { EngineState } from "./types";
 
@@ -62,5 +65,25 @@ describe("teamAffiliation and N.H.", () => {
       }
     }
     expect(Object.values(s.teams).filter((t) => t.club === null)).toHaveLength(4);
+  });
+  it("team.update without club information keeps the club typed by hand", () => {
+    resetOps();
+    let s = exec(makeState({ teams: 0 }), { type: "team.create", club: "Les Cigales", players: [p("A"), p("B")] });
+    const id = created(s).id;
+    s = exec(s, { type: "team.update", teamId: id, players: [p("A2"), p("B2")] });
+    expect(teamAffiliation(s, id)).toEqual({ kind: "none" });
+    expect(s.teams[id]!.club).toBe("Les Cigales");
+  });
+
+  it("undoing team.update (club -> N.H.) restores the club and the players' clubs", () => {
+    resetOps();
+    const s0 = exec(makeState({ teams: 0 }), { type: "team.create", players: [p("A", AGDE), p("B", AGDE)] });
+    const id = created(s0).id;
+    const ctx = { now: "2026-10-12T13:00:00.000Z", newId: createIdGenerator("upd"), seed: "upd" };
+    const { state: s1, changes } = applyCommand(s0, { type: "team.update", teamId: id, players: [p("A", AGDE), p("B", SETE)] }, ctx);
+    expect(s1.teams[id]!.club).toBeNull();
+    const back = applyChanges(s1, invertChanges(changes));
+    expect(back).toEqual(s0);
+    expect(teamAffiliation(back, id)).toEqual({ kind: "club", ...AGDE });
   });
 });
