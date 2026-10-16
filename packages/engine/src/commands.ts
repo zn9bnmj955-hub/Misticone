@@ -14,14 +14,22 @@ import {
   assertNothingDrawnAfter,
   type DrawContext,
 } from "./formats";
-import { ACTIVE_ON_VENUE, hasResult, isFinished, loserTeams, matchesOfRound, roundsOf, winnerTeams } from "./queries";
+import { ACTIVE_ON_VENUE, affiliationOf, hasResult, isFinished, loserTeams, matchesOfRound, roundsOf, teamAffiliation, teamClubFrom, winnerTeams } from "./queries";
 import { hash128 } from "./rng";
 import { resolveScore } from "./scoring";
 import { Transaction, type Change } from "./tx";
-import type { Bracket, EngineContext, EngineState, Match, Side, TeamStatus, TournamentStatus, Winner } from "./types";
+import type { Bracket, EngineContext, PlayerClub, EngineState, Match, Side, TeamStatus, TournamentStatus, Winner } from "./types";
 import { autoAssignVenues } from "./venues";
 
-export type PlayerInput = { firstName: string; lastName: string };
+export type PlayerInput = {
+  firstName: string;
+  lastName: string;
+  /** Player's club (public). All players of one club fill `team.club`; two clubs make the team « N.H. ». */
+  club?: PlayerClub | null;
+};
+
+const playerClub = (c: PlayerClub | null | undefined): PlayerClub | null =>
+  c && (c.number.trim() || c.name.trim()) ? { number: c.number.trim(), name: c.name.trim() } : null;
 
 export type Command =
   | {
@@ -219,14 +227,21 @@ function run(tx: Transaction, cmd: Command, ctx: DrawContext): void {
         id,
         number,
         name: cmd.name?.trim() || null,
-        club: cmd.club?.trim() || null,
+        club: teamClubFrom(affiliationOf(cmd.players.map((p) => p.club)), cmd.club?.trim() || null),
         status: full ? "waitlist" : cmd.checkIn ? "checked_in" : "registered",
         seed: null,
         bracket: "main",
         checkedInAt: !full && cmd.checkIn ? ctx.now : null,
       });
       cmd.players.forEach((p, i) =>
-        tx.create("player", { id: ctx.newId(), teamId: id, firstName: p.firstName.trim(), lastName: p.lastName.trim(), position: i + 1 }),
+        tx.create("player", {
+          id: ctx.newId(),
+          teamId: id,
+          firstName: p.firstName.trim(),
+          lastName: p.lastName.trim(),
+          position: i + 1,
+          ...(p.club !== undefined && { club: playerClub(p.club) }),
+        }),
       );
       tx.create("teamSecret", { id, code: teamScoreCode(id) });
       tx.create("registration", { id: ctx.newId(), teamId: id, source: cmd.source ?? "onsite" });
@@ -245,10 +260,14 @@ function run(tx: Transaction, cmd: Command, ctx: DrawContext): void {
           .sort((a, b) => a.position - b.position);
         cmd.players.forEach((p, i) => {
           const current = existing[i];
-          if (current) tx.update("player", current.id, { firstName: p.firstName.trim(), lastName: p.lastName.trim() });
-          else tx.create("player", { id: ctx.newId(), teamId: team.id, firstName: p.firstName.trim(), lastName: p.lastName.trim(), position: i + 1 });
+          const club = p.club !== undefined ? { club: playerClub(p.club) } : {};
+          if (current) tx.update("player", current.id, { firstName: p.firstName.trim(), lastName: p.lastName.trim(), ...club });
+          else tx.create("player", { id: ctx.newId(), teamId: team.id, firstName: p.firstName.trim(), lastName: p.lastName.trim(), position: i + 1, ...club });
         });
         existing.slice(cmd.players.length).forEach((p) => tx.remove("player", p.id));
+        // New players' clubs decide the team's club again (N.H. clears it); unknown → the club typed by hand stays.
+        const affiliation = teamAffiliation(tx.state, team.id);
+        if (affiliation.kind !== "none") tx.update("team", team.id, { club: teamClubFrom(affiliation, null) });
       }
       return;
     }

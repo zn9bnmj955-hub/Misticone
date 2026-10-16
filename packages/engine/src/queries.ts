@@ -1,4 +1,4 @@
-import type { Bracket, EngineState, Match, Phase, Round, Side, Team } from "./types";
+import type { Bracket, EngineState, Match, Phase, PlayerClub, Round, Side, Team } from "./types";
 
 /** Read-only helpers over the engine state. */
 
@@ -182,4 +182,34 @@ export function roundLabel(state: EngineState, round: Round): RoundLabel {
   if (T > 2 && !isFixedTree(state, round) && !isAfterCadragePoint(state, round)) return { key: "partie", n: round.number };
   const key = BY_PLACES[P === T ? T / 2 : P];
   return key ? { key } : { key: "round", n: round.number };
+}
+
+/** A team's club as shown next to its name: one club, « N.H. » (non homogène) or nothing known. */
+export type TeamAffiliation = { kind: "club"; number: string; name: string } | { kind: "nh" } | { kind: "none" };
+
+/** Same club when the numbers match (or, without numbers, the names). */
+const clubKey = (c: PlayerClub) => (c.number.trim() ? `n:${c.number.trim()}` : `c:${c.name.trim().toUpperCase()}`);
+const hasClub = (c: PlayerClub | null | undefined): c is PlayerClub => Boolean(c && (c.number.trim() || c.name.trim()));
+
+/**
+ * Affiliation from the players' clubs: every player of the same club → that
+ * club; at least two different clubs → « N.H. »; otherwise (no information,
+ * or some players unknown) → none, and the club typed by hand applies.
+ */
+export function affiliationOf(clubs: (PlayerClub | null | undefined)[]): TeamAffiliation {
+  const known = clubs.filter(hasClub);
+  if (new Set(known.map(clubKey)).size >= 2) return { kind: "nh" };
+  if (known.length === 0 || known.length < clubs.length) return { kind: "none" };
+  return { kind: "club", number: known[0]!.number.trim(), name: known[0]!.name.trim() };
+}
+
+export function teamAffiliation(state: EngineState, teamId: string): TeamAffiliation {
+  return affiliationOf(Object.values(state.players).filter((p) => p.teamId === teamId).map((p) => p.club));
+}
+
+/** Value of `team.club` (used by « même club évité »): the common club, none for N.H., else the club typed by hand. */
+export function teamClubFrom(affiliation: TeamAffiliation, typed: string | null): string | null {
+  if (affiliation.kind === "club") return affiliation.name || affiliation.number;
+  if (affiliation.kind === "nh") return null;
+  return typed;
 }

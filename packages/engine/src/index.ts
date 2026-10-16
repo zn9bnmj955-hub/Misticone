@@ -23,6 +23,9 @@ export {
   isOfficeBye,
   roundLabel,
   type RoundLabel,
+  teamAffiliation,
+  affiliationOf,
+  type TeamAffiliation,
 } from "./queries";
 export { stageOf, isFinalPhaseMatch, isFixedTree, compareRounds, teamsInRound, type Stage } from "./bracket";
 export { canDrawNext, eliminationDrawPlan, type EliminationDrawPlan, poolLabels, poolTeams, poolMatches, poolRanking, isPoolComplete, qualifiers, totalRounds } from "./formats";
