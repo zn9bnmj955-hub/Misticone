@@ -34,9 +34,7 @@ test("unknown code shows a clear message", async ({ page }) => {
 test("guest onboarding remembers sports on the device", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: /Sans compte/ }).click();
-  await expect(page.getByRole("heading", { name: "Quels sports vous intéressent ?" })).toBeVisible();
-  await page.getByRole("checkbox", { name: /Pétanque/ }).click();
-  await page.getByRole("button", { name: "Continuer" }).click();
+  // Pétanque is the only sport offered: the sport question is skipped.
   await expect(page.getByRole("heading", { name: "Votre ville" })).toBeVisible();
   await page.getByRole("button", { name: "Passer" }).click();
   await page.getByRole("button", { name: "C'est parti" }).click();
@@ -53,8 +51,6 @@ test("guest onboarding remembers sports on the device", async ({ page }) => {
 test("player onboarding creates an account and a personalized home", async ({ page }) => {
   const email = `e2e-${Date.now()}@example.com`;
   await page.goto("/inscription/joueur");
-  await page.getByRole("checkbox", { name: /Football/ }).click();
-  await page.getByRole("button", { name: "Continuer" }).click();
   await page.getByRole("radio", { name: /En loisir/ }).click();
   await page.getByRole("button", { name: "Continuer" }).click();
   await page.getByRole("radio", { name: /Non, pas de licence/ }).click();
@@ -69,8 +65,8 @@ test("player onboarding creates an account and a personalized home", async ({ pa
   await page.getByRole("button", { name: "Créer mon compte" }).click();
   await page.getByRole("button", { name: "C'est parti" }).click();
   await page.waitForURL("**/accueil");
-  await expect(page.locator("html")).toHaveAttribute("data-sport", "football");
-  await expect(page.getByRole("heading", { name: "Tournoi des fêtes des Platanes" })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-sport", "petanque");
+  await expect(page.getByRole("heading", { name: "Grand Prix des Platanes" })).toBeVisible();
 });
 
 test("a player in a live tournament reaches the next match in one tap", async ({ page }) => {
@@ -108,8 +104,7 @@ test("club onboarding creates the club and opens club mode", async ({ page }) =>
   await page.getByRole("button", { name: "Continuer" }).click();
   await page.getByRole("radio", { name: /Comité des fêtes/ }).click();
   await page.getByRole("button", { name: "Continuer" }).click();
-  await page.getByRole("checkbox", { name: /Pétanque/ }).click();
-  await page.getByRole("button", { name: "Continuer" }).click();
+  // Club sports: skipped, pétanque is the only sport offered.
   await page.getByRole("button", { name: "Passer" }).click(); // federation
   await page.getByRole("button", { name: "Passer" }).click(); // address
   await page.getByLabel("Nom du responsable").fill("Camille Test");

@@ -53,11 +53,14 @@ const STEPS: Record<OnboardingKind, string[]> = {
   club: ["clubName", "clubKind", "clubSports", "federation", "address", "contact", "account", "logo", "done"],
 };
 
-function freshDraft(kind: OnboardingKind): Draft {
+/** A single sport offered (pétanque only): it is chosen for the person and the sport questions are skipped. */
+const preset = (offered: string[]) => (offered.length === 1 ? offered : []);
+
+function freshDraft(kind: OnboardingKind, offered: string[]): Draft {
   return {
     kind,
     step: STEPS[kind][0]!,
-    sports: [],
+    sports: preset(offered),
     level: null,
     licensed: null,
     licenseNumber: "",
@@ -68,7 +71,7 @@ function freshDraft(kind: OnboardingKind): Draft {
     club: {
       name: "",
       kind: "association",
-      sports: [],
+      sports: preset(offered),
       federation: "",
       affiliationNumber: "",
       address: { text: "" },
@@ -80,10 +83,17 @@ function freshDraft(kind: OnboardingKind): Draft {
   };
 }
 
-function loadDraft(kind: OnboardingKind): Draft | null {
+function loadDraft(kind: OnboardingKind, offered: string[]): Draft | null {
   try {
     const d = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null") as Draft | null;
-    return d && d.kind === kind ? { ...freshDraft(kind), ...d } : null;
+    if (!d || d.kind !== kind) return null;
+    // A sport that is no longer offered (football switched off) is dropped from an old draft.
+    const keep = (list: string[] | undefined) => {
+      const kept = (list ?? []).filter((s) => offered.includes(s));
+      return kept.length ? kept : preset(offered);
+    };
+    const base = freshDraft(kind, offered);
+    return { ...base, ...d, sports: keep(d.sports), club: { ...base.club, ...d.club, sports: keep(d.club?.sports) } };
   } catch {
     return null;
   }
@@ -121,7 +131,9 @@ export function OnboardingFlow({
   const o = m.onboarding;
   const router = useRouter();
   const [signedIn, setSignedIn] = useState(initiallySignedIn);
-  const [draft, setDraft] = useState<Draft>(() => freshDraft(kind));
+  const offered = useMemo(() => sports.map((s) => s.slug), [sports]);
+  const singleSport = offered.length === 1;
+  const [draft, setDraft] = useState<Draft>(() => freshDraft(kind, offered));
   const [logo, setLogo] = useState<File | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
   const logoUrl = useMemo(() => (logo ? URL.createObjectURL(logo) : null), [logo]);
@@ -134,12 +146,16 @@ export function OnboardingFlow({
 
   // Resume after a magic link / Google round trip.
   useEffect(() => {
-    const saved = resume ? loadDraft(kind) : null;
+    const saved = resume ? loadDraft(kind, offered) : null;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- restore device draft after hydration
     if (saved) setDraft(saved);
-  }, [kind, resume]);
+  }, [kind, resume, offered]);
 
-  const steps = useMemo(() => STEPS[kind].filter((s) => !(signedIn && s === "account")), [kind, signedIn]);
+  // The sport questions are hidden when a single sport is offered.
+  const steps = useMemo(
+    () => STEPS[kind].filter((s) => !(signedIn && s === "account") && !(singleSport && (s === "sports" || s === "clubSports"))),
+    [kind, signedIn, singleSport],
+  );
   const index = Math.max(0, steps.indexOf(draft.step));
   const step = steps[index] ?? steps[0]!;
   const total = steps.length - 1; // "done" is not a question
