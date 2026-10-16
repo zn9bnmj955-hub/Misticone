@@ -1,5 +1,5 @@
-// Pre-renders the landing's static balls (public/vitrine/ball.webp, football.webp) from the very
-// same three.js code as the live hero (src/components/vitrine/ballModel.ts), with a transparent
+// Pre-renders the landing's static ball (public/vitrine/ball.webp: the dark steel pétanque ball
+// engraved « ORGASPORT ») from the very same three.js code as the live hero (src/components/vitrine/ballModel.ts), with a transparent
 // background, so the fallback shown before / instead of the 3D is identical to it.
 //
 //   node scripts/render-hero-balls.mjs [--preview <dir>]   (from apps/web)
@@ -20,10 +20,7 @@ const preview = previewIdx > 0 ? process.argv[previewIdx + 1] : null;
 
 const SIZE = 560; // px; shown at ≤ 20 rem (DPR 1.5–2 stays sharp enough for a still)
 const MAX_BYTES = 40 * 1024;
-const LOOKS = [
-  { file: "ball.webp", look: 0, sport: "petanque" },
-  { file: "football.webp", look: 1, sport: "football" },
-];
+const LOOKS = [{ file: "ball.webp", sport: "petanque" }];
 
 function module(name) {
   const src = readFileSync(join(web, "src/components/vitrine", `${name}.ts`), "utf8");
@@ -31,7 +28,7 @@ function module(name) {
     .replace(/from "\.\/(\w+)"/g, 'from "/m/$1.js"');
 }
 
-const page = (look, sport) => `<!doctype html><html><head><style>${tokens} html,body{margin:0;background:transparent}</style>
+const page = (sport) => `<!doctype html><html><head><style>${tokens} html,body{margin:0;background:transparent}</style>
 <script type="importmap">{"imports":{"three":"/three/build/three.module.js"}}</script></head>
 <body><div id="src" data-scheme="stage" data-sport="${sport}"></div><canvas id="c" width="${SIZE}" height="${SIZE}"></canvas>
 <script type="module">
@@ -46,7 +43,7 @@ renderer.setClearColor(0, 0);
 const colors = readStageColors(document.getElementById("src"));
 const scene = new Scene();
 scene.environment = createEnvironment(renderer, colors).texture;
-const ball = createBall(${look}, colors.accent, { textureSize: 2048, maxAnisotropy: 8 });
+const ball = createBall(colors.accent, { textureSize: 2048, maxAnisotropy: 8 });
 scene.add(ball.group);
 poseBall(ball.ball, REST_SPIN);
 const cam = new PerspectiveCamera();
@@ -56,13 +53,13 @@ window.__done = true;
 </script></body></html>`;
 
 const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
-for (const { file, look, sport } of LOOKS) {
+for (const { file, sport } of LOOKS) {
   const ctx = await browser.newContext({ viewport: { width: SIZE, height: SIZE } });
   const p = await ctx.newPage();
   p.on("pageerror", (e) => console.error(e));
   await p.route("http://render.local/**", (route) => {
     const path = new URL(route.request().url()).pathname;
-    if (path === "/") return route.fulfill({ contentType: "text/html", body: page(look, sport) });
+    if (path === "/") return route.fulfill({ contentType: "text/html", body: page(sport) });
     if (path.startsWith("/m/")) return route.fulfill({ contentType: "text/javascript", body: module(path.slice(3, -3)) });
     if (path.startsWith("/three/")) return route.fulfill({ contentType: "text/javascript", body: readFileSync(join(threeDir, path.slice(7))) });
     return route.fulfill({ status: 404 });
