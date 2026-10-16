@@ -48,3 +48,20 @@ for (const size of SIZES) {
     await page.screenshot({ path: info.outputPath(`pin-access-${size.name}.png`), fullPage: true });
   });
 }
+
+test("club tournament page explains the PIN in the organizing team (phone)", async ({ page }, info) => {
+  await page.setViewportSize(SIZES[0]);
+  await page.goto("/connexion");
+  await page.getByRole("button", { name: "Se connecter avec un mot de passe" }).click();
+  await page.getByLabel("Adresse email").fill("club@demo.orgasport.fr");
+  await page.getByLabel("Mot de passe").fill("orgasport-demo");
+  await page.getByRole("button", { name: "Se connecter", exact: true }).click();
+  await page.waitForURL("**/accueil");
+  await page.goto("/club");
+  await page.getByRole("link", { name: "Gérer", exact: true }).first().click();
+  await page.waitForURL(/\/club\/concours\/[0-9a-f-]{36}$/);
+  const help = await expectHelp(page, /Vous pouvez le révoquer à tout moment/);
+  await expect(help).toContainText(/\/c\/[2-9A-Z]{4}\/table/);
+  await noHorizontalOverflow(page);
+  await page.screenshot({ path: info.outputPath("pin-club-phone.png"), fullPage: true });
+});
