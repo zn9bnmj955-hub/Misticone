@@ -8,6 +8,7 @@ import {
   drawNext,
   isBracketEnabled,
   laterMatchesWith,
+  pausedAt,
   poolTeams,
   qualificationSnapshot,
   refreshRounds,
@@ -62,7 +63,9 @@ export type Command =
   | { type: "venue.update"; venueId: string; label?: string; available?: boolean; reservedForFinals?: boolean }
   | { type: "tournament.setStatus"; status: TournamentStatus }
   /** Final, one-way close of the link: finished -> archived. Nothing is accepted afterwards. */
-  | { type: "tournament.close" };
+  | { type: "tournament.close" }
+  /** Two-day tournament: draws the round held by the pause; the B and the C follow. */
+  | { type: "tournament.resume"; seed?: string };
 
 export type CommandType = Command["type"];
 
@@ -485,6 +488,11 @@ function run(tx: Transaction, cmd: Command, ctx: DrawContext): void {
       // The only way to "archived" is tournament.close (finished tournaments only).
       if (cmd.status === "archived") fail("INVALID_STATUS_CHANGE");
       tx.updateTournament({ status: cmd.status });
+      return;
+    }
+    case "tournament.resume": {
+      if (!pausedAt(state())) fail("NOTHING_TO_DRAW");
+      drawNext(tx, { ...ctx, seed: cmd.seed ?? ctx.seed }, "main");
       return;
     }
     case "tournament.close": {

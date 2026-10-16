@@ -597,10 +597,50 @@ export function canDrawNext(state: EngineState, bracket: Bracket): boolean {
   }
 }
 
-/** Draws that happen on their own once the previous round is over (never the first one). */
+/** The A's draw the two-day pause holds: its phase, its round number and the teams still in. */
+export interface PausePoint {
+  phase: Phase;
+  round: number;
+  teams: number;
+}
+
+/**
+ * Two-day tournament (`config.pause`): the A's next draw when the pause holds
+ * it, else null. Derived from the state, nothing is stored: the draw that
+ * resumes (tournament.resume or a manual round.draw) makes it false, and
+ * undoing that draw brings the pause back.
+ * - before.remaining R: the next round starts with R teams or fewer, the last
+ *   one with more (so it holds once, e.g. 64 teams, R = 16: before the 1/8);
+ * - "afterPools": before the 1st round of the final phase;
+ * - afterRound n: before round n + 1 of the A (of its final phase with pools).
+ * A fixed tree is drawn at once: only a pause before it (after the pools) applies.
+ */
+export function pausedAt(state: EngineState): PausePoint | null {
+  const rule = state.tournament.config.pause;
+  if (rule === null || !Object.values(state.rounds).some((r) => r.bracket === "main") || !canDrawNext(state, "main")) return null;
+  const format = state.tournament.config.format;
+  const phase: Phase =
+    format === "pools_then_bracket" ? "final" : format === "swiss" ? "swiss" : format === "melee_rotation" ? "melee" : format === "round_robin" ? "league" : "elimination";
+  const last = lastRound(state, "main", phase);
+  const before = last ? teamsInRound(state, last) : Infinity;
+  const teams = last
+    ? new Set(matchesOfRound(state, last.id).flatMap(winnerTeams).filter(stillIn(state))).size
+    : qualifiers(state).filter((x) => stillIn(state)(x.id)).length;
+  const point: PausePoint = { phase, round: (last?.number ?? 0) + 1, teams };
+  if (rule === "afterPools") return phase === "final" && !last ? point : null;
+  if ("afterRound" in rule) return point.round === rule.afterRound + 1 ? point : null;
+  if (phase !== "elimination" && phase !== "final") return null;
+  return teams <= rule.before.remaining && before > rule.before.remaining ? point : null;
+}
+
+/**
+ * Draws that happen on their own once the previous round is over (never the
+ * first one). The two-day pause stops all of them: the B and the C wait with the A.
+ */
 export function autoAdvance(tx: Transaction, ctx: DrawContext): void {
   const cfg = tx.state.tournament.config;
   for (let guard = 0; guard < 6; guard++) {
+    if (pausedAt(tx.state)) return;
     let drew = false;
     const mainStarted = Object.values(tx.state.rounds).some((r) => r.bracket === "main");
     if (cfg.autoNextRound && mainStarted && canDrawNext(tx.state, "main")) {
