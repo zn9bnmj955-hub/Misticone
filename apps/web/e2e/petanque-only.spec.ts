@@ -1,0 +1,64 @@
+import { expect, test, type Page } from "@playwright/test";
+
+/**
+ * Lot 2, P1 — pétanque only: football is switched off (`enabled: false` in
+ * packages/sports, code kept). No visible page mentions football, even with
+ * an old device cookie that still chose it.
+ */
+
+const FOOT = /\bfoot(ball)?\b|foot à/i;
+
+async function signIn(page: Page, email: string) {
+  await page.goto("/connexion");
+  await page.getByRole("button", { name: "Se connecter avec un mot de passe" }).click();
+  await page.getByLabel("Adresse email").fill(email);
+  await page.getByLabel("Mot de passe").fill("orgasport-demo");
+  await page.getByRole("button", { name: "Se connecter", exact: true }).click();
+  await page.waitForURL("**/accueil");
+}
+
+/** Old cookies from the time football was offered. */
+async function footballCookies(page: Page, baseURL: string | undefined) {
+  const url = baseURL ?? "http://localhost:3000";
+  await page.context().addCookies([
+    { name: "os_sport", value: "football", url },
+    { name: "os_prefs", value: encodeURIComponent(JSON.stringify({ sports: ["football", "petanque"] })), url },
+  ]);
+}
+
+async function expectNoFootball(page: Page, path: string) {
+  await page.goto(path);
+  await page.waitForLoadState("networkidle");
+  // The requested URL itself is echoed in the router payload: it is not page content.
+  const html = (await page.content()).split(path.split("?")[1] ?? "\u0000").join("");
+  expect(html.match(FOOT)?.[0] ?? null, `${path} mentions football`).toBeNull();
+}
+
+test.describe("pétanque only", () => {
+  test("public pages and onboarding never mention football", async ({ page, baseURL }) => {
+    await footballCookies(page, baseURL);
+    for (const path of ["/", "/accueil", "/concours", "/concours?sport=football", "/inscription/joueur", "/inscription/club", "/inscription/invite"]) {
+      await expectNoFootball(page, path);
+    }
+    // The old os_sport=football cookie is brought back to pétanque: no football accent, no sport chips.
+    await page.goto("/accueil");
+    await expect(page.locator("html")).not.toHaveAttribute("data-sport", "football");
+    await expect(page.getByRole("group", { name: "Filtrer par sport" })).toHaveCount(0);
+  });
+
+  test("player profile never mentions football", async ({ page, baseURL }) => {
+    await signIn(page, "joueur@demo.orgasport.fr");
+    await footballCookies(page, baseURL);
+    await expectNoFootball(page, "/profil");
+    await expectNoFootball(page, "/accueil");
+  });
+
+  test("the tournament form starts without a sport choice", async ({ page, baseURL }) => {
+    await signIn(page, "club@demo.orgasport.fr");
+    await footballCookies(page, baseURL);
+    await expectNoFootball(page, "/club/concours/nouveau");
+    await page.getByRole("button", { name: "Créer le concours" }).click();
+    await page.waitForURL(/\/club\/concours\/[0-9a-f-]+\/modifier/);
+    await expectNoFootball(page, new URL(page.url()).pathname);
+  });
+});
