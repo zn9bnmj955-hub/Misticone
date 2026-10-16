@@ -46,6 +46,20 @@ test.describe("pétanque only", () => {
     await expect(page.getByRole("group", { name: "Filtrer par sport" })).toHaveCount(0);
   });
 
+  test("« all sports » (no sport cookie) hides the football tournament still in the database", async ({ page, baseURL }) => {
+    // FT8S (football, « Tournoi des fêtes des Platanes ») is still in the demo data until P2:
+    // with no sport chosen, the catalog and the feed must only list the sports offered.
+    const url = baseURL ?? "http://localhost:3000";
+    await page.context().addCookies([{ name: "os_sport", value: "all", url }]);
+    for (const path of ["/accueil", "/concours", "/concours?sport=all"]) {
+      await expectNoFootball(page, path);
+      await expect(page.getByText("Tournoi des fêtes des Platanes")).toHaveCount(0);
+    }
+    await page.context().clearCookies();
+    await expectNoFootball(page, "/concours");
+    await expect(page.getByText("Tournoi des fêtes des Platanes")).toHaveCount(0);
+  });
+
   test("player profile never mentions football", async ({ page, baseURL }) => {
     await signIn(page, "joueur@demo.orgasport.fr");
     await footballCookies(page, baseURL);
