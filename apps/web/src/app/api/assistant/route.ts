@@ -5,7 +5,7 @@ import { z } from "zod";
 import { getSport } from "@orgasport/sports";
 import { fmt, getMessages } from "@/i18n";
 import { checkQuota, deviceHash, recordUsage, resolveTier } from "@/lib/assistant/quota";
-import { contextNote } from "@/lib/assistant/prompt";
+import { contextNote, questionScope } from "@/lib/assistant/prompt";
 import { runAssistant, type AssistantEvent } from "@/lib/assistant/run";
 import { assistantConfigured, getAiSettings } from "@/lib/assistant/settings";
 import { runTool } from "@/lib/assistant/tools";
@@ -88,6 +88,13 @@ export async function POST(request: NextRequest) {
       return;
     }
     const question = turns[turns.length - 1]!.content;
+
+    // Clearly unrelated question: polite refusal, no model call, no cost.
+    if (questionScope(question) === "off_topic") {
+      emit({ type: "text", text: m.offTopic });
+      emit({ type: "done", suggestions: m.offTopicSuggestions });
+      return;
+    }
 
     // Without an API key (local development, or not configured yet): answer
     // from the knowledge base only, never pretending to be the AI.

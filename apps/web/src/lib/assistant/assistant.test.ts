@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { costMicroEur, DEFAULT_PRICES } from "./pricing";
+import { questionScope, systemPrompt } from "./prompt";
 import { SuggestionFilter } from "./suggestions";
+import { assistantUi } from "@/i18n/fr/assistantUi";
 
 describe("cost", () => {
   it("Haiku 5.5: 10 000 tokens in, 500 out ≈ 0,12 centime", () => {
@@ -37,5 +39,40 @@ describe("suggestions filter", () => {
     const f = new SuggestionFilter();
     f.push("ok<suggestions>pas du json</suggestions>");
     expect(f.finish().suggestions).toEqual([]);
+  });
+});
+
+describe("scope: sport and the site are allowed", () => {
+  it("a rules question is not refused", () => {
+    expect(questionScope("Que dit le règlement quand le but sort du terrain ?")).toBe("in_scope");
+    expect(questionScope("Un conseil pour mieux pointer ?")).toBe("in_scope");
+  });
+  it("« comment marche le PIN » is not refused", () => {
+    expect(questionScope("Comment marche le PIN ?")).toBe("in_scope");
+    expect(questionScope("Combien coûte un lien concours ?")).toBe("in_scope");
+    expect(questionScope("Les résultats restent combien de temps ?")).toBe("in_scope");
+  });
+  it("an off-topic question is still refused, politely", () => {
+    expect(questionScope("Pour qui voter à l'élection présidentielle ?")).toBe("off_topic");
+    expect(questionScope("Écris-moi un programme en Python")).toBe("off_topic");
+    expect(questionScope("Quel médicament contre la migraine ?")).toBe("off_topic");
+    expect(assistantUi.offTopic).toMatch(/sport/);
+    expect(assistantUi.offTopicSuggestions.length).toBeGreaterThan(0);
+  });
+  it("a short follow-up is left to the model", () => {
+    expect(questionScope("Et pourquoi ?")).toBe("unclear");
+  });
+  it("the prompt names both domains, keeps official facts in the tools and never gives an end time", () => {
+    const p = systemPrompt();
+    for (const word of ["règlements", "conseils de jeu", "organisation d'un concours", "prix", "PIN", "cadrage", "concours B et C", "2 jours", "conservation des résultats"]) {
+      expect(p).toContain(word);
+    }
+    expect(p).toMatch(/UNIQUEMENT des outils/);
+    expect(p).toMatch(/Ne donne jamais d'heure de fin/);
+    expect(p).toMatch(/refuse poliment/);
+  });
+  it("welcome questions cover the rules and the site", () => {
+    expect(assistantUi.starters.some((s) => /règlement/i.test(s))).toBe(true);
+    expect(assistantUi.starters.some((s) => /PIN/.test(s))).toBe(true);
   });
 });

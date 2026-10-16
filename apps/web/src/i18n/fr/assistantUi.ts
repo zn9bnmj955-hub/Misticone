@@ -3,7 +3,9 @@ export const assistantUi = {
   today: "{date}",
   fallbackIntro: "L'assistant intelligent n'est pas encore activé sur ce site. Voici ce que j'ai trouvé dans l'aide :",
   fallbackNothing: "L'assistant intelligent n'est pas encore activé et je n'ai rien trouvé dans l'aide pour cette question. Essayez « Concours » pour trouver un concours ou « Mon tirage » pour votre match.",
-  fallbackSuggestions: ["Comment s'inscrire à un concours ?", "Comment retrouver mon tirage ?", "Comment acheter un lien concours ?"],
+  fallbackSuggestions: ["Comment s'inscrire à un concours ?", "Comment retrouver mon tirage ?", "Comment marche le PIN des bénévoles ?"],
+  offTopic: "Je réponds seulement aux questions de sport et sur le site OrgaSport. Demandez-moi par exemple une règle du jeu ou comment marche le tirage.",
+  offTopicSuggestions: ["Que dit le règlement sur le but ?", "Comment marche le PIN des bénévoles ?", "Comment marche le cadrage ?"],
   errors: {
     daily: "Vous avez posé vos {limit} questions du jour. Revenez demain, ou créez un compte pour en poser davantage.",
     dailyAccount: "Vous avez posé vos {limit} questions du jour. Revenez demain !",
@@ -19,8 +21,8 @@ export const assistantUi = {
   },
   // Chat interface (page /assistant and floating bubble).
   title: "Assistant",
-  intro: "Posez vos questions sur les concours, les règles du jeu ou le site. Je réponds en quelques lignes.",
-  starters: ["Mon prochain match", "Concours près de chez moi ce week-end", "La règle du but à 13", "Comment acheter un lien concours ?"],
+  intro: "Posez vos questions de sport (règles, conseils de jeu, organisation) ou sur le site (prix, tirage, PIN, résultats). Je réponds en quelques lignes.",
+  starters: ["Mon prochain match", "Concours près de chez moi ce week-end", "Que dit le règlement sur le but ?", "Comment marche le PIN des bénévoles ?", "Les concours B et C, c'est quoi ?"],
   startersLabel: "Exemples de questions",
   label: "Votre question",
   placeholder: "Posez votre question…",
