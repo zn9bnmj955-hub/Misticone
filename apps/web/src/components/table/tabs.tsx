@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   canDrawNext,
   isFinished,
@@ -21,6 +21,8 @@ import { standings, type TeamView } from "@/terrain/view-model";
 import type { ScoringTable } from "./store";
 import { Btn, NumberInput, Panel, roundName, sideName, teamMap } from "./ui";
 import { PinHelp } from "./PinHelp";
+import { VolunteerSheetPrint } from "./VolunteerSheetPrint";
+import { volunteerSheet, type VolunteerSheet } from "./volunteer-sheet";
 
 const m = () => getMessages().table;
 
@@ -707,14 +709,29 @@ export function HistoryTab({ table, code, version }: { table: ScoringTable; code
 
 type StaffRow = { id: string; role: string; label: string; user_id: string | null; revoked_at: string | null; hasPin: boolean };
 
-export function AccessTab({ code, isAccount }: { code: string; isAccount: boolean }) {
+export function AccessTab({ code, isAccount, tournamentName }: { code: string; isAccount: boolean; tournamentName: string }) {
   const t = m().access;
   const [staff, setStaff] = useState<StaffRow[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [label, setLabel] = useState("");
   const [created, setCreated] = useState<string | null>(null);
+  // The PIN stays in memory only (never in a URL or storage): enough to print the sheet now.
+  const [sheet, setSheet] = useState<VolunteerSheet | null>(null);
+  const [printing, setPrinting] = useState(false);
+  const stopPrinting = useCallback(() => setPrinting(false), []);
   const load = async () => {
     const res = await fetch(`/api/t/${code}/staff`, { cache: "no-store" }).catch(() => null);
     if (res?.ok) setStaff(((await res.json()) as { staff: StaffRow[] }).staff);
+    setLoaded(true);
+  };
+  const create = async (name: string) => {
+    const res = await fetch(`/api/t/${code}/staff`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ label: name }) });
+    if (!res.ok) return false;
+    const body = (await res.json()) as { pin: string; staff: { label: string } };
+    setCreated(fmt(t.created, { label: body.staff.label, pin: body.pin }));
+    setSheet(volunteerSheet({ code, tournamentName, label: body.staff.label, pin: body.pin }));
+    void load();
+    return true;
   };
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- load staff list
@@ -722,33 +739,51 @@ export function AccessTab({ code, isAccount }: { code: string; isAccount: boolea
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once
   }, [isAccount]);
   if (!isAccount) return <p className="text-ink-soft">{t.organizerOnly}</p>;
+  const hasActivePin = staff.some((s) => s.hasPin && !s.revoked_at);
   return (
     <div className="grid gap-4">
       <Panel title={t.title}>
         <PinHelp audience="organizer" tableUrl={`/c/${code}/table`} />
+        {loaded && !hasActivePin && !sheet && (
+          <div className="grid gap-2 rounded-[var(--radius)] border-2 border-accent p-3">
+            <h3 className="text-lg font-black">{t.tablePinTitle}</h3>
+            <p className="text-ink-soft">{t.tablePinHint}</p>
+            <Btn tone="primary" className="justify-self-start" onClick={() => void create(t.tablePinLabel)}>
+              {t.tablePinCreate}
+            </Btn>
+          </div>
+        )}
+        {loaded && !hasActivePin && !sheet && <p className="font-bold">{t.other}</p>}
         <form
           className="flex flex-wrap items-end gap-2"
           onSubmit={async (e) => {
             e.preventDefault();
             if (!label.trim()) return;
-            const res = await fetch(`/api/t/${code}/staff`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ label }) });
-            if (res.ok) {
-              const body = (await res.json()) as { pin: string; staff: { label: string } };
-              setCreated(fmt(t.created, { label: body.staff.label, pin: body.pin }));
-              setLabel("");
-              void load();
-            }
+            if (await create(label)) setLabel("");
           }}
         >
-          <label className="grid gap-1 text-sm font-bold">
+          <label className="grid min-w-0 gap-1 text-sm font-bold">
             {t.label}
-            <input className="h-12 w-64 rounded-[var(--radius)] border-2 border-line bg-bg px-3" value={label} onChange={(e) => setLabel(e.target.value)} />
+            <input className="h-12 w-64 max-w-full rounded-[var(--radius)] border-2 border-line bg-bg px-3" value={label} onChange={(e) => setLabel(e.target.value)} />
           </label>
-          <Btn tone="primary" type="submit">
+          <Btn tone={hasActivePin || sheet ? "primary" : "default"} type="submit">
             {t.create}
           </Btn>
         </form>
-        {created && <p className="rounded-[var(--radius)] bg-success/10 p-3 text-lg font-black text-success">{created}</p>}
+        {created && (
+          <div className="grid gap-2 rounded-[var(--radius)] bg-success/10 p-3">
+            <p className="text-lg font-black text-success">{created}</p>
+            {sheet && (
+              <>
+                <Btn tone="primary" className="justify-self-start" onClick={() => setPrinting(true)}>
+                  🖨 {t.print}
+                </Btn>
+                <p className="text-sm text-ink-soft">{t.printHint}</p>
+              </>
+            )}
+          </div>
+        )}
+        {printing && sheet && <VolunteerSheetPrint sheet={sheet} onDone={stopPrinting} />}
       </Panel>
       <ul className="grid gap-2">
         {staff.map((s) => (

@@ -166,7 +166,7 @@ export function ScoringTable({ code }: { code: string }) {
         {tab === "standings" && <StandingsTab state={view} />}
         {tab === "history" && <HistoryTab table={table} code={code} version={snap.version} />}
         {tab === "print" && <PrintTab state={view} tournament={snap.tournament} />}
-        {tab === "access" && <AccessTab code={code} isAccount={Boolean(snap.actor.canManageAccess)} />}
+        {tab === "access" && <AccessTab code={code} isAccount={Boolean(snap.actor.canManageAccess)} tournamentName={snap.tournament.name} />}
         <p className="text-xs text-ink-soft">{t.shortcuts} Échap : quitter un champ.</p>
       </main>
     </div>
