@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { EngineState, Match, Player, Round, Team } from "@orgasport/engine";
+import { defaultTournamentConfig, rulesFromSport, type EngineState, type Match, type Player, type Round, type Team } from "@orgasport/engine";
+import { requireSport } from "@orgasport/sports";
 import { printDrawSections, teamAffiliation } from "./print-model";
 
 const team = (n: number, club: string | null = null): Team => ({ id: `t${n}`, number: n, name: null, club, status: "checked_in", seed: null, bracket: "main", checkedInAt: null });
@@ -22,7 +23,7 @@ function demo(): EngineState {
     player("t4", 1, "Léa", "Vidal"), player("t4", 2, "Tom", "Faure"),
     player("t5", 1, "Ali", "Ben"), player("t5", 2, "Max", "Gros"),
   ];
-  const rounds = [round("r1", 1, "finished"), round("r2", 2, "live", "cadrage"), round("b1", 1, "live", undefined, "consolation")];
+  const rounds = [round("r1", 1, "finished"), round("r2", 2, "live"), round("b1", 1, "live", undefined, "consolation")];
   const matches = [
     match("m1", "r1", 1, ["t1"], ["t2"], { status: "done", scoreA: 13, scoreB: 7, winner: "A", venueId: "v8" }),
     match("m2", "r1", 2, ["t3"], ["t4"], { status: "done", scoreA: 5, scoreB: 13, winner: "B", venueId: "v9" }),
@@ -31,7 +32,11 @@ function demo(): EngineState {
     match("m5", "r2", 2, ["t5"], [], { status: "bye", winner: "A" }),
     match("m6", "b1", 1, ["t2"], ["t3"], { venueId: "v9" }),
   ];
+  const sport = requireSport("petanque");
   return {
+    tournament: { id: "x", status: "live", startsAt: null, maxTeams: null, config: defaultTournamentConfig(sport) },
+    rules: rulesFromSport(sport),
+    registrations: {},
     teams: Object.fromEntries(teams.map((t) => [t.id, t])),
     players: Object.fromEntries(players.map((p) => [p.id, p])),
     rounds: Object.fromEntries(rounds.map((r) => [r.id, r])),
@@ -50,7 +55,7 @@ describe("printed draw sheets (ppf format)", () => {
     expect(teamAffiliation(s, "t5")).toBe("(PÉTANQUE LUNELLOISE)");
   });
 
-  it("all rounds: newest first, A before B, NOM PRÉNOM in capitals, loser greyed, ** while not played, Office in the cadrage", () => {
+  it("all rounds: newest first, A before B, NOM PRÉNOM in capitals, loser greyed, ** while not played, Office in the cadrage (derived by the engine)", () => {
     const sections = printDrawSections(demo(), "all");
     expect(sections.map((x) => x.round.id)).toEqual(["r2", "r1", "b1"]);
     const [cadrage, first, b] = sections;

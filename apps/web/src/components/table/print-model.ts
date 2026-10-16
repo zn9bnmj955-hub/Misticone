@@ -1,4 +1,4 @@
-import { matchesOfRound, roundsOf, type Bracket, type EngineState, type Match, type Round } from "@orgasport/engine";
+import { matchesOfRound, roundLabel, roundsOf, type Bracket, type EngineState, type Match, type Round } from "@orgasport/engine";
 
 /**
  * Printed draw sheets, laid out like the federation result pages ("ppf"):
@@ -87,7 +87,8 @@ export function printDrawSections(state: EngineState, which: "current" | "all", 
         const b = side(state, m, m.sideB, "B");
         return { id: m.id, venue: m.venueId ? (venues.get(m.venueId) ?? "") : "", a: a ?? b, b: a ? b : null, score: score(m) };
       });
-      sections.push({ bracket, round, office: round.kind === "cadrage", rows });
+      // The cadrage is derived by the engine (not always stored on the round).
+      sections.push({ bracket, round, office: roundLabel(state, round).key === "cadrage", rows });
     }
   }
   return sections;
