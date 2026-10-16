@@ -249,7 +249,7 @@ export function SummaryStep({
         { label: s.venueNames, value: form.venueLabels.length ? labels.join(", ") : fmt(s.numbered, { count: form.venueCount }) },
         { label: s.reserved, value: form.reservedLabels.length ? form.reservedLabels.join(", ") : none },
         ...(plan
-          ? [{ label: s.estimate, value: fmt(s.estimateValue, { needed: plan.firstRoundVenuesNeeded, venues: vars.venues! }) }]
+          ? [{ label: s.venueNeeds, value: fmt(s.venueNeedsValue, { needed: plan.firstRoundVenuesNeeded, venues: vars.venues! }) }]
           : []),
       ],
     },
