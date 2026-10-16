@@ -6,6 +6,7 @@ import { clubLogoUrl } from "@/lib/data/clubs";
 import { distanceKm, listUpcomingTournaments, type TournamentCard } from "@/lib/data/tournaments";
 import { rankFeed, type FeedPrefs, type Rankable } from "@/lib/feed/rank";
 import type { Viewer } from "@/lib/viewer";
+import { offeredSportSlugs } from "@/lib/prefs";
 
 /**
  * Items of the personalized home feed. The public parts are cached queries
@@ -153,6 +154,9 @@ export async function buildFeed(input: FeedInput): Promise<FeedItem[]> {
   const { viewer, prefs, nowMs } = input;
   const sports = input.sports?.filter((s) => SLUG.test(s)).sort() ?? null;
   const sportKey = sports && sports.length > 0 ? sports : null;
+  // Sports switched off (football) never reach the feed, even with « all sports ».
+  const offered = offeredSportSlugs();
+  const queryKey = sportKey ?? offered;
   const origin = input.where?.lat != null && input.where.lng != null ? { lat: input.where.lat, lng: input.where.lng } : null;
   const dist = (p: { lat: number | null; lng: number | null } | null | undefined) =>
     origin && p?.lat != null && p.lng != null ? distanceKm(origin, { lat: p.lat, lng: p.lng }) : null;
@@ -163,11 +167,11 @@ export async function buildFeed(input: FeedInput): Promise<FeedItem[]> {
   const none = Promise.resolve([] as never[]);
 
   const [upcoming, results, announcements, clubs, news] = await Promise.all([
-    prefs.nearby ? listUpcomingTournaments(sportKey, 30) : none,
-    prefs.results ? listRecentResults(sportKey, follows.clubIds, follows.tournamentIds, hourIso(nowMs - 14 * DAY)) : none,
-    prefs.clubs ? listFeedAnnouncements(sportKey, follows.clubIds) : none,
-    prefs.nearby ? listNewClubs(sportKey, hourIso(nowMs - 30 * DAY)) : none,
-    prefs.news ? listNews(sportKey) : none,
+    prefs.nearby ? listUpcomingTournaments(queryKey, 30) : none,
+    prefs.results ? listRecentResults(queryKey, follows.clubIds, follows.tournamentIds, hourIso(nowMs - 14 * DAY)) : none,
+    prefs.clubs ? listFeedAnnouncements(queryKey, follows.clubIds) : none,
+    prefs.nearby ? listNewClubs(queryKey, hourIso(nowMs - 30 * DAY)) : none,
+    prefs.news ? listNews(queryKey) : none,
   ]);
 
   const items: FeedItem[] = [];
@@ -233,7 +237,7 @@ export async function buildFeed(input: FeedInput): Promise<FeedItem[]> {
     items.push({
       key: `c:${c.id}`,
       kind: "newClub",
-      sport: sportKey?.find((s) => c.sports.includes(s)) ?? c.sports[0] ?? null,
+      sport: queryKey.find((s) => c.sports.includes(s)) ?? c.sports[0] ?? null,
       at: c.created_at,
       distanceKm: dist(c),
       followed: followedClubs.has(c.id),
@@ -253,5 +257,6 @@ export async function buildFeed(input: FeedInput): Promise<FeedItem[]> {
     });
   }
 
-  return rankFeed(items, { nowMs, sports: sportKey, strictSports: input.strictSports, radiusKm: input.radiusKm, prefs });
+  const shown = items.filter((i) => i.sport == null || offered.includes(i.sport));
+  return rankFeed(shown, { nowMs, sports: sportKey, strictSports: input.strictSports, radiusKm: input.radiusKm, prefs });
 }

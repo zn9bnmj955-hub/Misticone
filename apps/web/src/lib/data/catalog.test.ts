@@ -13,8 +13,17 @@ describe("catalog filters", () => {
     expect(catalogFiltersToQuery(f)).toBe("?sport=petanque&quand=weekend&rayon=30&ouverture=licencies&places=1&vue=carte&tri=distance");
   });
   it("ignores unknown values and falls back to the sport selector", () => {
-    const f = parseCatalogFilters({ rayon: "7", format: "nope", categorie: "x", lat: "abc" }, "football");
-    expect(f).toMatchObject({ sport: "football", radiusKm: null, format: null, category: null, point: null });
+    const f = parseCatalogFilters({ rayon: "7", format: "nope", categorie: "x", lat: "abc" }, "petanque");
+    expect(f).toMatchObject({ sport: "petanque", radiusKm: null, format: null, category: null, point: null });
+  });
+  it("brings a sport that is no longer offered (football) back to pétanque", () => {
+    expect(parseCatalogFilters({}, "football").sport).toBe("petanque");
+    expect(parseCatalogFilters({ sport: "football" }, null).sport).toBe("petanque");
+  });
+  it("« all sports » only lists the sports offered", () => {
+    const f = parseCatalogFilters({}, "all");
+    expect(f.sport).toBeNull();
+    expect(toCatalogQuery(f, null, Date.now()).sports).toEqual(["petanque"]);
   });
   it("only filters by distance when a point is known", () => {
     const f = parseCatalogFilters({ rayon: "30", tri: "distance" }, null);

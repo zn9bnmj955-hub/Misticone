@@ -40,7 +40,7 @@ async function Catalog({ searchParams }: { searchParams: SearchParams }) {
 
   // A shared link with ?sport=… sets the sport selector, then the parameter is dropped.
   const sportParam = typeof sp.sport === "string" ? sp.sport : null;
-  const adopt = sportParam && (sportParam === ALL_SPORTS || getSport(sportParam)) ? sportParam : null;
+  const adopt = sportParam && (sportParam === ALL_SPORTS || getSport(sportParam)?.enabled) ? sportParam : null;
 
   return (
     <>

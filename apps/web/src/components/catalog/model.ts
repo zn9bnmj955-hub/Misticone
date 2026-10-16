@@ -52,7 +52,7 @@ export function clearAllHref(f: CatalogFilters): string {
 
 function sportsFor(sport: string | null): SportConfig[] {
   const one = sport ? getSport(sport) : undefined;
-  return one ? [one] : enabledSports();
+  return one?.enabled ? [one] : enabledSports();
 }
 
 /** Competition formats offered by the selected sport (or by all sports for "Tous"). */

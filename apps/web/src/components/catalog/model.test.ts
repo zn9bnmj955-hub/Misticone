@@ -44,14 +44,16 @@ function row(patch: Partial<Row> = {}): Row {
 
 describe("filter options", () => {
   it("offers only the formats and categories of the selected sport", () => {
-    const foot = model.formatOptions("football");
-    expect(foot).not.toContain("melee_rotation");
-    expect(foot).toContain("pools_then_bracket");
-    expect(model.formatOptions(null).length).toBeGreaterThanOrEqual(foot.length);
+    const petanque = model.formatOptions("petanque");
+    expect(petanque).toContain("melee_rotation");
+    expect(model.formatOptions(null)).toEqual(petanque);
     expect(model.categoryOptions("petanque")).not.toContain("all");
   });
+  it("ignores a sport that is not offered (football switched off)", () => {
+    expect(model.formatOptions("football")).toEqual(model.formatOptions(null));
+  });
   it("keeps the current value even if the sport does not offer it", () => {
-    expect(model.formatOptions("football", "melee_rotation")).toContain("melee_rotation");
+    expect(model.formatOptions("petanque", "round_robin")).toContain("round_robin");
   });
   it("falls back to every sport for an unknown sport", () => {
     expect(model.formatOptions("curling")).toEqual(model.formatOptions(null));

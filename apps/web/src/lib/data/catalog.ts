@@ -3,6 +3,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { CATEGORIES, COMPETITION_FORMATS, type Category, type CompetitionFormat } from "@orgasport/sports";
 import { createPublicClient } from "@/lib/supabase/public";
 import { isoToParis, parisToIso, parisDatePlus } from "@/lib/tournament-form/time";
+import { ALL_SPORTS, normalizeSportFilter, offeredSportSlugs } from "@/lib/prefs";
 
 /**
  * Catalog filters travel in the URL (plain GET form: works without
@@ -35,14 +36,16 @@ type Params = Record<string, string | string[] | undefined>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
 
 export function parseCatalogFilters(sp: Params, sportCookie: string | null): CatalogFilters {
-  const sport = one(sp.sport) || sportCookie || "all";
+  // A sport that is not offered (football switched off) goes back to the offered one.
+  const raw = one(sp.sport) || sportCookie || ALL_SPORTS;
+  const sport = normalizeSportFilter(/^[a-z0-9-]+$/.test(raw) ? raw : null);
   const radius = Number(one(sp.rayon));
   const lat = Number(one(sp.lat));
   const lng = Number(one(sp.lng));
   const format = one(sp.format);
   const category = one(sp.categorie);
   return {
-    sport: /^[a-z0-9-]+$/.test(sport) && sport !== "all" ? sport : null,
+    sport: sport !== ALL_SPORTS ? sport : null,
     when: WHEN[one(sp.quand)] ?? "all",
     radiusKm: (RADII as readonly number[]).includes(radius) ? radius : null,
     format: (COMPETITION_FORMATS as readonly string[]).includes(format) ? (format as CompetitionFormat) : null,
@@ -149,7 +152,8 @@ export type CatalogQuery = {
 export function toCatalogQuery(f: CatalogFilters, origin: { lat: number; lng: number } | null, nowMs: number): CatalogQuery {
   const range = whenRange(f.when, nowMs);
   const q: CatalogQuery = { limit: 100 };
-  if (f.sport) q.sports = [f.sport];
+  // « All sports » means all the sports offered: tournaments of a sport switched off stay hidden.
+  q.sports = f.sport ? [f.sport] : offeredSportSlugs();
   if (range.from) q.from = range.from;
   if (range.to) q.to = range.to;
   if (origin) {
