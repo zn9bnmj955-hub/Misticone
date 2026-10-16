@@ -532,5 +532,110 @@ begin
   end;
 end $$;
 
+-- B3. Purge 14 days after the final: personal data deleted, payments and the short code kept,
+-- a second run does nothing, a tournament finished 13 days ago is untouched.
+do $$
+declare
+  club uuid;
+  owner uuid;
+  t_old uuid; t_new uuid; t_stale uuid;
+  code_old text; code_new text; code_stale text;
+  tm uuid; pl uuid; sub uuid; uid uuid;
+  t uuid;
+  purged text[];
+  n int;
+begin
+  select club_id, created_by into club, owner from public.tournaments where short_code = 'GP3M';
+  select id into uid from auth.users where email = 'joueur@demo.orgasport.fr';
+  insert into public.tournaments (club_id, sport_slug, name, status, finished_at, starts_at)
+    values (club, 'petanque', 'Purge 15 jours', 'archived', now() - interval '15 days', now() - interval '15 days')
+    returning id, short_code into t_old, code_old;
+  insert into public.tournaments (club_id, sport_slug, name, status, finished_at, starts_at)
+    values (club, 'petanque', 'Purge 13 jours', 'archived', now() - interval '13 days', now() - interval '13 days')
+    returning id, short_code into t_new, code_new;
+  -- Safety net: a tournament that never finished is purged 6 months after its start.
+  insert into public.tournaments (club_id, sport_slug, name, status, starts_at)
+    values (club, 'petanque', 'Purge 7 mois', 'published', now() - interval '7 months')
+    returning id, short_code into t_stale, code_stale;
+  insert into public.teams (tournament_id, number) values (t_stale, 1) returning id into tm;
+  insert into public.registrations (team_id, tournament_id, source, captain_phone) values (tm, t_stale, 'online', '0600000001');
+  foreach t in array array[t_old, t_new] loop
+    insert into public.teams (tournament_id, number, name, club_name) values (t, 1, 'Les Pointeurs', 'Boule du Cap') returning id into tm;
+    insert into public.players (team_id, first_name, last_name) values (tm, 'Jean', 'Dupont') returning id into pl;
+    insert into public.players_private (player_id, license_number) values (pl, '01234567');
+    insert into public.registrations (team_id, tournament_id, source, captain_name, captain_phone, captain_email)
+      values (tm, t, 'online', 'Jean Dupont', '0600000000', 'jean@example.org');
+    insert into public.team_secrets (team_id, code) values (tm, '1234');
+    insert into public.tournament_staff (tournament_id, role, label, pin_hash) values (t, 'referee', 'Table', 'hash');
+    insert into public.tournament_actions (tournament_id, type) values (t, 'team.create');
+    insert into public.notifications (channel, template, tournament_id, email) values ('email', 'reminder', t, 'jean@example.org');
+    insert into public.push_subscriptions (endpoint, p256dh, auth) values ('https://push.example/' || t, 'k', 'a') returning id into sub;
+    insert into public.push_targets (subscription_id, tournament_id, team_id) values (sub, t, tm);
+    insert into public.follows (user_id, tournament_id) values (uid, t);
+    insert into public.payments (tournament_id, club_id, amount_cents, status) values (t, club, 2900, 'paid');
+  end loop;
+
+  purged := public.purge_finished_tournaments(now());
+  if not (code_old = any(purged)) then raise exception 'a tournament finished 15 days ago must be purged'; end if;
+  if code_new = any(purged) then raise exception 'a tournament finished 13 days ago must not be purged'; end if;
+  if not (code_stale = any(purged)) or exists (select 1 from public.registrations where tournament_id = t_stale) then
+    raise exception 'a tournament started 7 months ago must be purged';
+  end if;
+
+  if exists (select 1 from public.players p join public.teams x on x.id = p.team_id where x.tournament_id = t_old)
+     or exists (select 1 from public.registrations where tournament_id = t_old)
+     or exists (select 1 from public.team_secrets s join public.teams x on x.id = s.team_id where x.tournament_id = t_old)
+     or exists (select 1 from public.tournament_staff where tournament_id = t_old)
+     or exists (select 1 from public.tournament_actions where tournament_id = t_old)
+     or exists (select 1 from public.notifications where tournament_id = t_old)
+     or exists (select 1 from public.push_targets where tournament_id = t_old)
+     or exists (select 1 from public.push_subscriptions where endpoint = 'https://push.example/' || t_old)
+     or exists (select 1 from public.follows where tournament_id = t_old)
+     or exists (select 1 from public.teams where tournament_id = t_old and (name is not null or club_name is not null)) then
+    raise exception 'the purge left personal data behind';
+  end if;
+  if (select count(*) from public.players_private pp where pp.license_number = '01234567') <> 1 then
+    raise exception 'the purge must delete the licence of the purged tournament only';
+  end if;
+  if not exists (select 1 from public.payments where tournament_id = t_old and status = 'paid') then raise exception 'payments must be kept'; end if;
+  if not exists (select 1 from public.teams where tournament_id = t_old and number = 1) then raise exception 'anonymous teams must be kept'; end if;
+  if (select purged_at from public.tournaments where id = t_old) is null then raise exception 'purged_at must be filled'; end if;
+  if (select short_code from public.tournaments where id = t_old) is distinct from code_old then raise exception 'the tournament row and its code must be kept'; end if;
+
+  if (select count(*) from public.players p join public.teams x on x.id = p.team_id where x.tournament_id = t_new) <> 1
+     or not exists (select 1 from public.registrations where tournament_id = t_new)
+     or not exists (select 1 from public.tournament_staff where tournament_id = t_new)
+     or (select purged_at from public.tournaments where id = t_new) is not null then
+    raise exception 'a tournament finished 13 days ago must keep its data';
+  end if;
+
+  if cardinality(public.purge_finished_tournaments(now())) <> 0 then raise exception 'a second run must do nothing'; end if;
+
+  -- The code is never given out again: the generator checks the kept row, and the column is unique.
+  for n in 1..200 loop
+    if public.generate_short_code() = code_old then raise exception 'generate_short_code reused a purged code'; end if;
+  end loop;
+  begin
+    insert into public.tournaments (club_id, sport_slug, name, short_code) values (club, 'petanque', 'Code repris', code_old);
+    raise exception 'a purged code was given to a new tournament';
+  exception when unique_violation then null;
+  end;
+end $$;
+
+-- Only the server (service role, pg_cron) may run the purge.
+select pg_temp.as_user('club@demo.orgasport.fr');
+do $$ begin
+  perform public.purge_finished_tournaments(now());
+  raise exception 'a signed-in user ran the purge';
+exception when insufficient_privilege then null;
+end $$;
+select pg_temp.as_anon();
+do $$ begin
+  perform public.purge_finished_tournaments(now());
+  raise exception 'anon ran the purge';
+exception when insufficient_privilege then null;
+end $$;
+select pg_temp.reset();
+
 \echo 'RLS checks passed'
 rollback;

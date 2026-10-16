@@ -856,6 +856,9 @@ isOneToOne: false
 "publish_tournament":
 { Args: { "p_fields": Json,"p_payment": string,"p_staff": Json,"p_venues": Json }; Returns: string
                            },
+"purge_finished_tournaments":
+{ Args: { "p_now"?: string }; Returns: (string)[]
+                           },
 "rate_limit_exceeded":
 { Args: { "p_key": string,"p_max": number,"p_window_seconds": number }; Returns: boolean
                            },
