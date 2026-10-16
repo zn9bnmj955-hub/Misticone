@@ -1,15 +1,16 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { matchesOfRound, type EngineState, type Match } from "@orgasport/engine";
+import { type EngineState, type Match } from "@orgasport/engine";
 import { getSport, venueLabel } from "@orgasport/sports";
-import { getMessages } from "@/i18n";
+import { fmt, getMessages } from "@/i18n";
 import { formatDay, formatTime } from "@/lib/format";
-import { currentRounds, standings } from "@/terrain/view-model";
+import { standings } from "@/terrain/view-model";
+import { printDrawSections, type PrintSide } from "./print-model";
 import type { TableTournament } from "./store";
 import { Btn, Panel, roundName, sideName, teamMap } from "./ui";
 
-type Doc = "draw" | "sheets" | "standings" | "teams";
+type Doc = "draw" | "rounds" | "sheets" | "standings" | "teams";
 
 /**
  * Backup printing from the data already on this device: works without
@@ -38,6 +39,7 @@ export function PrintTab({ state, tournament }: { state: EngineState; tournament
 
   const docs: { id: Doc; label: string }[] = [
     { id: "draw", label: t.draw },
+    { id: "rounds", label: t.allRounds },
     { id: "sheets", label: t.sheets },
     { id: "standings", label: t.standings },
     { id: "teams", label: t.teams },
@@ -79,26 +81,57 @@ function PrintDoc({ doc, state, tournament }: { doc: Doc; state: EngineState; to
   const box = { display: "inline-block", width: "18mm", height: "12mm", border: "2px solid var(--os-paper-ink)", verticalAlign: "middle" } as const;
 
   let body: React.ReactNode;
-  if (doc === "draw") {
-    const rounds = [...currentRounds(state, "main"), ...currentRounds(state, "consolation")];
-    body = rounds.map((r) => (
-      <section key={r.id} style={{ breakInside: "avoid" }}>
-        <h2>{roundName(state, r)}</h2>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11pt" }}>
-          <tbody>
-            {matchesOfRound(state, r.id).map((x) => (
-              <tr key={x.id} style={{ borderBottom: "1px solid var(--os-paper-line)" }}>
-                <td style={{ width: "18mm", fontWeight: 900, fontSize: "14pt" }}>{x.venueId ? venues.get(x.venueId) : ""}</td>
-                <td>{sideName(teams, x.sideA)}</td>
-                <td style={{ width: "12mm", textAlign: "center" }}>{x.scoreA ?? ""}</td>
-                <td>{x.status === "bye" ? m.terrain.status.bye : sideName(teams, x.sideB)}</td>
-                <td style={{ width: "12mm", textAlign: "center" }}>{x.scoreB ?? ""}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-    ));
+  if (doc === "draw" || doc === "rounds") {
+    const p = m.table.print;
+    const sections = printDrawSections(state, doc === "draw" ? "current" : "all", venues);
+    const several = new Set(sections.map((x) => x.bracket)).size > 1;
+    const cell = { border: "1px solid var(--os-paper-ink)", padding: "1.5mm 2mm", verticalAlign: "top" } as const;
+    const head = { ...cell, background: "var(--os-paper-shade)", textAlign: "left", fontSize: "10pt" } as const;
+    const team = (x: PrintSide | null, office: boolean) =>
+      x ? (
+        <td style={{ ...cell, ...(x.lost ? { background: "var(--os-paper-shade)", color: "var(--os-paper-line)" } : null) }}>
+          <strong>{x.number}</strong>
+          {x.players.map((name) => (
+            <div key={name}>{name}</div>
+          ))}
+          {x.affiliation && <div style={{ fontSize: "9pt" }}>{x.affiliation}</div>}
+        </td>
+      ) : (
+        <td style={{ ...cell, background: "var(--os-paper-shade)", fontWeight: 900 }}>{office ? p.office : p.exempt}</td>
+      );
+    body = (
+      <>
+        {sections.map((x) => (
+          <section key={x.round.id} data-print-round={x.round.id} style={{ marginBottom: "6mm" }}>
+            <h2 style={{ fontSize: "14pt", margin: "0 0 2mm" }}>
+              {several ? `${p.brackets[x.bracket] ?? ""} · ` : ""}
+              {fmt(p.results, { label: roundName(state, x.round) })}
+            </h2>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11pt" }}>
+              <thead>
+                <tr>
+                  <th style={{ ...head, width: "18mm" }}>{noun}</th>
+                  <th style={head}>{p.colTeam}</th>
+                  <th style={head}>{p.colTeam}</th>
+                  <th style={{ ...head, width: "22mm", textAlign: "center" }}>{p.colScore}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {x.rows.map((r) => (
+                  <tr key={r.id} style={{ breakInside: "avoid" }}>
+                    <td style={{ ...cell, fontWeight: 900, fontSize: "14pt" }}>{r.venue}</td>
+                    {team(r.a, x.office)}
+                    {team(r.b, x.office)}
+                    <td style={{ ...cell, textAlign: "center", fontWeight: 900, fontSize: "13pt" }}>{r.score}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        ))}
+        <p style={{ fontSize: "9pt" }}>{p.notPlayed}</p>
+      </>
+    );
   } else if (doc === "sheets") {
     const list: Match[] = Object.values(state.matches)
       .filter((x) => ["waiting_venue", "ready", "playing", "pending", "score_submitted", "disputed"].includes(x.status) && x.sideA.length && x.sideB.length)
