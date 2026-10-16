@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { applyCommand } from "./commands";
+import { applyChanges, invertChanges } from "./tx";
 import { cadragePairing } from "./pairing";
 import { canDrawNext, eliminationDrawPlan, qualifiers } from "./formats";
 import { isOfficeBye, isPowerOfTwo, largestPowerOfTwo, matchesOfRound, roundLabel, roundsOf } from "./queries";
-import { createRng } from "./rng";
+import { createIdGenerator, createRng } from "./rng";
 import { computeStats } from "./standings";
 import { exec, makeState, PLAYABLE_STATUSES, playToEnd, randomScore, resetOps } from "./test-helpers";
 import type { EngineState, Phase } from "./types";
@@ -227,4 +229,41 @@ describe("scores of an exempt and of a place « d'office »", () => {
     const o = computeStats(s, office.sideA, [office]).get(office.sideA[0]!)!;
     expect([o.wins, o.pointsFor, o.pointsAgainst]).toEqual([1, 0, 0]);
   });
+});
+
+describe("cadrage draw: same result everywhere, undo restores exactly (M2, tester)", () => {
+  it("13 teams: the cadrage draw (3 games + 1 « d'office ») is identical on two devices and undone exactly", () => {
+    let s = makeState({ teams: 13, config: { bracketMode: "redraw", autoNextRound: false, ...noB } });
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "u1" });
+    const rng = createRng("undo");
+    const r1 = roundsOf(s, "main", "elimination")[0]!;
+    for (const m of matchesOfRound(s, r1.id).filter((x) => PLAYABLE_STATUSES.has(x.status)))
+      s = exec(s, { type: "match.score", matchId: m.id, ...randomScore(s, () => rng.next(), true) });
+    const ctx = { now: "2026-10-12T15:00:00.000Z", newId: createIdGenerator("cad"), seed: "cad" };
+    const a = applyCommand(s, { type: "round.draw", bracket: "main", seed: "u2" }, ctx);
+    const b = applyCommand(s, { type: "round.draw", bracket: "main", seed: "u2" }, { ...ctx, newId: createIdGenerator("cad") });
+    expect(b.state).toEqual(a.state);
+    expect(profile(a.state, "elimination")).toEqual(["6p+1ex partie1", "3p+1off cadrage"]);
+    expect(applyChanges(a.state, invertChanges(a.changes))).toEqual(s);
+  });
+});
+
+describe("pools then final phase: other sizes of the reference list", () => {
+  for (const n of [13, 129, 256]) {
+    it(`${n} teams: after the cadrage every final round starts with a power of two`, () => {
+      resetOps();
+      let s = makeState({ teams: n, config: { format: "pools_then_bracket", bracketMode: "redraw", ...noB } });
+      s = playToEnd(s, `pools-x-${n}`);
+      const q = qualifiers(s).length;
+      const P = largestPowerOfTwo(q);
+      const p = profile(s, "final");
+      expect(p[0]).toBe(q === P ? `${q / 2}p ${p[0]!.split(" ")[1]}` : `${q - P}p+${2 * P - q}off cadrage`);
+      roundsOf(s, "main", "final").slice(1).forEach((r) => {
+        const teams = matchesOfRound(s, r.id).reduce((t, m) => t + m.sideA.length + m.sideB.length, 0);
+        expect(isPowerOfTwo(teams)).toBe(true);
+      });
+      expect(p[p.length - 1]).toBe("1p final");
+      expect(s.tournament.status).toBe("finished");
+    });
+  }
 });
