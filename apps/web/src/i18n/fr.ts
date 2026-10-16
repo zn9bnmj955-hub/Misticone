@@ -282,6 +282,7 @@ export const fr = {
     teamsCount: "{count} / {max} équipes",
     teamsCountNoMax: "{count} équipes",
     fee: "{amount} par {per}",
+    consolationFee: "Concours B : {amount} par équipe, sur place",
     perTeam: "équipe",
     perPlayer: "joueur",
     free: "Gratuit",

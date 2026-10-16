@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Section";
 import { formatDay, formatEuros, formatTime } from "@/lib/format";
 import type { TournamentDetail } from "@/app/(app)/concours/[code]/data";
+import { consolationFeeOf } from "@/lib/tournament-form/bracket-fee";
 import { PlacesGauge } from "./RegistrationBox";
 
 function Fact({ label, children, wide }: { label: string; children: ReactNode; wide?: boolean }) {
@@ -26,6 +27,7 @@ export function KeyFacts({ t, sport }: { t: TournamentDetail; sport: SportConfig
     t.fee_cents > 0
       ? fmt(m.tournament.fee, { amount: formatEuros(t.fee_cents), per: t.fee_per === "player" ? m.tournament.perPlayer : m.tournament.perTeam })
       : m.tournament.free;
+  const bFee = consolationFeeOf(t.config);
   const eligibility = t.eligibility === "licensed" ? m.tournament.licensed : t.eligibility === "mixed" ? m.tournament.mixed : m.tournament.open;
   const category = m.categoryLabels[t.category as keyof typeof m.categoryLabels] ?? t.category;
 
@@ -50,7 +52,10 @@ export function KeyFacts({ t, sport }: { t: TournamentDetail; sport: SportConfig
               {eligibility}
             </Badge>
           </Fact>
-          <Fact label={f.fee}>{fee}</Fact>
+          <Fact label={f.fee}>
+            {fee}
+            {bFee !== null && <span className="block text-sm font-semibold text-ink-soft">{fmt(m.tournament.consolationFee, { amount: formatEuros(bFee) })}</span>}
+          </Fact>
           {t.prize_text && <Fact label={f.prize}>{t.prize_text}</Fact>}
           <Fact label={f.registration}>
             {f.registrationMode[t.registration_mode]}

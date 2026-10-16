@@ -5,6 +5,7 @@ import { fmt, getMessages } from "@/i18n";
 import { env } from "@/lib/env";
 import { formatDay, formatEuros, formatTime } from "@/lib/format";
 import { createPublicClient } from "@/lib/supabase/public";
+import { consolationFeeOf } from "@/lib/tournament-form/bracket-fee";
 import { lightPalette } from "@/lib/email/layout";
 import { html, raw } from "@/terrain/html";
 import { TERRAIN_CSS } from "@/terrain/styles.generated";
@@ -25,7 +26,7 @@ export async function GET(_request: Request, { params }: Ctx) {
   if (!isShortCode(code)) return new Response("Not found", { status: 404 });
   const { data: t } = await createPublicClient()
     .from("tournaments")
-    .select("name, sport_slug, starts_at, address, postcode, city, team_format, fee_cents, fee_per, prize_text, eligibility, clubs (name)")
+    .select("name, sport_slug, starts_at, address, postcode, city, team_format, fee_cents, fee_per, prize_text, eligibility, config, clubs (name)")
     .eq("short_code", code)
     .neq("status", "draft")
     .maybeSingle();
@@ -39,6 +40,7 @@ export async function GET(_request: Request, { params }: Ctx) {
   const format = sport?.teamFormats.find((f) => f.id === t.team_format)?.label;
   const fee =
     t.fee_cents > 0 ? fmt(m.tournament.fee, { amount: formatEuros(t.fee_cents), per: t.fee_per === "player" ? m.tournament.perPlayer : m.tournament.perTeam }) : m.tournament.free;
+  const bFee = consolationFeeOf(t.config);
   const club = (t.clubs as { name: string } | null)?.name;
   const page = html`<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${fmt(p.title, { name: t.name })}</title>
@@ -69,6 +71,7 @@ h1{font-size:40pt;line-height:1;margin:4mm 0 0;font-weight:900;font-style:italic
 <span>${formatDay(t.starts_at)} · ${formatTime(t.starts_at)}</span>
 <span>${[t.address, t.city].filter(Boolean).join(", ")}</span>
 <span>${fee}${t.prize_text ? ` · ${t.prize_text}` : ""}</span>
+${bFee !== null ? html`<span>${fmt(m.tournament.consolationFee, { amount: formatEuros(bFee) })}</span>` : ""}
 <span>${t.eligibility === "licensed" ? m.tournament.licensed : m.tournament.open}</span>
 </div>
 <div class="qr">${raw(qr)}<div>
