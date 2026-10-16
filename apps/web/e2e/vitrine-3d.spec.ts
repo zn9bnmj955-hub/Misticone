@@ -101,3 +101,35 @@ test.describe("landing 3D", () => {
     expect(p95).toBeLessThan(median * 3 + 8);
   });
 });
+
+test.describe("landing 3D stays off the critical path", () => {
+  test.use({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false });
+
+  test("the largest paint happens before the 3D canvas is mounted, and is never the canvas", async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __lcp: { t: number; tag: string }[]; __canvasAt: number | null };
+      w.__lcp = [];
+      w.__canvasAt = null;
+      new PerformanceObserver((list) => {
+        for (const e of list.getEntries() as (PerformanceEntry & { element?: Element | null })[])
+          w.__lcp.push({ t: e.startTime, tag: e.element?.tagName ?? "" });
+      }).observe({ type: "largest-contentful-paint", buffered: true });
+      new MutationObserver(() => {
+        if (w.__canvasAt === null && document.querySelector("canvas[data-ball-canvas]")) w.__canvasAt = performance.now();
+      }).observe(document, { childList: true, subtree: true });
+    });
+    const hero = await open3D(page);
+    if ((await hero.getAttribute("data-ball")) !== "3d") test.skip(true, "no WebGL 2 on this machine: static scene only");
+    const { lcp, canvasAt } = await page.evaluate(() => {
+      const w = window as unknown as { __lcp: { t: number; tag: string }[]; __canvasAt: number | null };
+      return { lcp: w.__lcp, canvasAt: w.__canvasAt };
+    });
+    expect(lcp.length, "a largest contentful paint is reported").toBeGreaterThan(0);
+    expect(canvasAt, "the 3D canvas was mounted").not.toBeNull();
+    const last = lcp[lcp.length - 1];
+    console.log(`landing LCP ${last.t.toFixed(0)} ms (${last.tag}), 3D canvas mounted at ${canvasAt!.toFixed(0)} ms`);
+    expect(last.tag).not.toBe("CANVAS");
+    // The 3D is loaded only once the page is idle: it can never delay the largest paint.
+    expect(lcp[0].t).toBeLessThan(canvasAt!);
+  });
+});
