@@ -34,3 +34,42 @@ test("« Résultats par équipes » works without JavaScript, one anchor per tea
   expect(content).not.toMatch(/\b\d{8}\b/);
   expect(content).not.toContain("<form");
 });
+
+test("before the draw the page is the list of registered teams: an online registration appears without its contacts", async ({ request, baseURL }) => {
+  // A tournament open to online registration, not drawn yet.
+  const catalog = await (await request.get("/concours?places=1")).text();
+  const code = /href="\/c\/([2-9A-HJKMNP-Z]{4,6})\/inscription"/.exec(catalog)?.[1];
+  expect(code, "an open tournament in the catalog").toBeTruthy();
+  const last = `Inscrit${Date.now().toString(36)}`;
+  const reg = await request.post(`/c/${code}/inscription`, {
+    headers: { Origin: baseURL ?? "http://localhost:3000" },
+    form: {
+      p0_prenom: "Léa", p0_nom: last, p1_prenom: "Paul", p1_nom: last, cap_nom: `Léa ${last}`,
+      cap_tel: "06 98 76 54 32", cap_email: `${last.toLowerCase()}@exemple.fr`, reglement: "on", coequipiers: "on",
+    },
+    maxRedirects: 0,
+  });
+  expect(reg.status()).toBe(303);
+  const number = Number(/equipe=(\d+)/.exec(reg.headers()["location"] ?? "")?.[1]);
+  expect(number).toBeGreaterThan(0);
+
+  const res = await request.get(`/c/${code}/equipes`);
+  expect(res.status()).toBe(200);
+  const body = await res.text();
+  expect(body).toContain("<h2>Liste des inscrits ");
+  expect(body).not.toContain("<th>Parcours</th>");
+  const row = new RegExp(`<tr id="e${number}">.*?</tr>`).exec(body)?.[0] ?? "";
+  expect(row).toContain("Inscrite");
+  // The captain's contacts never reach the public page.
+  expect(body).not.toContain("98 76 54 32");
+  expect(body).not.toContain("0698765432");
+  expect(body).not.toContain("@exemple.fr");
+  expect(body).not.toContain("<script src");
+
+  // Short code in lower case: permanent redirect; unknown code: back to the draw page.
+  const lower = await request.get(`/c/${code!.toLowerCase()}/equipes`, { maxRedirects: 0 });
+  expect(lower.status()).toBe(301);
+  expect(lower.headers()["location"]).toMatch(new RegExp(`/c/${code}/equipes$`));
+  const unknown = await request.get("/c/ZZZZ/equipes", { maxRedirects: 0 });
+  expect(unknown.status()).toBe(303);
+});
