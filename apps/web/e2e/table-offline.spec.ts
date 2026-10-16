@@ -117,8 +117,8 @@ test.describe("scoring table without network", () => {
     expect(titles.length).toBeGreaterThan(1);
     expect(titles.every((x) => /^(Concours [ABC] · )?Résultats /.test(x))).toBe(true);
     // Newest round first, games in progress shown as "**", names "NOM PRÉNOM" in capitals.
-    expect(titles[0]).toContain("Concours A · Résultats Huitièmes");
-    expect(titles[1]).toContain("Concours A · Résultats Tour 1");
+    expect(titles[0]).toContain("Concours A · Résultats 1/8 de finale");
+    expect(titles[1]).toContain("Concours A · Résultats 1re partie");
     await expect(sheet.locator("td", { hasText: /^\*\*$/ }).first()).toBeAttached();
     const name = ((await sheet.locator("tbody td:nth-child(2) div").first().textContent()) ?? "").trim();
     expect(name).toMatch(/[A-Z]/);

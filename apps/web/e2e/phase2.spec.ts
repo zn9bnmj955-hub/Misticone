@@ -47,7 +47,7 @@ test.describe("public tournament page", () => {
     await expect(card.locator(".v").first()).toHaveText("12");
     // Other tabs work too (plain links).
     await page.getByRole("link", { name: "Tableau" }).click();
-    await expect(page.getByRole("heading", { name: "Huitièmes de finale" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "1/8 de finale" })).toBeVisible();
     await context.close();
   });
 
@@ -184,7 +184,7 @@ test.describe("scoring table", () => {
 
     await page.getByRole("button", { name: /Tirage/ }).first().click();
     await page.getByRole("button", { name: "Lancer le tirage" }).click();
-    await expect(page.getByRole("heading", { name: /Tour 1|Quarts|Demi/ }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /1re partie|Cadrage|1\/4 de finale|1\/2 finale/ }).first()).toBeVisible();
     await expect(page.getByText(/saisie\(s\) en attente/)).toHaveCount(0, { timeout: 10_000 });
 
     await page.goto("/c/GP3M");
