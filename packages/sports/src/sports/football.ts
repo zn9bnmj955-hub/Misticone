@@ -5,7 +5,7 @@ export const football: SportConfigInput = {
   name: "Football",
   icon: "football",
   accentToken: "football",
-  enabled: true,
+  enabled: false,
   sortOrder: 20,
   venue: {
     kind: "pitch",

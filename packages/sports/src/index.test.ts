@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   SPORTS,
   competitionFormatsFor,
+  enabledSports,
   formatTemplate,
   getSport,
   isValidLicenseNumber,
@@ -9,6 +10,7 @@ import {
   sportConfigSchema,
 } from "./index";
 import { petanque } from "./sports/petanque";
+import { football } from "./sports/football";
 
 const s0 = () => requireSport("petanque");
 
@@ -62,6 +64,24 @@ describe("sport registry", () => {
       defaults: { ...petanque.defaults, teamFormat: "solo", venues: 8 },
     });
     expect(darts.venue.noun.singular).toBe("cible");
+  });
+});
+
+describe("pétanque only (football switched off, code kept)", () => {
+  it("offers pétanque alone", () => {
+    expect(enabledSports().map((s) => s.slug)).toEqual(["petanque"]);
+  });
+
+  it("still resolves football for existing tournaments", () => {
+    expect(getSport("football")?.name).toBe("Football");
+    expect(requireSport("football").enabled).toBe(false);
+  });
+
+  it("switching football back on is a single boolean", () => {
+    // The football file only differs from an offered sport by `enabled`: flipping it gives a valid, offered sport.
+    const on = sportConfigSchema.parse({ ...football, enabled: true });
+    expect(on).toEqual({ ...requireSport("football"), enabled: true });
+    expect([...SPORTS.filter((s) => s.slug !== "football"), on].filter((s) => s.enabled).map((s) => s.slug).sort()).toEqual(["football", "petanque"]);
   });
 });
 
