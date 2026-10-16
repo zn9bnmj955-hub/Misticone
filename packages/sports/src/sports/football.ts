@@ -68,5 +68,8 @@ export const football: SportConfigInput = {
     tournamentStarting: "Coup d'envoi à {time}. Bon tournoi !",
     reminderDayBefore: "Demain : {tournament} à {time}, {place}.",
     notCheckedIn: "Votre équipe n'est pas encore pointée. Passez à la table de marque avant {time}.",
+    office: "Qualifiés d'office pour le tour suivant ({round}) : pas de match à jouer.",
+    bracketEntry: "Inscription au {bracket} confirmée.",
+    paused: "Fin de la journée. Reprise demain : le prochain tirage sera publié sur la page du tournoi.",
   },
 };

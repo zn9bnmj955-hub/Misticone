@@ -81,10 +81,13 @@ export const petanque: SportConfigInput = {
   },
   notifications: {
     yourTurn: "À vous ! {venueLabel} {venue} · {time} · contre {opponent}",
-    drawPublished: "Le tirage du tour {round} est publié.",
+    drawPublished: "Tirage publié : {round}.",
     scoreValidated: "Score validé : {score}.",
     tournamentStarting: "Jet du but à {time}. Bonne partie !",
     reminderDayBefore: "Demain : {tournament} à {time}, {place}.",
     notCheckedIn: "Votre équipe n'est pas encore pointée. Passez à la table de marque avant {time}.",
+    office: "Qualifiés d'office pour le tour suivant ({round}) : pas de partie à jouer.",
+    bracketEntry: "Inscription au {bracket} confirmée.",
+    paused: "Fin de la journée. Reprise demain : le prochain tirage sera publié sur la page du concours.",
   },
 };

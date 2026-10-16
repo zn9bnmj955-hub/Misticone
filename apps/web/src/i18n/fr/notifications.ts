@@ -4,6 +4,28 @@ export const notifications = {
   emailFooter: "Vous recevez ce message car vous avez accepté les notifications OrgaSport. Pour ne plus les recevoir, désactivez-les dans votre profil.",
   following: "Notifications activées pour l'équipe {number} du concours {code}.",
 
+  /** Round names inside notification texts (« Tirage publié : 1/4 de finale »). */
+  rounds: {
+    cadrage: "cadrage",
+    partie: "{n}e partie",
+    partie1: "1re partie",
+    final: "finale",
+    semifinal: "1/2 finale",
+    quarterfinal: "1/4 de finale",
+    round_of_16: "1/8 de finale",
+    round_of_32: "1/16 de finale",
+    round_of_64: "1/32 de finale",
+    round_of_128: "1/64 de finale",
+    round: "tour {n}",
+    pool: "poules, partie {n}",
+    swiss: "partie {n}",
+    league: "journée {n}",
+    melee: "partie {n}",
+  },
+  /** Brackets: the A has no prefix. */
+  brackets: { consolation: "concours B", consolation_c: "concours C" },
+  bracketRound: "{bracket}, {round}",
+
   /** Opt-in button (app pages and terrain pages). */
   button: "Me prévenir quand c'est à moi",
   asking: "Répondez à la question du navigateur : « Autoriser ».",

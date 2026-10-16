@@ -82,6 +82,12 @@ const notificationTemplatesSchema = z.object({
   tournamentStarting: z.string(),
   reminderDayBefore: z.string(),
   notCheckedIn: z.string(),
+  /** Team qualified « d'office » (one-sided match after the cadrage). Placeholders: {round} */
+  office: z.string(),
+  /** Team entered a B or C bracket on its own (« opt_in »). Placeholders: {bracket} */
+  bracketEntry: z.string(),
+  /** Two-day tournament: the automatic chain stopped for the night. */
+  paused: z.string(),
 });
 
 export const sportConfigSchema = z.object({

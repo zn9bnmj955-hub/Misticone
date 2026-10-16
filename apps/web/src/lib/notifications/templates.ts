@@ -1,11 +1,22 @@
+import { roundLabel, type EngineState, type Round } from "@orgasport/engine";
 import { formatTemplate, venueLabel, type SportConfig } from "@orgasport/sports";
+import { fmt, type Messages } from "@/i18n";
 
 /**
  * Notification texts come from the sport configuration (packages/sports:
  * `notifications`), so football says "Match dans 10 min, terrain 2" and
  * pétanque "À vous ! Terrain 12 · 15 h 40 · contre l'équipe 27 (…)".
  */
-export type NotificationKind = "your_turn" | "draw_published" | "score_validated" | "tournament_starting" | "reminder_day_before" | "not_checked_in";
+export type NotificationKind =
+  | "your_turn"
+  | "draw_published"
+  | "score_validated"
+  | "tournament_starting"
+  | "reminder_day_before"
+  | "not_checked_in"
+  | "office"
+  | "bracket_entry"
+  | "paused";
 
 const TEMPLATE_KEY: Record<NotificationKind, keyof SportConfig["notifications"]> = {
   your_turn: "yourTurn",
@@ -14,6 +25,9 @@ const TEMPLATE_KEY: Record<NotificationKind, keyof SportConfig["notifications"]>
   tournament_starting: "tournamentStarting",
   reminder_day_before: "reminderDayBefore",
   not_checked_in: "notCheckedIn",
+  office: "office",
+  bracket_entry: "bracketEntry",
+  paused: "paused",
 };
 
 export type TemplateVars = {
@@ -25,7 +39,17 @@ export type TemplateVars = {
   score?: string;
   tournament?: string;
   place?: string;
+  /** « concours B » / « concours C ». */
+  bracket?: string;
 };
+
+/** « 1/4 de finale », « cadrage », « concours B, 1re partie »: the round as named in a message. */
+export function roundText(state: EngineState, round: Round, m: Messages): string {
+  const r = m.notifications.rounds;
+  const label = roundLabel(state, round);
+  const text = "n" in label ? (label.key === "partie" && label.n === 1 ? r.partie1 : fmt(r[label.key], { n: label.n })) : r[label.key];
+  return round.bracket === "main" ? text : fmt(m.notifications.bracketRound, { bracket: m.notifications.brackets[round.bracket], round: text });
+}
 
 export function renderBody(sport: SportConfig, kind: NotificationKind, vars: TemplateVars): string {
   const template = sport.notifications[TEMPLATE_KEY[kind]];
