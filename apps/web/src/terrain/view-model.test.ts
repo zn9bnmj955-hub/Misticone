@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { canDrawNext, matchesOfRound, roundsOf, type EngineState } from "@orgasport/engine";
 import { requireSport } from "@orgasport/sports";
 import { getMessages } from "@/i18n";
-import { exec, makeState, PLAYABLE_STATUSES, resetOps } from "../../../../packages/engine/src/test-helpers";
+import { exec, makeState, PLAYABLE_STATUSES, playToEnd, resetOps } from "../../../../packages/engine/src/test-helpers";
 import { buildTeamViews, drawSheets, roundLabel, type DrawRow } from "./view-model";
 
 /** Lot 2, T1: draw sheets like the federation results pages (« resultats-ppf »). */
@@ -116,5 +116,47 @@ describe("draw sheets (T1)", () => {
       if (canDrawNext(s, "main")) s = exec(s, { type: "round.draw", bracket: "main", seed: `seven-${i}` });
     }
     expect(roundsOf(s, "main").map((r) => roundLabel(s, r, m))).toEqual(["1re partie", "1/2 finale", "Finale"]);
+  });
+});
+
+describe("draw sheets (T1, vérification du testeur)", () => {
+  it("13 teams played to the end with B and C: three sections A, B, C, newest round first, prefixed names", () => {
+    const s = playToEnd(
+      makeState({ teams: 13, config: { bracketMode: "redraw", cadrage: { afterRound: 1 }, consolation: { enabled: true, entry: "auto" }, consolationC: { enabled: true, entry: "auto" } } }),
+      "t1-abc",
+    );
+    const sheets = drawSheets(s, buildTeamViews(s, "full"), petanque, m);
+    expect(sheets.map((b) => b.title)).toEqual(["Concours A", "Concours B", "Concours C"]);
+    expect(sheets.map((b) => b.rounds.map((r) => r.label))).toEqual([
+      ["Finale", "1/2 finale", "Cadrage", "1re partie"],
+      ["Concours B · Finale", "Concours B · Cadrage", "Concours B · 1re partie"],
+      ["Concours C · Finale", "Concours C · 1re partie"],
+    ]);
+    // Finished: every game has a score and exactly one greyed side; only « d'office » lines keep « ** ».
+    for (const row of sheets.flatMap((b) => b.rounds.flatMap((r) => r.rows))) {
+      if (row.alone === "office") {
+        expect(row).toMatchObject({ score: "**", venue: "", b: null });
+        expect(row.a!.lost).toBe(false);
+      } else if (row.alone === "exempt") {
+        expect(row.b).toBeNull();
+        expect(row.a!.lost).toBe(false);
+        expect(row.score).not.toBe("**");
+      } else {
+        expect(row.score).toMatch(/^\d+ - \d+$/);
+        expect([row.a!.lost, row.b!.lost].filter(Boolean)).toHaveLength(1);
+      }
+    }
+  });
+
+  it("a game lost by forfeit: the absent team is greyed and the forfeit score is shown", () => {
+    let s = makeState({ teams: 8, config: { bracketMode: "redraw", consolation: { enabled: false } } });
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "forfait" });
+    const game = matchesOfRound(s, roundsOf(s, "main")[0]!.id)[0]!;
+    s = exec(s, { type: "match.forfeit", matchId: game.id, side: "B" });
+    const row = drawSheets(s, buildTeamViews(s, "full"), petanque, m)[0]!.rounds[0]!.rows.find((r) => r.matchId === game.id)!;
+    expect(row.a!.lost).toBe(false);
+    expect(row.b!.lost).toBe(true);
+    const f = s.tournament.config.forfeitScore;
+    expect(row.score).toBe(`${f.winner} - ${f.loser}`);
   });
 });
