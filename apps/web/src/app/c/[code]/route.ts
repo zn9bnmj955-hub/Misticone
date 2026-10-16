@@ -8,7 +8,7 @@ import { createVersionedCache } from "@/lib/tournament/versioned-cache";
 import { escapeHtml } from "@/terrain/html";
 import { myTeamCookie } from "@/terrain/cookies";
 import { terrainCacheHeaders } from "@/terrain/cache-headers";
-import { renderTerrainPage, VIEWS, type TerrainView } from "@/terrain/render";
+import { renderPurgedPage, renderTerrainPage, VIEWS, type TerrainView } from "@/terrain/render";
 import { TERRAIN_CSS } from "@/terrain/styles.generated";
 
 type Ctx = { params: Promise<{ code: string }> };
@@ -64,6 +64,8 @@ export async function GET(request: NextRequest, { params }: Ctx) {
 
   const loaded = await loadPublic(code);
   if (!loaded) return notFound(code);
+  // 14 days after the final the personal data is purged: the code stays, the results are gone.
+  if (loaded.meta.purged_at) return new Response(renderPurgedPage(loaded.meta, { fragment: sp.has("fragment") }), { headers: HTML_HEADERS });
 
   const view = (VIEWS as string[]).includes(sp.get("vue") ?? "") ? (sp.get("vue") as TerrainView) : "tirage";
   const mineCookie = request.cookies.get(myTeamCookie(code))?.value;

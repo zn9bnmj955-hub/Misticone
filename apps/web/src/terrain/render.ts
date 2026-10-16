@@ -434,3 +434,41 @@ ${found?.length === 1 && !["finished", "archived"].includes(t.meta.status) ? not
 </html>`;
   return page.value;
 }
+
+/**
+ * Page of a tournament whose personal data was purged (14 days after the final):
+ * only « Résultats supprimés », the name and the date stay. The fragment keeps the
+ * #live wrapper so a page left open swaps to the same message.
+ */
+export function renderPurgedPage(meta: Pick<TournamentMeta, "short_code" | "name" | "starts_at" | "state_version">, opts: { fragment: boolean }): string {
+  const m = getMessages().terrain;
+  const code = meta.short_code!;
+  const live = html`<div id="live" data-version="${meta.state_version}"><main><h2>${m.purged.title}</h2><p class="msg">${m.purged.text}</p></main></div>`;
+  if (opts.fragment) return live.value;
+  return html`<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${meta.name} · ${code}</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="${THEME_COLOR}">
+<script>${raw('try{var th=localStorage.getItem("os_theme");if(th==="light"||th==="dark")document.documentElement.setAttribute("data-theme",th)}catch(e){}')}</script>
+<style>${raw(TERRAIN_CSS)}</style>
+</head>
+<body data-code="${code}">
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="/">Orga<b>Sport</b></a><span class="code">${code}</span>
+    <h1>${meta.name}</h1>
+    <p class="meta">${formatDay(meta.starts_at)}</p>
+  </header>
+  ${live}
+  <footer class="foot no-print">
+    <a href="/">${m.poweredBy}</a>
+    ${legalLinks()}
+  </footer>
+</div>
+</body>
+</html>`.value;
+}

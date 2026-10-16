@@ -316,6 +316,10 @@ export const fr = {
     eliminated: "Éliminée au {round}",
     champion: "Vainqueur du concours !",
     finished: "Concours terminé",
+    purged: {
+      title: "Résultats supprimés",
+      text: "Les résultats et les noms des équipes de ce concours ont été supprimés 14 jours après la finale, comme prévu.",
+    },
     won: "Gagné {score}",
     lost: "Perdu {score}",
     draw: "Nul {score}",
