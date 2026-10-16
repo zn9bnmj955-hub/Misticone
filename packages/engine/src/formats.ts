@@ -64,13 +64,12 @@ export function totalRounds(state: EngineState, phase: "swiss" | "melee", partic
 // Entity helpers
 // ---------------------------------------------------------------------------
 
-function newRound(tx: Transaction, ctx: DrawContext, bracket: Bracket, phase: Phase, number: number, status: RoundStatus, kind?: RoundKind): Round {
+function newRound(tx: Transaction, ctx: DrawContext, bracket: Bracket, phase: Phase, number: number, status: RoundStatus): Round {
   return tx.create("round", {
     id: ctx.newId(),
     bracket,
     phase,
     number,
-    ...(kind && { kind }),
     status,
     seed: status === "pending" ? null : `${ctx.seed}:${bracket}:${phase}:${number}`,
     drawnAt: status === "pending" ? null : ctx.now,
@@ -184,7 +183,10 @@ function drawRedrawRound(tx: Transaction, ctx: DrawContext, bracket: Bracket, ph
     pairs = drawn.pairs;
     singles = drawn.bye ? [drawn.bye] : [];
   }
-  const round = newRound(tx, ctx, bracket, phase, number, "drawn", plan.kind);
+  // The « cadrage » kind is not stored on the round: roundLabel derives it
+  // (round at the cadrage point, field not a power of two), so a state read
+  // back from the database is identical.
+  const round = newRound(tx, ctx, bracket, phase, number, "drawn");
   pairs.forEach(([a, b], i) => newMatch(tx, ctx, round, i + 1, [a], [b]));
   singles.forEach((id, i) => newMatch(tx, ctx, round, pairs.length + i + 1, [id], []));
 }

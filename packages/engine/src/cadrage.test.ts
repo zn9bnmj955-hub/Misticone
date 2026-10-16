@@ -202,8 +202,6 @@ describe("safety net after the cadrage", () => {
     expect(canDrawNext(s, "main")).toBe(true);
     s = exec(s, { type: "round.draw", bracket: "main", seed: "d4" });
     expect(profile(s, "elimination")).toEqual(["16p+1ex partie1", "1p+15off cadrage", "8p round_of_16", "3p+1off quarterfinal"]);
-    const r4 = roundsOf(s, "main", "elimination")[3]!;
-    expect(r4.kind).toBe("partie");
   });
 });
 
