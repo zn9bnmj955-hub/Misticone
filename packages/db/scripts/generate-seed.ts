@@ -207,12 +207,15 @@ const at = (minutes: number) => new Date(VIRTUAL_NOW + minutes * 60_000).toISOSt
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 const relative = (iso: string) => raw(`now() + interval '${Math.round((Date.parse(iso) - VIRTUAL_NOW) / 60_000)} minutes'`);
 
+/** Array columns that are not team ids (side_a / side_b). */
+const ARRAY_TYPE: Record<string, string> = { bracket_entries: "public.bracket_kind[]" };
+
 /** Engine row → SQL values (timestamps become offsets from now()). */
 function sqlRow(row: Record<string, unknown>): Record<string, Val> {
   const out: Record<string, Val> = {};
   for (const [k, v] of Object.entries(row)) {
     if (typeof v === "string" && ISO.test(v)) out[k] = relative(v);
-    else if (Array.isArray(v)) out[k] = raw(`array[${v.map((x) => lit(String(x))).join(",")}]::uuid[]`);
+    else if (Array.isArray(v)) out[k] = raw(`array[${v.map((x) => lit(String(x))).join(",")}]::${ARRAY_TYPE[k] ?? "uuid[]"}`);
     else out[k] = v as Val;
   }
   return out;
