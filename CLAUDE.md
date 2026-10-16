@@ -132,7 +132,7 @@ pnpm videos:render     # rend les 4 vidéos (long : ~15 min chacune)
 ```
 Variables locales nécessaires dans `apps/web/.env.local` : voir `.env.example` (dont `STAFF_SESSION_SECRET`, `CRON_SECRET`). Les tests Playwright lisent ce fichier (aucune clé dans les tests).
 Comptes de démo (local uniquement, mot de passe `orgasport-demo`) : `joueur@demo.orgasport.fr`, `club@demo.orgasport.fr`, `benevole@demo.orgasport.fr`, `admin@demo.orgasport.fr`. PIN table de marque du concours 7KQ2 : `4821`.
-Codes de démo : `7KQ2` (en cours, 32 doublettes, 2e tour), `GP3M` (à venir, inscriptions ouvertes), `TR8E` (terminé il y a 3 jours), `FT8S` (foot à 7, 8 équipes). Codes promo de démo : `BIENVENUE` (100 %), `CLUB50`. Boîte mail locale : http://127.0.0.1:54324.
+Codes de démo (tous en pétanque, détail dans `docs/DEMO.md`) : `7KQ2` (en cours, 32 doublettes dont 3 absentes, tour « Cadrage » avec une équipe « Office », concours B, équipes « N.H. »), `GP3M` (à venir, inscriptions ouvertes), `TR8E` (terminé il y a 3 jours), `C4DR` (terminé, cadrage dans A, B et C), `2J7P` (2 jours, en pause avant les 1/4), `PQ8P` (à venir, en poules, tirage automatique des e2e). Codes promo de démo : `BIENVENUE` (100 %), `CLUB50`. Boîte mail locale : http://127.0.0.1:54324.
 
 ## Hors périmètre (place réservée)
 CGV, mentions légales, confidentialité, cookies (pages vides `/legal/*` + table `legal_pages`), paiement en ligne des inscriptions, SMS (`notification_channel` 'sms', désactivé), app native, import Facebook/affiche par IA.
