@@ -14,9 +14,9 @@ const requests: Record<string, unknown>[] = [];
 function sse(events: [string, unknown][]): string {
   return events.map(([event, data]) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`).join("");
 }
-const message = (stop: string) => ({ id: "msg_1", type: "message", role: "assistant", model: "claude-haiku-5-5", content: [], stop_reason: null, usage: { input_tokens: 1000, output_tokens: 1 } });
+const message = () => ({ id: "msg_1", type: "message", role: "assistant", model: "claude-haiku-5-5", content: [], stop_reason: null, usage: { input_tokens: 1000, output_tokens: 1 } });
 const toolTurn = sse([
-  ["message_start", { type: "message_start", message: message("tool_use") }],
+  ["message_start", { type: "message_start", message: message() }],
   ["content_block_start", { type: "content_block_start", index: 0, content_block: { type: "tool_use", id: "toolu_1", name: "knowledge_search", input: {} } }],
   ["content_block_delta", { type: "content_block_delta", index: 0, delta: { type: "input_json_delta", partial_json: '{"query":"but à 13"}' } }],
   ["content_block_stop", { type: "content_block_stop", index: 0 }],
@@ -24,7 +24,7 @@ const toolTurn = sse([
   ["message_stop", { type: "message_stop" }],
 ]);
 const textTurn = sse([
-  ["message_start", { type: "message_start", message: message("end_turn") }],
+  ["message_start", { type: "message_start", message: message() }],
   ["content_block_start", { type: "content_block_start", index: 0, content_block: { type: "text", text: "" } }],
   ["content_block_delta", { type: "content_block_delta", index: 0, delta: { type: "text_delta", text: "La partie se joue en 13 points." } }],
   ["content_block_delta", { type: "content_block_delta", index: 0, delta: { type: "text_delta", text: '\n<suggestions>["Et le jet du but ?"]</suggestions>' } }],

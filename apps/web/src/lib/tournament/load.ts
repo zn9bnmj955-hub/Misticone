@@ -113,6 +113,7 @@ export async function loadTournament(code: string, opts: { secrets?: boolean } =
     {
       tournament: { id: tid, status: row.status, starts_at: row.starts_at, max_teams: row.max_teams },
       teams,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- drop the joined team row
       players: players.map(({ teams: _team, ...p }) => p),
       venues,
       rounds,
