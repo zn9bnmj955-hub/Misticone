@@ -57,7 +57,8 @@ const IN_SCOPE = [
   "exempt", "complementaire", "b/c", "tirage", "club", "clubs", "orgasport", "site", "pin", "benevole", "benevoles",
   "table de marque", "inscription", "inscrire", "inscrit", "inscrits", "compte", "prix", "tarif", "tarifs", "payer", "paiement",
   "lien concours", "qr", "affiche", "notification", "notifications", "organiser", "organisateur", "resultat", "resultats",
-  "classement", "2 jours", "deux jours", "assistant", "reglements", "association", "pointage", "echauffement", "echauffer",
+  "classement", "2 jours", "deux jours", "assistant", "remboursement", "rembourser", "rembourse", "confidentialite", "donnees",
+  "rgpd", "cgv", "buvette", "reglements", "association", "pointage", "echauffement", "echauffer",
   "competition", "competitions",
 ];
 // Clearly unrelated subjects (only refused when no in-scope word appears).
