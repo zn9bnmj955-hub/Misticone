@@ -22,7 +22,8 @@ test.describe("assistant", () => {
     const conversation = page.getByRole("list", { name: "Conversation avec l'assistant" });
     await expect(conversation).toContainText("Que dit le règlement sur le but ?");
     await expect(conversation).toHaveAttribute("aria-busy", "false", { timeout: 30_000 });
-    await expect(conversation.getByRole("listitem").last()).toContainText(/\S{20,}|13/);
+    // The answer talks about the jack (« but »), from the help or from the model.
+    await expect(conversation.getByRole("listitem").last()).toContainText(/\bbut\b/i);
     await expect(page.getByRole("list", { name: "Questions suggérées" }).getByRole("button").first()).toBeVisible();
   });
 
