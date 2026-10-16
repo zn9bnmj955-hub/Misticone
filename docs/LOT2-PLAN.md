@@ -640,3 +640,8 @@ Puis lancer la recette de fin de phase.
 
 - Clôture définitive du lien : elle va contre la règle « l'organisateur peut tout corriger ». Je propose que les corrections restent possibles jusqu'au bouton « Clore définitivement », ou automatiquement 24 h après la finale. Est-ce que cela vous convient ? Sans réponse, on applique ce choix.
 - Score d'un exempt avant le cadrage : c'est une règle de jeu. Je propose 13-7, à la place du 13-0 actuel qui avantage l'exempt au goal-average. Est-ce que cela vous convient ? Sans réponse, on applique 13-7.
+
+## Décisions du Directeur (le propriétaire a délégué ; modifiables sur simple demande)
+- Clôture : corrections possibles jusqu'au bouton « Clore définitivement » ou automatiquement 24 h après la finale ; ensuite plus aucune action ; résultats visibles au moins 2 semaines puis suppression.
+- Exempt avant le cadrage : 13-7 (au lieu de 13-0).
+- Données personnelles des inscrits (téléphones, emails, licences) : effacement automatique 6 mois après le concours (promesse affichée sur le formulaire d'inscription), par la tâche planifiée.
