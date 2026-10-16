@@ -62,7 +62,8 @@ test.describe("public tournament page", () => {
     await page.getByRole("link", { name: "C'est mon équipe" }).click();
     await page.goto("/c/7KQ2");
     await expect(page.locator("#mon-equipe")).toContainText("Équipe 14");
-    await expect(page.locator("tr.mine")).toHaveCount(1);
+    // Draw sheets: the team's cells are outlined in every round it played.
+    await expect(page.locator("table.sheet td.me").first()).toBeVisible();
   });
 
   test("updates live when the scoring table enters a result", async ({ page, request }) => {
