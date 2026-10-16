@@ -190,11 +190,23 @@ describe("format advice", () => {
     }
   });
 
-  it("asks for more venues when a big pétanque contest would end late", () => {
+  it("says how many venues the first round needs, without changing the organizer's venues", () => {
     const sport = requireSport("petanque");
     const form = { ...defaultForm(sport, ctx), name: "X", maxTeams: 128, venueCount: 10 };
     const advice = suggestFormat(form, sport, 128);
-    expect(advice.reasons.map((r) => r.key)).toContain("moreVenues");
-    expect(advice.changes.venueCount).toBeGreaterThan(10);
+    const reason = advice.reasons.find((r) => r.key === "moreVenues");
+    expect(reason?.values.venues).toBe(advice.plan.firstRoundVenuesNeeded);
+    expect(advice.changes).not.toHaveProperty("venueCount");
+  });
+
+  it("never gives an end time nor a duration", () => {
+    const sport = requireSport("petanque");
+    for (const teams of [4, 16, 128]) {
+      const form = { ...defaultForm(sport, ctx), name: "X", maxTeams: teams, venueCount: 10 };
+      const advice = suggestFormat(form, sport, teams);
+      expect(Object.keys(advice.plan).sort()).toEqual(["firstRoundDelayed", "firstRoundVenuesNeeded", "totalMatches"]);
+      expect(advice.reasons.map((r) => r.key)).not.toContain("noConsolation");
+      expect(advice.reasons.map((r) => r.key)).not.toContain("swissShorter");
+    }
   });
 });

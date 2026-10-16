@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useTransition, type ReactNode } from "reac
 import { Icon } from "@orgasport/ui";
 import { fmt, getMessages } from "@/i18n";
 import { formatEuros } from "@/lib/format";
-import { isoToParis, venueLabelsOf, type FormIssue, type Step, type TournamentForm } from "@/lib/tournament-form";
+import { venueLabelsOf, type FormIssue, type Step, type TournamentForm } from "@/lib/tournament-form";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { cn } from "@/components/ui/cn";
@@ -249,7 +249,7 @@ export function SummaryStep({
         { label: s.venueNames, value: form.venueLabels.length ? labels.join(", ") : fmt(s.numbered, { count: form.venueCount }) },
         { label: s.reserved, value: form.reservedLabels.length ? form.reservedLabels.join(", ") : none },
         ...(plan
-          ? [{ label: s.estimate, value: fmt(s.estimateValue, { needed: plan.firstRoundVenuesNeeded, venues: vars.venues!, time: hm(isoToParis(plan.end).time) }) }]
+          ? [{ label: s.estimate, value: fmt(s.estimateValue, { needed: plan.firstRoundVenuesNeeded, venues: vars.venues! }) }]
           : []),
       ],
     },

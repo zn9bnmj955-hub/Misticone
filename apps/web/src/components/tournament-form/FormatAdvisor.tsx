@@ -6,7 +6,7 @@ import { fmt, getMessages } from "@/i18n";
 import { Button } from "@/components/ui/Button";
 import { openAssistant } from "@/lib/assistant-client";
 import { DATE_RE, TIME_RE, suggestFormat, type FormatAdvice, type TournamentForm } from "@/lib/tournament-form";
-import { formatLabel, hm } from "./display";
+import { formatLabel } from "./display";
 import { Stepper } from "./fields";
 
 function safeAdvice(form: TournamentForm, sport: SportConfig, teams: number): FormatAdvice | null {
@@ -79,10 +79,8 @@ export function FormatAdvisor({
     ? [
         c?.rounds ? fmt(t.rounds, { count: c.rounds }) : null,
         c?.consolation !== undefined ? (c.consolation ? t.consolationYes : t.consolationNo) : null,
-        c?.venueCount !== undefined ? fmt(t.venuesChange, { count: c.venueCount, venues }) : null,
         sport.venue.usage === "parallel" ? fmt(t.venuesNeeded, { count: advice.plan.firstRoundVenuesNeeded, venues }) : null,
         fmt(t.matches, { count: advice.plan.totalMatches }),
-        fmt(t.end, { time: hm(advice.plan.endTime) }),
       ].filter((x): x is string => Boolean(x))
     : [];
 

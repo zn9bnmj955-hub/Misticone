@@ -95,7 +95,7 @@ export function toolDefinitions(): Anthropic.Tool[] {
     {
       name: "format_advice",
       description:
-        "Aide un organisateur à choisir un format : à partir du sport, du nombre d'équipes attendu, des terrains et de l'heure de début, calcule une proposition (format, tours, terrains nécessaires, heure de fin estimée).",
+        "Aide un organisateur à choisir un format : à partir du sport, du nombre d'équipes attendu, des terrains et de l'heure de début, calcule une proposition (format, tours, terrains nécessaires au 1er tour, nombre de matchs). Ne donne jamais d'heure de fin ni de durée.",
       input_schema: {
         type: "object",
         properties: {
@@ -278,8 +278,6 @@ function formatAdvice(input: z.infer<typeof adviceInput>, ctx: ToolContext) {
     consolation: merged.consolation,
     venues_needed_first_round: advice.plan.firstRoundVenuesNeeded,
     first_round_delayed_matches: advice.plan.firstRoundDelayed,
-    suggested_venue_count: advice.changes.venueCount ?? null,
-    estimated_end: advice.plan.endTime,
     total_matches: advice.plan.totalMatches,
     reasons: advice.reasons.map((r) => r.key),
     venue_noun: sport.venue.noun.plural,

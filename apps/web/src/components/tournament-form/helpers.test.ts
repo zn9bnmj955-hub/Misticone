@@ -122,11 +122,12 @@ describe("venue plan", () => {
     const form = { ...defaultForm(sport, ctx), name: "Test", maxTeams: 64, venueCount: 20, format: "single_elimination" as const };
     const plan = safePlan(form, sport);
     expect(plan).not.toBeNull();
-    const s = summarizePlan(form, sport, plan!);
+    const s = summarizePlan(form, plan!);
     expect(s.needed).toBe(32);
     expect(s.free).toBe(20);
     expect(s.delayed).toBe(12);
-    expect(s.endDate).toBe(form.date);
+    // Counts only: never an end time nor a duration.
+    expect(Object.keys(s).sort()).toEqual(["delayed", "free", "matches", "needed", "reserved", "slots"]);
   });
 
   it("waits for a valid date and time", () => {
@@ -139,8 +140,7 @@ describe("venue plan", () => {
     const form = { ...defaultForm(sport, ctx), maxTeams: 8, venueCount: 2 };
     const plan = safePlan(form, sport);
     expect(plan).not.toBeNull();
-    const s = summarizePlan(form, sport, plan!);
+    const s = summarizePlan(form, plan!);
     expect(s.slots).toBeGreaterThan(1);
-    expect(s.slot).toBeGreaterThan(0);
   });
 });
