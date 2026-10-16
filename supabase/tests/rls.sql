@@ -25,9 +25,22 @@ begin
 end $$;
 
 -- 1. Anonymous visitors see published tournaments but no personal data.
+-- Independent of the tournaments the e2e tests publish: a draft is added here
+-- (rolled back), and anon must see exactly the non-draft ones, demo codes included.
+do $$ begin
+  insert into public.tournaments (club_id, sport_slug, name, created_by)
+    select club_id, sport_slug, 'Brouillon test RLS', created_by from public.tournaments where short_code = 'GP3M';
+  perform set_config('rls_test.public_count', (select count(*) from public.tournaments where status <> 'draft')::text, true);
+end $$;
 select pg_temp.as_anon();
 do $$ begin
-  if (select count(*) from public.tournaments) <> 4 then raise exception 'anon should see 4 published tournaments'; end if;
+  if (select count(*) from public.tournaments) <> current_setting('rls_test.public_count')::int then
+    raise exception 'anon should see exactly the published (non-draft) tournaments';
+  end if;
+  if exists (select 1 from public.tournaments where status = 'draft') then raise exception 'anon must not see drafts'; end if;
+  if (select count(*) from public.tournaments where short_code in ('7KQ2', 'GP3M', 'TR8E', 'FT8S')) <> 4 then
+    raise exception 'anon should see the 4 demo tournaments';
+  end if;
   if (select count(*) from public.matches) = 0 then raise exception 'anon should see matches'; end if;
   if (select count(*) from public.players) <> 0 then raise exception 'anon must not read players'; end if;
   if (select count(*) from public.registrations) <> 0 then raise exception 'anon must not read registrations'; end if;
@@ -192,6 +205,8 @@ declare
   t uuid := (select id from public.tournaments where status = 'draft' limit 1);
   c uuid := (select club_id from public.tournaments where status = 'draft' limit 1);
   promo uuid := (select id from public.promo_codes where code = 'BIENVENUE');
+  -- The e2e tests also use BIENVENUE: count from the current value.
+  used_before int := (select redemptions from public.promo_codes where code = 'BIENVENUE');
   pay uuid;
   r text;
 begin
@@ -211,7 +226,7 @@ begin
   if (select count(*) from public.venues where tournament_id = t) <> 2 then raise exception 'venues not created'; end if;
   if (select pin_hash from public.tournament_staff where tournament_id = t and label = 'Bénévole 1') in (null, '123456') then raise exception 'PIN not hashed'; end if;
   if (select user_id from public.tournament_staff where tournament_id = t and label = 'co') is null then raise exception 'co-organizer with a confirmed account not linked'; end if;
-  if (select redemptions from public.promo_codes where id = promo) <> 1 then raise exception 'promo redemption not counted once'; end if;
+  if (select redemptions from public.promo_codes where id = promo) <> used_before + 1 then raise exception 'promo redemption not counted once'; end if;
   if (select status from public.payments where id = pay) <> 'paid' then raise exception 'payment not marked paid'; end if;
 end $$;
 select pg_temp.reset();
