@@ -102,7 +102,7 @@ insert into public.kb_documents (title, sport_slug, source_url, body, published)
 
 Les étapes : qui gère le concours, informations générales (date, heure, adresse), participants, argent (mise, dotation), déroulement et tirage, terrains, communication, puis récapitulatif et paiement. Un club pressé peut passer directement au récapitulatif avec les réglages par défaut.
 
-Le bouton « Aide-moi à choisir » propose un format adapté au nombre d''équipes, aux terrains disponibles et à l''heure de début, avec l''heure de fin estimée.
+Le bouton « Aide-moi à choisir » propose un format adapté au nombre d''équipes, aux terrains disponibles et à l''heure de début, avec le nombre de terrains nécessaires au premier tour. OrgaSport ne donne jamais d''heure de fin : la durée des parties est impossible à prévoir.
 
 Le paiement se fait sur la page sécurisée de Stripe (carte bancaire, Apple Pay, Google Pay). Aucune donnée bancaire ne passe par OrgaSport. Le concours est publié automatiquement dès que Stripe confirme le paiement, avec son lien court, son QR code et son affiche A4.
 
