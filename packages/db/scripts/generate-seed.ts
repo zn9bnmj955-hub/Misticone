@@ -645,7 +645,7 @@ insert("public.news_sources", [
 ]);
 insert("public.news_items", [
   { id: uuid(), source_id: demoSource, title: "(Démo) Championnat départemental doublettes : les résultats", url: "https://example.org/demo/resultats-doublettes", published_at: ago(60 * 5) },
-  { id: uuid(), source_id: demoSource, title: "(Démo) Nouvelle saison de foot à 7 : ce qui change", url: "https://example.org/demo/foot-a-7", published_at: ago(60 * 26) },
+  { id: uuid(), source_id: demoSource, title: "(Démo) Nouvelle saison des triplettes : ce qui change", url: "https://example.org/demo/triplettes", published_at: ago(60 * 26) },
   { id: uuid(), source_id: demoSource, title: "(Démo) Les clubs de pétanque recrutent des bénévoles", url: "https://example.org/demo/benevoles", published_at: ago(60 * 50) },
 ]);
 insert("public.legal_pages", LEGAL_PAGES.map((l) => ({ ...l, body: "", published: false })));
