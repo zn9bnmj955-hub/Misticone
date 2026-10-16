@@ -320,6 +320,74 @@ begin
   perform pg_temp.reset();
 end $$;
 
+-- Lot 2: B/C entries, round kind, players' clubs, closing and purge dates are written by the server only.
+do $$
+declare
+  tid uuid := (select id from public.tournaments where short_code = '7KQ2');
+  draft uuid;
+  n int;
+  who text;
+  r jsonb;
+  team uuid := (select id from public.teams where tournament_id = (select id from public.tournaments where short_code = '7KQ2') order by number limit 1);
+  pl uuid := (select p.id from public.players p where p.team_id = (select id from public.teams where tournament_id = (select id from public.tournaments where short_code = '7KQ2') order by number limit 1) order by position limit 1);
+  rnd uuid := (select id from public.rounds where tournament_id = (select id from public.tournaments where short_code = '7KQ2') limit 1);
+  v int := (select state_version from public.tournaments where short_code = '7KQ2');
+begin
+  foreach who in array array['benevole@demo.orgasport.fr', 'club@demo.orgasport.fr', 'joueur@demo.orgasport.fr'] loop
+    perform pg_temp.as_user(who);
+    update public.teams set bracket_entries = array['consolation', 'consolation_c']::public.bracket_kind[] where tournament_id = tid;
+    get diagnostics n = row_count;
+    if n <> 0 then raise exception '% entered teams in the B/C directly', who; end if;
+    update public.rounds set kind = 'cadrage' where tournament_id = tid;
+    get diagnostics n = row_count;
+    if n <> 0 then raise exception '% changed a round kind directly', who; end if;
+    update public.players set club_number = '0000000', club_name = 'Intrus' where team_id = team;
+    get diagnostics n = row_count;
+    if n <> 0 then raise exception '% changed a player club directly', who; end if;
+    update public.tournaments set finished_at = now(), purged_at = now() where id = tid;
+    get diagnostics n = row_count;
+    if n <> 0 then raise exception '% closed a tournament directly', who; end if;
+    perform pg_temp.reset();
+  end loop;
+
+  -- Even on a draft (editable by its club), the closing and purge dates stay server-only.
+  select id into draft from public.tournaments
+  where status = 'draft' and club_id = (select club_id from public.tournaments where id = tid) limit 1;
+  if draft is null then
+    insert into public.tournaments (club_id, sport_slug, name, status)
+    select club_id, sport_slug, 'Brouillon test', 'draft' from public.tournaments where id = tid returning id into draft;
+  end if;
+  perform pg_temp.as_user('club@demo.orgasport.fr');
+  update public.tournaments set name = 'Brouillon modifié' where id = draft;
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'the club should edit its draft'; end if;
+  begin
+    update public.tournaments set finished_at = now() where id = draft;
+    raise exception 'a club member set finished_at on a draft';
+  exception when raise_exception then
+    if sqlerrm not like '%server only%' then raise; end if;
+  end;
+  perform pg_temp.reset();
+
+  -- Players' clubs are public; anon reads them like the rest of the player row.
+  perform pg_temp.as_anon();
+  perform club_number, club_name from public.players limit 1;
+  perform kind from public.rounds limit 1;
+  perform pg_temp.reset();
+
+  -- The server (service role) writes the new columns through apply_tournament_changes.
+  perform set_config('role', 'service_role', true);
+  r := public.apply_tournament_changes(tid, v, jsonb_build_array(
+    jsonb_build_object('table', 'teams', 'op', 'update', 'key', 'id', 'id', team, 'values', jsonb_build_object('bracket_entries', jsonb_build_array('consolation', 'consolation_c'))),
+    jsonb_build_object('table', 'players', 'op', 'update', 'key', 'id', 'id', pl, 'values', jsonb_build_object('club_number', '0340901', 'club_name', 'BOULE DU CAP AGDE')),
+    jsonb_build_object('table', 'rounds', 'op', 'update', 'key', 'id', 'id', rnd, 'values', jsonb_build_object('kind', 'cadrage'))
+  ), jsonb_build_object('type', 'test.lot2', 'source', 'table'));
+  perform pg_temp.reset();
+  if (select bracket_entries from public.teams where id = team) <> array['consolation', 'consolation_c']::public.bracket_kind[] then raise exception 'B/C entries not written by the server'; end if;
+  if (select club_number from public.players where id = pl) <> '0340901' then raise exception 'player club not written by the server'; end if;
+  if (select kind from public.rounds where id = rnd) <> 'cadrage' then raise exception 'round kind not written by the server'; end if;
+end $$;
+
 -- Live updates: anyone may listen to "tournament:CODE" (private channel), only the server may send.
 do $$
 declare who text;
