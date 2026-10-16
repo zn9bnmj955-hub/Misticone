@@ -473,6 +473,22 @@ begin
   if (select finished_at from public.tournaments where id = tid) is distinct from '2026-10-12T18:00:00Z'::timestamptz then
     raise exception 'the server could not write finished_at through apply_tournament_changes';
   end if;
+  -- purged_at stays reserved to the purge function (B3): the engine path refuses it.
+  perform set_config('role', 'service_role', true);
+  perform set_config('request.jwt.claims', '{"role":"service_role"}', true);
+  begin
+    perform public.apply_tournament_changes(tid, (select state_version from public.tournaments where id = tid), jsonb_build_array(
+      jsonb_build_object('table', 'tournaments', 'op', 'update', 'key', 'id', 'id', tid, 'values',
+        jsonb_build_object('status', 'archived', 'purged_at', '2026-10-12T18:00:00Z'))
+    ), jsonb_build_object('type', 'test.lot2.lifecycle', 'source', 'table'));
+    raise exception 'apply_tournament_changes accepted purged_at';
+  exception when others then
+    if sqlerrm <> 'tournament_change_not_allowed' then raise; end if;
+  end;
+  perform pg_temp.reset();
+  if (select purged_at from public.tournaments where id = tid) is not null then
+    raise exception 'purged_at was written through apply_tournament_changes';
+  end if;
 
   perform pg_temp.as_user('club@demo.orgasport.fr');
   begin
