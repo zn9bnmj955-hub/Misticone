@@ -15,6 +15,7 @@ import {
   pairKey,
   playedPairs,
   roundsOf,
+  teamsInRound,
   winnerTeams,
 } from "./queries";
 import {
@@ -378,18 +379,65 @@ function drawFinalPhase(tx: Transaction, ctx: DrawContext): void {
 // Consolation ("concours complémentaire")
 // ---------------------------------------------------------------------------
 
-function consolationEntrants(state: EngineState): PairingTeam[] {
+/** Extra brackets: concours B ("consolation") and concours C ("consolation_c"). */
+export type ExtraBracket = Exclude<Bracket, "main">;
+
+/** The C is only played when the B started with at least this many teams. */
+export const C_MIN_B_TEAMS = 4;
+
+const KNOCKOUT_FORMATS: ReadonlySet<string> = new Set(["single_elimination", "pools_then_bracket"]);
+
+export function bracketSettings(state: EngineState, bracket: ExtraBracket) {
   const cfg = state.tournament.config;
-  if (cfg.format === "pools_then_bracket") {
+  return bracket === "consolation" ? cfg.consolation : cfg.consolationC;
+}
+
+/** The B (or the C, which needs the B) is part of this tournament. */
+export function isBracketEnabled(state: EngineState, bracket: ExtraBracket): boolean {
+  const cfg = state.tournament.config;
+  if (!KNOCKOUT_FORMATS.has(cfg.format) || !cfg.consolation.enabled) return false;
+  return bracket === "consolation" || cfg.consolationC.enabled;
+}
+
+/** Teams in the first round of a bracket (exempt and « d'office » included), 0 before its draw. */
+export function bracketStartCount(state: EngineState, bracket: Bracket): number {
+  const first = roundsOf(state, bracket, "elimination")[0];
+  return first ? teamsInRound(state, first) : 0;
+}
+
+/**
+ * Teams that go to the B or the C:
+ * - B: losers of the A's 1st game (never its exempt), or the pool non-qualifiers;
+ * - C: losers of the B's 1st game, only if the B started with at least 4 teams.
+ * With « opt_in » entry, only the teams entered with team.enterBracket.
+ */
+export function consolationEntrants(state: EngineState, bracket: ExtraBracket): PairingTeam[] {
+  const cfg = state.tournament.config;
+  let ids: string[];
+  if (bracket === "consolation_c") {
+    const first = roundsOf(state, "consolation", "elimination")[0];
+    if (!first || !isRoundComplete(state, first.id)) fail("ROUND_INCOMPLETE", { round: 1 });
+    const count = teamsInRound(state, first);
+    if (count < C_MIN_B_TEAMS) fail("NOT_ENOUGH_TEAMS", { count });
+    ids = matchesOfRound(state, first.id).flatMap(loserTeams);
+  } else if (cfg.format === "pools_then_bracket" && cfg.consolation.source === "pool_non_qualified") {
     const labels = poolLabels(state);
     if (labels.length === 0 || !labels.every((l) => isPoolComplete(state, l))) fail("ROUND_INCOMPLETE");
     const qualified = new Set(qualifiers(state).map((x) => x.id));
-    return labels.flatMap((l) => poolTeams(state, l)).filter((id) => !qualified.has(id) && stillIn(state)(id)).map((id) => toPairing(state.teams[id]!));
+    ids = labels.flatMap((l) => poolTeams(state, l)).filter((id) => !qualified.has(id));
+  } else {
+    // Losers of a game of the A: its elimination rounds, or the 1st round of its final phase.
+    const phase: Phase = cfg.format === "pools_then_bracket" ? "final" : "elimination";
+    const number = phase === "elimination" ? cfg.consolation.losersOfRound : 1;
+    const source = roundsOf(state, "main", phase).find((r) => r.number === number);
+    if (!source || !isRoundComplete(state, source.id)) fail("ROUND_INCOMPLETE", { round: number });
+    ids = matchesOfRound(state, source.id).flatMap(loserTeams);
   }
-  const source = roundsOf(state, "main", "elimination").find((r) => r.number === cfg.consolation.losersOfRound);
-  if (!source || !isRoundComplete(state, source.id)) fail("ROUND_INCOMPLETE", { round: cfg.consolation.losersOfRound });
-  const losers = matchesOfRound(state, source.id).flatMap(loserTeams);
-  return [...new Set(losers)].filter(stillIn(state)).map((id) => toPairing(state.teams[id]!));
+  const optIn = bracketSettings(state, bracket).entry === "opt_in";
+  return [...new Set(ids)]
+    .filter(stillIn(state))
+    .filter((id) => !optIn || Boolean(state.teams[id]!.entries?.includes(bracket)))
+    .map((id) => toPairing(state.teams[id]!));
 }
 
 // ---------------------------------------------------------------------------
@@ -484,9 +532,9 @@ function drawMelee(tx: Transaction, ctx: DrawContext): void {
 export function drawNext(tx: Transaction, ctx: DrawContext, bracket: Bracket): void {
   const state = tx.state;
   const cfg = state.tournament.config;
-  if (bracket === "consolation") {
-    if (!cfg.consolation.enabled || cfg.format === "swiss" || cfg.format === "round_robin" || cfg.format === "melee_rotation") fail("NOTHING_TO_DRAW");
-    return drawElimination(tx, ctx, "consolation", "elimination", () => consolationEntrants(tx.state), { avoidSameClub: false, seeding: false });
+  if (bracket !== "main") {
+    if (!isBracketEnabled(state, bracket)) fail("NOTHING_TO_DRAW");
+    return drawElimination(tx, ctx, bracket, "elimination", () => consolationEntrants(tx.state, bracket), { avoidSameClub: false, seeding: false });
   }
   switch (cfg.format) {
     case "single_elimination":
@@ -510,17 +558,17 @@ export function drawNext(tx: Transaction, ctx: DrawContext, bracket: Bracket): v
 /** True when the organizer (or the automation) can draw the next round now. */
 export function canDrawNext(state: EngineState, bracket: Bracket): boolean {
   const cfg = state.tournament.config;
-  if (bracket === "consolation") {
-    if (!cfg.consolation.enabled || !["single_elimination", "pools_then_bracket"].includes(cfg.format)) return false;
-    const rounds = roundsOf(state, "consolation", "elimination");
+  if (bracket !== "main") {
+    if (!isBracketEnabled(state, bracket)) return false;
+    const rounds = roundsOf(state, bracket, "elimination");
     if (rounds.length === 0) {
       try {
-        return consolationEntrants(state).length >= 2;
+        return consolationEntrants(state, bracket).length >= 2;
       } catch {
         return false;
       }
     }
-    return canContinueElimination(state, "consolation", "elimination");
+    return canContinueElimination(state, bracket, "elimination");
   }
   switch (cfg.format) {
     case "single_elimination": {
@@ -559,10 +607,15 @@ export function autoAdvance(tx: Transaction, ctx: DrawContext): void {
       drawNext(tx, { ...ctx, seed: `${ctx.seed}:auto${guard}` }, "main");
       drew = true;
     }
-    // The consolation bracket follows the main one automatically.
-    if (canDrawNext(tx.state, "consolation") && (cfg.autoNextRound || roundsOf(tx.state, "consolation").length === 0)) {
-      drawNext(tx, { ...ctx, seed: `${ctx.seed}:autoc${guard}` }, "consolation");
-      drew = true;
+    // The B and the C follow automatically. Their first draw waits for the
+    // table when teams enter on their own (« opt_in »: entries are collected first).
+    for (const [bracket, tag] of [["consolation", "autoc"], ["consolation_c", "autocc"]] as const) {
+      const started = roundsOf(tx.state, bracket).length > 0;
+      const auto = started ? cfg.autoNextRound : bracketSettings(tx.state, bracket).entry === "auto";
+      if (auto && canDrawNext(tx.state, bracket)) {
+        drawNext(tx, { ...ctx, seed: `${ctx.seed}:${tag}${guard}` }, bracket);
+        drew = true;
+      }
     }
     if (!drew) return;
   }

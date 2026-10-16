@@ -130,6 +130,10 @@ export function playToEnd(start: EngineState, seed = "play", opts: { maxSteps?: 
       state = exec(state, { type: "round.draw", bracket: "consolation", seed: `${seed}-c${step}` });
       continue;
     }
+    if (canDrawNext(state, "consolation_c")) {
+      state = exec(state, { type: "round.draw", bracket: "consolation_c", seed: `${seed}-cc${step}` });
+      continue;
+    }
     return state;
   }
   throw new Error("tournament did not finish");

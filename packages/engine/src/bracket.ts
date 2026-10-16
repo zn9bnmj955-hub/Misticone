@@ -12,9 +12,11 @@ export { isFixedTree, teamsInRound };
 
 export const PHASE_RANK: Record<Phase, number> = { pool: 0, league: 0, swiss: 0, melee: 0, elimination: 1, final: 2 };
 
-/** Chronological order of rounds: main before consolation, pools before finals, then number. */
+const BRACKET_RANK: Record<Round["bracket"], number> = { main: 0, consolation: 1, consolation_c: 2 };
+
+/** Chronological order of rounds: A, then B, then C; pools before finals, then number. */
 export function roundOrderKey(r: Round): [number, number, number] {
-  return [r.bracket === "main" ? 0 : 1, PHASE_RANK[r.phase], r.number];
+  return [BRACKET_RANK[r.bracket], PHASE_RANK[r.phase], r.number];
 }
 
 export function compareRounds(a: Round, b: Round): number {

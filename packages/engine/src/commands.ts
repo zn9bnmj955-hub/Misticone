@@ -169,7 +169,7 @@ export function isTournamentComplete(state: EngineState): boolean {
   if (ms.length === 0 || !ms.every(isFinished)) return false;
   const mainStarted = Object.values(state.rounds).some((r) => r.bracket === "main");
   if (!mainStarted) return false;
-  return !canDrawNext(state, "main") && !canDrawNext(state, "consolation");
+  return !canDrawNext(state, "main") && !canDrawNext(state, "consolation") && !canDrawNext(state, "consolation_c");
 }
 
 function settle(tx: Transaction, ctx: DrawContext): void {
