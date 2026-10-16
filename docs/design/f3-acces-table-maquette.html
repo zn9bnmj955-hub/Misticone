@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accès table de marque — maquette F3</title>
+<style>
+  /* Maquette de travail (documentation), hors application : pas de jetons --os-*. */
+  body { margin: 0; padding: 16px; font: 15px/1.45 system-ui, sans-serif; background: #f4f6fa; color: #10131a; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p.lead { margin: 0 0 16px; color: #4a5263; max-width: 60em; }
+  .cols { display: flex; flex-wrap: wrap; margin: -8px; }
+  .col { flex: 1 1 320px; margin: 8px; }
+  h2 { font-size: 16px; margin: 0 0 8px; }
+  .phone { background: #fff; border: 1px solid #d5dae4; border-radius: 18px; padding: 14px; max-width: 360px; }
+  .bar { font-size: 12px; color: #4a5263; margin-bottom: 8px; }
+  .steps { display: flex; margin-bottom: 10px; }
+  .steps span { flex: 1; height: 4px; margin-right: 3px; border-radius: 2px; background: #d5dae4; }
+  .steps span.on { background: #1f5bff; }
+  .screen-title { font-weight: 800; font-size: 18px; margin: 0 0 10px; }
+  .group { border: 1px solid #e3e7ef; border-radius: 12px; padding: 10px; margin-bottom: 10px; }
+  .group b { display: block; margin-bottom: 4px; }
+  .field { border: 1px solid #c4cad6; border-radius: 8px; padding: 8px; margin: 4px 0; color: #4a5263; font-size: 14px; }
+  .moved { outline: 2px dashed #1f5bff; outline-offset: 2px; }
+  .gone { opacity: .35; text-decoration: line-through; }
+  .fold { border: 1px solid #1f5bff; color: #1f5bff; border-radius: 8px; padding: 8px; font-weight: 700; text-align: center; }
+  .btn { background: #10131a; color: #fff; border-radius: 10px; padding: 10px; text-align: center; font-weight: 700; margin-top: 6px; }
+  .note { font-size: 13px; color: #4a5263; }
+  table { border-collapse: collapse; margin-top: 8px; background: #fff; }
+  td, th { border: 1px solid #d5dae4; padding: 6px 8px; text-align: left; font-size: 14px; }
+</style>
+</head>
+<body>
+<h1>Co-organisateurs et PIN plus loin dans le parcours — maquette à valider</h1>
+<p class="lead">Proposition F3 (choix produit de l'audit). <strong>Rien n'est encore modifié dans l'application</strong> : le propriétaire valide d'abord.
+Idée : le 1er écran ne parle plus que de l'organisateur (déjà prérempli par le compte). Les accès à la table de marque
+(co-organisateurs, nombre de PIN, arbitre) vont à l'écran 7, repliés, avec un résumé de ce qui est déjà prévu par défaut.
+Ils restent modifiables après le paiement depuis « Gérer les accès ».</p>
+
+<div class="cols">
+  <div class="col">
+    <h2>Aujourd'hui — écran 1 « Équipe »</h2>
+    <div class="phone">
+      <div class="bar">Étape 1 sur 8</div>
+      <div class="steps"><span class="on"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <p class="screen-title">Qui organise ?</p>
+      <div class="group"><b>Organisateur principal</b><div class="field">Nom (prérempli)</div><div class="field">Téléphone (facultatif)</div><div class="field">Email (prérempli)</div></div>
+      <div class="group moved"><b>Co-organisateurs (table de marque)</b><div class="field">Adresse email… + Ajouter</div></div>
+      <div class="group moved"><b>Codes PIN pour les bénévoles</b><div class="field">− 1 +</div><span class="note">+ aide « Comment marche le PIN » (3 étapes)</span></div>
+      <div class="group moved"><b>Arbitre (facultatif)</b><div class="field">Nom de l'arbitre</div></div>
+      <div class="btn">Continuer</div>
+    </div>
+    <p class="note">Premier écran long, avec des notions (PIN, table de marque) avant même d'avoir nommé le concours.</p>
+  </div>
+
+  <div class="col">
+    <h2>Proposé — écran 1 « Organisateur »</h2>
+    <div class="phone">
+      <div class="bar">Étape 1 sur 8</div>
+      <div class="steps"><span class="on"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <p class="screen-title">Qui organise ?</p>
+      <div class="group"><b>Organisateur principal</b><div class="field">Nom (prérempli)</div><div class="field">Téléphone (facultatif)</div><div class="field">Email (prérempli)</div></div>
+      <div class="btn">Continuer</div>
+    </div>
+    <p class="note">Écran court : on passe en un clic.</p>
+  </div>
+
+  <div class="col">
+    <h2>Proposé — écran 7 « Communication et table de marque »</h2>
+    <div class="phone">
+      <div class="bar">Étape 7 sur 8</div>
+      <div class="steps"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span></div>
+      <p class="screen-title">Communication</p>
+      <div class="group"><b>Affiche, description, photos…</b><div class="field">(inchangé)</div></div>
+      <div class="group moved"><b>Table de marque</b>
+        <span class="note">Prévu : vous (organisateur) + 1 code PIN pour les bénévoles.</span>
+        <div class="fold">Modifier les accès ▾</div>
+        <span class="note">Ouvert : co-organisateurs, nombre de PIN + aide, arbitre. S'ouvre tout seul en cas d'erreur.</span>
+      </div>
+      <div class="btn">Continuer</div>
+    </div>
+    <p class="note">Le récapitulatif (écran 8) reprend la ligne « Table de marque : vous + 1 PIN ».</p>
+  </div>
+</div>
+
+<h2 style="margin-top:16px">Effet mesuré attendu (parcours du test chronométré)</h2>
+<table>
+  <tr><th></th><th>Aujourd'hui</th><th>Proposé</th></tr>
+  <tr><td>Écrans</td><td>8 (+ écran de départ)</td><td>8 (+ écran de départ)</td></tr>
+  <tr><td>Interactions jusqu'au paiement</td><td>13</td><td>13 (aucun champ ajouté)</td></tr>
+  <tr><td>Groupes sur l'écran 1</td><td>4</td><td>1</td></tr>
+  <tr><td>Notions techniques avant le nom du concours</td><td>PIN, table de marque, arbitre</td><td>aucune</td></tr>
+</table>
+<p class="note">Travail si validé (effort S) : déplacer trois groupes de TeamStep.tsx vers CommunicationStep.tsx, rattacher
+coOrganizers / pinCount / referee à l'étape « communication » dans lib/tournament-form/schema.ts (pour que les erreurs
+ramènent au bon écran), renommer l'étape dans i18n/fr/wizard.ts, mettre à jour TeamStep.test.ts, pin-help.spec.ts et wizard-speed.spec.ts.
+Aucun changement de données : les brouillons existants se relisent tels quels.</p>
+</body>
+</html>
