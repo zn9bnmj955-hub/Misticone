@@ -11,10 +11,13 @@ import { Skeleton } from "@/components/ui/Section";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
 import { ThemeSwitcher } from "@/components/profile/ThemeSwitcher";
 import { getDevicePrefs, getViewer } from "@/lib/viewer";
+import { onlyOfferedSports } from "@/lib/prefs";
 
 export const metadata: Metadata = { title: getMessages().profile.title };
 
-function SportsList({ sports }: { sports: string[] }) {
+function SportsList({ sports: all }: { sports: string[] }) {
+  // Sports no longer offered (football switched off) are not shown.
+  const sports = onlyOfferedSports(all);
   if (sports.length === 0) return <span className="text-ink-soft">—</span>;
   return (
     <span className="flex flex-wrap gap-2">
