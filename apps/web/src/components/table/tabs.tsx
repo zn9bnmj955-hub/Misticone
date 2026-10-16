@@ -345,10 +345,6 @@ export function DrawTab({ table, state }: TabProps) {
 // Venues
 // ---------------------------------------------------------------------------
 
-function endEstimate(minutes: number): string {
-  return new Date(Date.now() + minutes * 60_000).toISOString();
-}
-
 export function VenuesTab({ table, state, sportSlug }: TabProps & { sportSlug: string }) {
   const t = m().venues;
   const teams = useMemo(() => teamMap(state), [state]);
@@ -360,14 +356,10 @@ export function VenuesTab({ table, state, sportSlug }: TabProps & { sportSlug: s
   const queue = venueQueue(state);
   const venues = Object.values(state.venues).sort((a, b) => a.position - b.position);
   const remaining = Object.values(state.matches).filter((x) => !isFinished(x)).length;
-  const freeVenues = venues.filter((v) => v.available).length;
-  const waves = remaining > 0 ? Math.ceil(remaining / Math.max(1, freeVenues)) : 0;
-  const slot = state.rules.typicalMatchMinutes + state.rules.changeoverMinutes;
-  const end = remaining > 0 ? endEstimate(waves * slot) : null;
 
   return (
     <div className="grid gap-4">
-      {end && <p className="font-bold">{fmt(t.plan, { time: formatTime(end), matches: remaining })}</p>}
+      {remaining > 0 && <p className="font-bold">{fmt(t.plan, { matches: remaining })}</p>}
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2">
         {venues.map((v) => {
           const x = occupied.get(v.id);

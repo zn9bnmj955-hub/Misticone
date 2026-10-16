@@ -477,7 +477,7 @@ export const fr = {
       move: "Déplacer vers…",
       add: "Ajouter un terrain",
       addLabel: "Nom ou numéro",
-      plan: "Fin estimée vers {time} ({matches} match(s) restant(s)).",
+      plan: "{matches} match(s) restant(s).",
     },
     scores: {
       quick: "Saisie rapide",
