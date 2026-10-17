@@ -36,6 +36,12 @@ describe("knowledge base", async () => {
     );
   });
 
+  it("keeps the promise of the registration form: contacts kept 6 months at most", () => {
+    const closing = KB_DOCS.find((d) => /suppression des résultats/.test(d.title));
+    expect(closing?.body).toMatch(/14 jours/);
+    expect(closing?.body).toMatch(/plus de 6 mois après le concours/);
+  });
+
   it("dates every rulebook sheet and gives its source", () => {
     const rules = KB_DOCS.filter((d) => d.kind === "rules");
     expect(rules.length).toBeGreaterThan(0);

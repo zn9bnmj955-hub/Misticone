@@ -1288,6 +1288,8 @@ La clôture est définitive : par le bouton « Clore définitivement » à la ta
 
 Les résultats restent visibles 14 jours après la fin du concours. Ensuite, les noms des joueurs, les contacts, les codes des équipes, les PIN et l''historique des actions sont supprimés, et la page affiche « Résultats supprimés ». Les paiements, les factures et des statistiques anonymes sont conservés.
 
+En filet de sécurité, les contacts et numéros de licence des inscrits ne sont jamais gardés plus de 6 mois après le concours, même si le concours n''a pas été terminé : c''est la promesse affichée sur le formulaire d''inscription.
+
 Le code court d''un concours (par exemple 7KQ2) n''est jamais réattribué à un autre concours.', true);
 
 insert into public.news_sources (id, name, feed_url, site_url, sport_slug, enabled) values
