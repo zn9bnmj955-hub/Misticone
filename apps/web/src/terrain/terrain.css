@@ -126,6 +126,14 @@ details.rules p{white-space:pre-line}
   .sheet th,.sheet td{border-color:var(--os-paper-line)}
   .sheet td.l{background:var(--os-paper-shade);color:var(--os-paper-ink)}
   .sheet td.me{box-shadow:none}
-  .sheet-nav,.save{display:none}
+  .sheet-nav,.save,.dot{display:none}
   a{text-decoration:none}
+  /* Draw sheets on paper, like the federation result sheets: one round per block, header repeated */
+  @page{margin:12mm}
+  .wrap{max-width:none;padding:0}
+  .msg{background:none;border:1px solid var(--os-paper-line);color:var(--os-paper-ink)}
+  .sheets h3{page-break-after:avoid;break-after:avoid}
+  table.sheet{font-size:10pt}
+  thead{display:table-header-group}
+  tr{page-break-inside:avoid;break-inside:avoid}
 }
