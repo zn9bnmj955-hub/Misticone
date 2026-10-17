@@ -168,3 +168,24 @@ describe("two-day pause — final phase after pools (testeur)", () => {
     expect(playAll(r.state).tournament.status).toBe("finished");
   });
 });
+
+describe("two-day pause — the C already started (testeur)", () => {
+  it("64 teams, pause before 8 left: the C, already under way on day 1, is held with the A and the B, then restarts on resume", () => {
+    let s = exec(makeState({ teams: 64, config: { ...ABC, pause: { before: { remaining: 8 } } } }), { type: "round.draw", bracket: "main", seed: "c8" });
+    s = playAll(s);
+    expect(pausedAt(s)).toEqual({ phase: "elimination", round: 4, teams: 8 });
+    // The C started on day 1 and is now idle: its last round is over, its next draw is held.
+    expect(count(s, "consolation_c")).toBeGreaterThan(0);
+    for (const b of ["main", "consolation", "consolation_c"] as const) {
+      expect(lastComplete(s, b)).toBe(true);
+      expect(canDrawNext(s, b)).toBe(true);
+    }
+    const held = { b: count(s, "consolation"), c: count(s, "consolation_c") };
+    const r = applyCommand(s, { type: "tournament.resume", seed: "day2" }, { now: "2026-10-13T08:00:00.000Z", newId: createIdGenerator("resume") });
+    expect(roundsOf(r.state, "main").map((x) => teamsInRound(r.state, x))).toEqual([64, 32, 16, 8]);
+    expect(count(r.state, "consolation")).toBe(held.b + 1);
+    expect(count(r.state, "consolation_c")).toBe(held.c + 1);
+    expect(applyChanges(r.state, invertChanges(r.changes))).toEqual(s);
+    expect(playAll(r.state).tournament.status).toBe("finished");
+  });
+});
