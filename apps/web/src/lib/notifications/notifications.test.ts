@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { requireSport } from "@orgasport/sports";
-import { applyCommand, createIdGenerator, type EngineState } from "@orgasport/engine";
+import { applyChanges, applyCommand, createIdGenerator, invertChanges, type EngineState } from "@orgasport/engine";
 import { getMessages } from "@/i18n";
 import { renderBody, roundText } from "./templates";
 import { eventsFromChanges, type NotifyEvent } from "./events";
@@ -200,6 +200,32 @@ describe("cadrage, Office, B/C and pause", () => {
     const kinds = eventsFromChanges(resume.changes, resume.state).map((e) => e.kind);
     expect(kinds).toContain("draw_published");
     expect(kinds).not.toContain("paused");
+  });
+
+  it("pause: the evening's last score undone then entered again gives the same pause key (one « Reprise demain »), and the match put back on its venue does not call « À vous » again", () => {
+    const s = tournament(8, 8, { pause: { before: { remaining: 4 } } });
+    const run = runner(s);
+    const r1 = run({ type: "round.draw", bracket: "main", seed: "x" }, "draw");
+    let state = r1.state;
+    let last: { changes: never[]; state: EngineState; matchId: string } | null = null;
+    for (let i = 0; ; i++) {
+      const m = Object.values(state.matches).find((x) => x.status === "ready");
+      if (!m) break;
+      const r = run({ type: "match.score", matchId: m.id, scoreA: 13, scoreB: 5 }, `p${i}`);
+      state = r.state;
+      last = { ...r, matchId: m.id };
+    }
+    const first = eventsFromChanges(last!.changes, last!.state).filter((e) => e.kind === "paused");
+    expect(first.map((e) => e.key)).toEqual(["pause:elimination:2"]);
+    // Organizer's undo (inverse changes, as executeCommand applies them).
+    const undone = applyChanges(state, invertChanges(last!.changes));
+    expect(undone.matches[last!.matchId]!.status).toBe("ready");
+    const undoEvents = eventsFromChanges(invertChanges(last!.changes), undone);
+    expect(undoEvents.filter((e) => e.kind === "your_turn" || e.kind === "paused")).toEqual([]);
+    // Entered again: same key, so the queue (unique dedupe_key) keeps one message.
+    const again = applyCommand(undone, { type: "match.score", matchId: last!.matchId, scoreA: 13, scoreB: 5 }, { now: "2026-10-24T20:00:00Z", newId: createIdGenerator("again"), seed: "again" });
+    const second = eventsFromChanges(again.changes, again.state).filter((e) => e.kind === "paused");
+    expect(second.map((e) => e.key)).toEqual(first.map((e) => e.key));
   });
 
   it("a match only placed again (flag set then cleared, same venue and teams) notifies nobody; a venue move does", () => {
