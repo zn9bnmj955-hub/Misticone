@@ -373,6 +373,31 @@ begin
   perform pg_temp.as_anon();
   perform club_number, club_name from public.players limit 1;
   perform kind from public.rounds limit 1;
+  -- ...but a visitor without an account cannot write any of the lot 2 columns either.
+  begin
+    update public.teams set bracket_entries = array['consolation_c']::public.bracket_kind[] where tournament_id = tid;
+    get diagnostics n = row_count;
+    if n <> 0 then raise exception 'anon entered teams in the B/C directly'; end if;
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.rounds set kind = 'cadrage' where tournament_id = tid;
+    get diagnostics n = row_count;
+    if n <> 0 then raise exception 'anon changed a round kind directly'; end if;
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.players set club_number = '0000000', club_name = 'Intrus' where team_id = team;
+    get diagnostics n = row_count;
+    if n <> 0 then raise exception 'anon changed a player club directly'; end if;
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.tournaments set finished_at = now(), purged_at = now() where id = tid;
+    get diagnostics n = row_count;
+    if n <> 0 then raise exception 'anon closed a tournament directly'; end if;
+  exception when insufficient_privilege then null;
+  end;
   perform pg_temp.reset();
 
   -- The server (service role) writes the new columns through apply_tournament_changes.
