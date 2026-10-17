@@ -65,4 +65,13 @@ describe("knowledge base", async () => {
       for (const d of KB_DOCS) expect(sql).toContain(d.title.replace(/'/g, "''"));
     }
   });
+
+  // A sheet edited in kb-content.ts without « reference:gen » / « seed:gen »
+  // would keep its old text in the database (the titles alone stay the same).
+  it("has the current text of every sheet in the generated reference.sql and seed.sql", () => {
+    for (const file of ["reference.sql", "seed.sql"]) {
+      const sql = readFileSync(new URL(`../../../supabase/${file}`, import.meta.url), "utf8");
+      for (const d of KB_DOCS) expect(sql, `${file} : ${d.title}`).toContain(d.body.replace(/'/g, "''"));
+    }
+  });
 });
