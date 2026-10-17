@@ -46,6 +46,23 @@ test.describe("demo data", () => {
     expect(html).toContain("Cadrage");
   });
 
+  test("7KQ2: 32 doublettes, 3 absent at the check-in (forfeit), 29 checked in", async ({ request }) => {
+    const [t] = await rest<{ id: string; team_format: string }[]>(request, "tournaments?short_code=eq.7KQ2&select=id,team_format");
+    expect(t!.team_format).toBe("doublette");
+    const teams = await rest<{ status: string; checked_in_at: string | null }[]>(request, `teams?tournament_id=eq.${t!.id}&select=status,checked_in_at`);
+    expect(teams).toHaveLength(32);
+    const absent = teams.filter((x) => !x.checked_in_at);
+    expect(absent).toHaveLength(3);
+    expect(absent.every((x) => x.status === "forfeit")).toBe(true);
+  });
+
+  test("PQ8P: 8 triplettes in pools (drawn later by the automatic-draw e2e)", async ({ request }) => {
+    const [t] = await rest<{ id: string; team_format: string; config: { format: string } }[]>(request, "tournaments?short_code=eq.PQ8P&select=id,team_format,config");
+    expect(t!.config.format).toBe("pools_then_bracket");
+    expect(t!.team_format).toBe("triplette");
+    expect(await rest<unknown[]>(request, `teams?tournament_id=eq.${t!.id}&select=id`)).toHaveLength(8);
+  });
+
   test("7KQ2: teams of one club and « N.H. » teams (players' clubs)", async ({ request }) => {
     const [t] = await rest<{ id: string }[]>(request, "tournaments?short_code=eq.7KQ2&select=id");
     const teams = await rest<{ id: string; club_name: string | null; players: { club_number: string | null }[] }[]>(
