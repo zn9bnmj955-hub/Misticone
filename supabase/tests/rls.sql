@@ -38,8 +38,8 @@ do $$ begin
     raise exception 'anon should see exactly the published (non-draft) tournaments';
   end if;
   if exists (select 1 from public.tournaments where status = 'draft') then raise exception 'anon must not see drafts'; end if;
-  if (select count(*) from public.tournaments where short_code in ('7KQ2', 'GP3M', 'TR8E', 'FT8S')) <> 4 then
-    raise exception 'anon should see the 4 demo tournaments';
+  if (select count(*) from public.tournaments where short_code in ('7KQ2', 'GP3M', 'TR8E', 'C4DR', '2J7P', 'PQ8P')) <> 6 then
+    raise exception 'anon should see the 6 demo tournaments';
   end if;
   if (select count(*) from public.matches) = 0 then raise exception 'anon should see matches'; end if;
   if (select count(*) from public.players) <> 0 then raise exception 'anon must not read players'; end if;
