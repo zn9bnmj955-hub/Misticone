@@ -154,6 +154,9 @@ importers:
       '@types/web-push':
         specifier: ^3.6.4
         version: 3.6.4
+      acorn:
+        specifier: 8.19.0
+        version: 8.19.0
       eslint:
         specifier: ^9
         version: 9.39.5(jiti@2.7.0)
