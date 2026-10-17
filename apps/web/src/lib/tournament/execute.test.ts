@@ -120,6 +120,18 @@ describe("finished tournament: corrections only", () => {
     expect(tournamentValues()).toBeUndefined();
   });
 
+  it("accepts a new score for the final (winner changed) and stays finished, finished_at untouched", async () => {
+    current = finishedState();
+    const final = finalMatch(current);
+    const flipped = final.winner === "A" ? { scoreA: 5, scoreB: 13 } : { scoreA: 13, scoreB: 5 };
+    const res = await executeCommand({ code: "ABCD", command: { type: "match.score", matchId: final.id, ...flipped }, clientOpId: OP, actor: staff });
+    expect(res.ok).toBe(true);
+    expect(rpcCalls).toHaveLength(1);
+    const matchValues = rpcCalls[0]!.p_changes.find((c) => c.table === "matches")?.values;
+    expect(matchValues).toMatchObject({ score_a: flipped.scoreA, score_b: flipped.scoreB });
+    expect(tournamentValues()).toBeUndefined();
+  });
+
   it("refuses anything else (TOURNAMENT_FINISHED)", async () => {
     current = finishedState();
     const res = await executeCommand({ code: "ABCD", command: { type: "round.draw", bracket: "main", seed: "x" }, clientOpId: OP, actor: staff });
