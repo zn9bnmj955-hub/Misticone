@@ -37,6 +37,10 @@ h3{font-size:18px;margin:16px 0 6px;font-weight:800}
 .vs{padding:12px 14px;background:var(--os-accent);color:var(--os-on-accent);font-weight:900;font-size:19px;border-top:3px solid var(--os-ink)}
 .vs.wait{background:var(--os-surface-2);color:var(--os-ink)}
 .note{padding:10px 14px;font-weight:700;border-top:1px solid var(--os-line)}
+.ended{border:3px solid var(--os-ink);border-radius:14px;padding:10px 14px;margin:12px 0;background:var(--os-surface)}
+.ended p{margin:4px 0}
+.ended .title{font-size:22px;font-weight:900}
+.ended .win{font-size:19px;font-weight:900}
 .msg{border-radius:10px;padding:10px 14px;font-weight:800;margin:10px 0;background:var(--os-surface-2)}
 .msg.ok{background:var(--os-success);color:var(--os-on-status)}
 .msg.err{background:var(--os-danger);color:var(--os-on-status)}

@@ -323,6 +323,12 @@ export const fr = {
     eliminated: "Éliminée au {round}",
     champion: "Vainqueur du concours !",
     finished: "Concours terminé",
+    ended: {
+      closed: "Lien clôturé",
+      winner: "Vainqueur : {team}",
+      finishedText: "Résultats définitifs. Les inscriptions et la saisie des scores par les capitaines sont fermées.",
+      archivedText: "Plus aucune modification n'est possible. Les résultats restent visibles jusqu'à 14 jours après la finale, puis sont supprimés.",
+    },
     purged: {
       title: "Résultats supprimés",
       text: "Les résultats et les noms des équipes de ce concours ont été supprimés 14 jours après la finale, comme prévu.",
@@ -423,6 +429,8 @@ export const fr = {
       invalid: "Score impossible pour ce sport.",
       notPlayable: "Ce match ne peut pas recevoir de score maintenant.",
       limited: "Trop d'essais. Réessayez dans quelques minutes.",
+      ended: "Le concours est terminé : la saisie des scores par les capitaines est fermée.",
+      closed: "Lien clôturé : plus aucun score ne peut être saisi.",
     },
     print: "Imprimer",
     poster: "Affiche A4",

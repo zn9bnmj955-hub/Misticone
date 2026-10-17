@@ -86,7 +86,7 @@ function scoreText(match: Match, side: "A" | "B"): string {
 
 function captainForm(ctx: Ctx, team: TeamView, info: MyMatchInfo): SafeHtml {
   const c = ctx.m.terrain.captain;
-  if (ctx.t.state.tournament.config.scoreEntry !== "captains") return html``;
+  if (ctx.t.state.tournament.config.scoreEntry !== "captains" || isEnded(ctx.t.state)) return html``;
   if (!["ready", "playing", "score_submitted", "disputed"].includes(info.match.status)) return html``;
   return html`<form class="score-form" method="post" action="${ctx.base}/score">
     <p class="k">${c.title}</p>
@@ -98,6 +98,34 @@ function captainForm(ctx: Ctx, team: TeamView, info: MyMatchInfo): SafeHtml {
       <button class="btn" type="submit">${c.send}</button>
     </div>
   </form>`;
+}
+
+/** Finished (corrections only, by the scoring table) or closed for good: nothing to enter from the public page. */
+const isEnded = (state: EngineState) => state.tournament.status === "finished" || state.tournament.status === "archived";
+
+/** Winner of the main knockout bracket (last round, a single decided match), else null. */
+function mainChampion(state: EngineState): string[] | null {
+  const final = engineRounds(state, "main", "final");
+  const last = (final.length ? final : engineRounds(state, "main", "elimination")).at(-1);
+  if (!last) return null;
+  const ms = matchesOfRound(state, last.id);
+  const x = ms.length === 1 ? ms[0]! : null;
+  if (!x || (x.winner !== "A" && x.winner !== "B")) return null;
+  return x.winner === "A" ? x.sideA : x.sideB;
+}
+
+/** « Concours terminé » (and « Lien clôturé » once closed) above the final results. */
+function endedBanner(ctx: Ctx): SafeHtml | string {
+  const state = ctx.t.state;
+  if (!isEnded(state)) return "";
+  const tm = ctx.m.terrain;
+  const archived = state.tournament.status === "archived";
+  const champion = mainChampion(state);
+  return html`<section class="ended" id="termine" role="status">
+    <p class="title">${tm.finished}${archived ? ` · ${tm.ended.closed}` : ""}</p>
+    ${champion ? html`<p class="win">${fmt(tm.ended.winner, { team: sideText(ctx.teams, champion, ctx.m) })}</p>` : ""}
+    <p class="muted">${archived ? tm.ended.archivedText : tm.ended.finishedText}</p>
+  </section>`;
 }
 
 function myTeamCard(ctx: Ctx, team: TeamView): SafeHtml {
@@ -386,6 +414,7 @@ function liveContent(ctx: Ctx, found: TeamView[] | null): SafeHtml {
   return html`<div id="live" data-version="${t.version}">
     <p class="status">${t.meta.status === "live" ? html`<span class="dot"></span>` : ""}${m.status[t.meta.status as keyof Messages["status"]] ?? ""} · <span class="muted">${fmt(tm.updatedAt, { time: formatTime(t.now.toISOString()) })}</span></p>
     ${t.message ? html`<p class="msg ${t.message.startsWith("!") ? "err" : "ok"}" role="status">${t.message.replace(/^!/, "")}</p>` : ""}
+    ${endedBanner(ctx)}
     ${teamBlock}
     <nav class="tabs" aria-label="Vues">${views.map(
       (v) => html`<a href="${link(ctx, { vue: v === "tirage" ? null : v, equipe: teamParam })}"${v === view ? raw(' aria-current="page"') : ""}>${tabLabel[v]}</a>`,
