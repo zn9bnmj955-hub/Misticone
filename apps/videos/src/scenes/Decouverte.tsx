@@ -1,9 +1,9 @@
 import React from "react";
 import { AbsoluteFill, Audio, staticFile } from "remotion";
-import { BracketScene, FranceScene, MorphScene, WorldScene } from "../three/world";
+import { BracketScene, FranceScene, WorldScene } from "../three/world";
 import { C, NUM, TITLE, clamp01, mix, mixColor, rand, ramp, useLayout, useTime } from "../theme";
 import { Backdrop, Beam, Button, Caption, Card, Dot, Kinetic, Logo, Panel, Phone, Pointer, QR, Shot } from "../ui/kit";
-import { Board, Entry, ScanScreen, TerrainPage } from "../ui/screens";
+import { Board, DT, DrawTable, Entry, ScanScreen, TerrainPage, type DrawRow } from "../ui/screens";
 
 /** Video 1 — « OrgaSport en 75 secondes » (docs/videos/storyboard.md). */
 export function Decouverte() {
@@ -26,7 +26,7 @@ export function Decouverte() {
         <Offline />
       </Shot>
       <Shot from={47} to={55}>
-        <Morph />
+        <Brackets />
       </Shot>
       <Shot from={55} to={65}>
         <ClubCreate />
@@ -387,26 +387,68 @@ function SignalIcon({ x, y, on, t, glitch }: { x: number; y: number; on: boolean
   );
 }
 
-/* 47–55 s: the pétanque ball becomes a football. */
-function Morph() {
+/* 47–55 s: the draws in the format of the site — cadrage with « Office », then the B and C tournaments. */
+const BRACKETS: Array<{ title: string; rows: DrawRow[] }> = [
+  {
+    title: "Concours A · Résultats Cadrage",
+    rows: [
+      { terrain: 1, a: DT[12], b: DT[31], sa: 13, sb: 9 },
+      { terrain: 2, a: DT[5], b: DT[44] },
+      { a: DT[19] },
+      { a: DT[3] },
+    ],
+  },
+  {
+    title: "Concours B · Résultats 1re partie",
+    rows: [
+      { terrain: 21, a: DT[8], b: DT[57], sa: 13, sb: 11 },
+      { terrain: 22, a: DT[14], b: DT[22] },
+      { terrain: 23, a: DT[9], b: DT[50] },
+    ],
+  },
+  {
+    title: "Concours C · Résultats 1re partie",
+    rows: [
+      { terrain: 25, a: DT[38], b: DT[27] },
+      { terrain: 26, a: DT[22], b: DT[9], sa: 6, sb: 13 },
+    ],
+  },
+];
+
+function Brackets() {
   const t = useTime();
   const { vertical } = useLayout();
-  const m = ramp(t, 1.6, 4.4, "inOut");
   return (
     <>
-      <MorphScene t={t} vertical={vertical} />
+      <WorldScene t={t + 6} mode="title" vertical={vertical} />
+      <AbsoluteFill style={{ background: "rgba(4,6,12,0.45)" }} />
+      {BRACKETS.map((b, i) => {
+        const at = 0.6 + i * 1.3;
+        const k = ramp(t, at, at + 0.7);
+        const box = vertical ? { left: 40, top: 360 + i * 300, width: 640, height: 270 } : { left: 40 + i * 406, top: 70, width: 388, height: 400 };
+        return (
+          <Panel
+            key={b.title}
+            width={box.width}
+            height={box.height}
+            glow={i === 0 ? C.accent : C.blueSoft}
+            style={{
+              left: box.left,
+              top: box.top,
+              padding: 16,
+              opacity: k,
+              transform: `perspective(1400px) translateY(${(1 - k) * 60}px) rotateX(${(1 - k) * 18}deg)`,
+            }}
+          >
+            <DrawTable t={t} at={at + 0.2} title={b.title} rows={b.rows} scale={vertical ? 1.3 : 1.1} />
+          </Panel>
+        );
+      })}
       <Caption
-        words={[
-          { text: "Pétanque,", color: C.accentInk },
-          { text: "football…", color: C.cyanInk },
-          "et",
-          "demain",
-          "votre",
-          "sport.",
-        ]}
+        words={[{ text: "Cadrage,", color: C.accentInk }, "Office,", { text: "concours B et C", color: C.accentInk }, ":", "tout", "est", "prévu."]}
         at={0.5}
-        stagger={0.28}
-        accent={mixColor(C.accent, C.cyan, m)}
+        stagger={0.22}
+        accent={C.accent}
       />
     </>
   );

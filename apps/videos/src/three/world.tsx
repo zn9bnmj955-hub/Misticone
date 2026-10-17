@@ -540,57 +540,6 @@ export function Boule({ pos, radius = 0.5, rot = 0, cut, glow = 0 }: { pos: V3; 
   );
 }
 
-/** Procedural football (truncated icosahedron pattern). Visible above `cut`. */
-function Football({ pos, radius, rot, cut, rim }: { pos: V3; radius: number; rot: number; cut: number; rim: string }) {
-  const mat = useMemo(() => {
-    const phi = (1 + Math.sqrt(5)) / 2;
-    const ip = 1 / phi;
-    const raw: V3[] = [];
-    for (const a of [-1, 1])
-      for (const b of [-1, 1]) raw.push([0, a, b * phi], [a, b * phi, 0], [a * phi, 0, b]);
-    for (const a of [-1, 1]) for (const b of [-1, 1]) for (const c of [-1, 1]) raw.push([a, b, c]);
-    for (const a of [-1, 1])
-      for (const b of [-1, 1]) raw.push([0, a * ip, b * phi], [a * ip, b * phi, 0], [a * phi, 0, b * ip]);
-    const centers = raw.map((p) => v(p).normalize());
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        uCenters: { value: centers },
-        uCut: { value: 1 },
-        uEdge: { value: new THREE.Color(C.cyanInk) },
-        uRim: { value: new THREE.Color(rim) },
-      },
-      vertexShader: `varying vec3 vObj; varying vec3 vN; varying vec3 vV;
-        void main(){ vObj = normalize(position); vec4 wp = modelMatrix * vec4(position, 1.0);
-          vN = normalize(mat3(modelMatrix) * normal); vV = normalize(cameraPosition - wp.xyz);
-          gl_Position = projectionMatrix * viewMatrix * wp; }`,
-      fragmentShader: `uniform vec3 uCenters[32]; uniform float uCut; uniform vec3 uEdge; uniform vec3 uRim;
-        varying vec3 vObj; varying vec3 vN; varying vec3 vV;
-        void main(){
-          if (vObj.y < uCut) discard;
-          float d1 = -2.0; float d2 = -2.0; int i1 = 0;
-          for (int i = 0; i < 32; i++) { float d = dot(vObj, uCenters[i]);
-            if (d > d1) { d2 = d1; d1 = d; i1 = i; } else if (d > d2) { d2 = d; } }
-          float seam = smoothstep(0.0, 0.02, d1 - d2);
-          vec3 base = i1 < 12 ? vec3(0.05, 0.06, 0.12) : vec3(0.93, 0.95, 1.0);
-          base *= mix(0.2, 1.0, seam);
-          vec3 L = normalize(vec3(0.5, 0.8, 0.6));
-          float diff = max(dot(vN, L), 0.0) * 0.85 + 0.2;
-          float rim = pow(1.0 - max(dot(vN, vV), 0.0), 3.0);
-          float spec = pow(max(dot(vN, normalize(L + vV)), 0.0), 40.0) * 0.45;
-          vec3 col = base * diff + uRim * rim * 0.9 + spec;
-          col += uEdge * (1.0 - smoothstep(0.0, 0.07, vObj.y - uCut)) * 2.2;
-          gl_FragColor = vec4(col, 1.0);
-        }`,
-    });
-  }, [rim]);
-  mat.uniforms.uCut.value = cut;
-  return (
-    <mesh position={pos} rotation={[0.4, rot, 0.1]} scale={radius} material={mat}>
-      <sphereGeometry args={[1, 64, 40]} />
-    </mesh>
-  );
-}
-
 /* ======================================================================== */
 /* The boulodrome: 32 terrains (8 × 4), numbers and players                  */
 /* ======================================================================== */
@@ -978,80 +927,6 @@ export function BracketScene({ t, vertical }: { t: number; vertical: boolean }) 
       <Labels items={labelItems} lit={nodeOn} color="#ffffff" size={vertical ? 0.46 : 0.5} />
       <Bars bars={connBars} bright={connBright} grow={connGrow} color={C.blueSoft} core={0.04} glow={0.35} />
       <Dust3D t={t} center={[0, 0, -2]} size={[30, 14, 20]} count={200} />
-    </Stage3D>
-  );
-}
-
-/* ======================================================================== */
-/* Scene 3: the pétanque ball becomes a football, the terrain a pitch       */
-/* ======================================================================== */
-
-function pitchBars(): Bar[] {
-  const W = 14;
-  const L = 22;
-  const y = 0.013;
-  const out: Bar[] = [];
-  const rect = (x0: number, z0: number, x1: number, z1: number) => {
-    out.push({ a: [x0, y, z0], b: [x1, y, z0] }, { a: [x1, y, z0], b: [x1, y, z1] }, { a: [x1, y, z1], b: [x0, y, z1] }, { a: [x0, y, z1], b: [x0, y, z0] });
-  };
-  rect(-W / 2, -L / 2, W / 2, L / 2);
-  out.push({ a: [-W / 2, y, 0], b: [W / 2, y, 0] });
-  rect(-3.6, -L / 2, 3.6, -L / 2 + 3.6);
-  rect(-3.6, L / 2 - 3.6, 3.6, L / 2);
-  rect(-1.6, -L / 2 - 0.8, 1.6, -L / 2);
-  rect(-1.6, L / 2, 1.6, L / 2 + 0.8);
-  const seg = 40;
-  for (let i = 0; i < seg; i++) {
-    const a0 = (i / seg) * Math.PI * 2;
-    const a1 = ((i + 1) / seg) * Math.PI * 2;
-    out.push({ a: [Math.cos(a0) * 2.6, y, Math.sin(a0) * 2.6], b: [Math.cos(a1) * 2.6, y, Math.sin(a1) * 2.6] });
-  }
-  return out;
-}
-
-export function MorphScene({ t, vertical }: { t: number; vertical: boolean }) {
-  const pitch = useMemo(pitchBars, []);
-  const petanque = useMemo(() => rectBars([0, 0, 0], TW, TL), []);
-  const m = ramp(t, 1.6, 4.4, "inOut");
-  const cut = mix(1.05, -1.05, m);
-  const radius = mix(0.5, 0.95, ramp(t, 1.6, 4.6, "inOut"));
-  const lift = mix(0.5, 0.95, ramp(t, 1.6, 4.6, "inOut"));
-  const ballPos: V3 = [0, lift, 0];
-  const accent = new THREE.Color(C.accent).lerp(new THREE.Color(C.cyan), m);
-  const accentHex = `#${accent.getHexString()}`;
-  const pGrow = new Float32Array(pitch.length);
-  const pBright = new Float32Array(pitch.length);
-  pitch.forEach((_, i) => {
-    const st = 3.6 + (i / pitch.length) * 1.8;
-    pGrow[i] = ramp(t, st, st + 0.5, "linear");
-    pBright[i] = 1;
-  });
-  const fade = 1 - ramp(t, 3.4, 4.6);
-  const pet = [fade, fade, fade, fade];
-  const ang = mix(-0.6, 0.5, t / 8.5);
-  const dist = mix(3.6, 17, ramp(t, 3.2, 7.5, "inOut")) * (vertical ? 1.4 : 1);
-  const height = mix(1.4, 11, ramp(t, 3.2, 7.5, "inOut"));
-  const cam: V3 = [Math.sin(ang) * dist, height, Math.cos(ang) * dist];
-  const ringR = Math.sqrt(Math.max(0, 1 - cut * cut)) * radius * 1.03;
-  return (
-    <Stage3D>
-      <Cam pos={cam} look={[0, vertical ? 0.2 : 0.7, 0]} fog={0.02} />
-      <Floor />
-      <Bars bars={petanque} bright={pet} color={C.accent} />
-      <Bars bars={pitch} bright={pBright} grow={pGrow} color={C.cyanInk} />
-      <Boule pos={ballPos} radius={radius} rot={t * 0.8} cut={cut} />
-      <Football pos={ballPos} radius={radius * 1.002} rot={t * 0.8} cut={cut} rim={accentHex} />
-      {m > 0.01 && m < 0.99 ? (
-        <mesh position={[0, lift + cut * radius, 0]} rotation-x={-Math.PI / 2}>
-          <ringGeometry args={[ringR * 0.98, ringR * 1.06, 96]} />
-          <meshBasicMaterial color={C.cyanInk} blending={THREE.AdditiveBlending} toneMapped={false} transparent depthWrite={false} side={THREE.DoubleSide} />
-        </mesh>
-      ) : null}
-      <mesh position={[0, 0.02, 0]} rotation-x={-Math.PI / 2} scale={radius * 3.2}>
-        <circleGeometry args={[1, 48]} />
-        <meshBasicMaterial map={dotTex()} color={accentHex} transparent opacity={0.55} blending={THREE.AdditiveBlending} toneMapped={false} depthWrite={false} />
-      </mesh>
-      <Dust3D t={t} size={[24, 8, 24]} count={180} color={accentHex} />
     </Stage3D>
   );
 }

@@ -156,31 +156,26 @@ export function LineCard({ tag, text, right, w, v, color = C.accent, dim = 0, st
   );
 }
 
-/** Sport tile with a small 3D emblem (a steel ball, or a football in cyan). */
-export function SportTile({ label, steel, active, w, v }: { label: string; steel?: boolean; active: number; w: number; v: boolean }) {
-  const color = steel ? C.accent : C.cyan;
-  const ball = v ? 92 : 78;
+/** Choice tile with small steel boules (smooth dark silver, like the boule of the site). */
+export function SportTile({ label, balls, active, w, v }: { label: string; balls: number; active: number; w: number; v: boolean }) {
+  const color = C.accent;
+  const ball = v ? 64 : 54;
   return (
     <div style={{ ...glass(active > 0.5 ? color : C.line), width: w, padding: v ? "22px 18px" : "18px 16px", textAlign: "center", boxShadow: `0 30px 70px rgba(0,0,0,0.6), 0 0 ${20 + 50 * active}px ${color}${active > 0.5 ? "88" : "30"}` }}>
-      <div
-        style={{
-          width: ball,
-          height: ball,
-          borderRadius: "50%",
-          margin: "0 auto 12px",
-          background: steel
-            ? "radial-gradient(circle at 34% 30%, #ffffff 0%, #dfe5f2 12%, #8d97ad 38%, #3b4256 66%, #10131c 100%)"
-            : `radial-gradient(circle at 34% 30%, #ffffff 0%, ${C.cyanInk} 30%, #0b3b66 80%)`,
-          boxShadow: `0 10px 26px rgba(0,0,0,0.6), 0 0 30px ${color}55`,
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        {steel
-          ? [0.42, 0.5, 0.58].map((y) => (
-              <div key={y} style={{ position: "absolute", left: -4, right: -4, top: `${y * 100}%`, height: 2, background: "rgba(16,20,30,0.55)", transform: "rotate(-18deg)" }} />
-            ))
-          : null}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+        {Array.from({ length: balls }, (_, i) => (
+          <div
+            key={i}
+            style={{
+              width: ball,
+              height: ball,
+              borderRadius: "50%",
+              margin: "0 4px",
+              background: "radial-gradient(circle at 34% 30%, #d9dce3 0%, #7d8089 18%, #3a3c42 46%, #1d1f23 74%, #0b0c0e 100%)",
+              boxShadow: `0 10px 26px rgba(0,0,0,0.6), 0 0 24px ${color}40`,
+            }}
+          />
+        ))}
       </div>
       <div style={{ ...TITLE, fontSize: v ? 42 : 36 }}>{label}</div>
     </div>

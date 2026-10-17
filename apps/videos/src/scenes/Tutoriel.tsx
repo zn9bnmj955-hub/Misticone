@@ -18,7 +18,7 @@ import {
   Recap,
   ScoreEntry,
   Slides,
-  SportChoice,
+  TeamsChoice,
   TerrainsStep,
   Wizard,
 } from "../ui/screens";
@@ -111,7 +111,7 @@ function PhoneContent({ t }: { t: number }) {
         t={t}
         items={[
           [0, (lt) => <ClubHome t={lt} tap={3.6} />],
-          [5, (lt) => <SportChoice t={lt} tap={4.2} next={7.6} />],
+          [5, (lt) => <TeamsChoice t={lt} tap={4.2} next={7.6} />],
           [14, (lt) => <Wizard t={lt} taps={WIZARD_TAPS} />],
           [32, (lt) => <TerrainsStep t={lt} help={9.5} />],
           [47, (lt) => <Recap t={lt} pay={6.6} />],
@@ -233,16 +233,16 @@ function Steps() {
       </Fly>,
     );
 
-  // 1. Create: the button, then the two sports.
+  // 1. Create: the button, then the kind of teams (pétanque only: no sport question).
   fly("create", 10.6, 12.9, L(P(350, 520, 0, 0, -8), P(360, 540, 0, 0, 0)), <InfoCard v={v} w={W(480, 600)} icon="+" title="Créer un concours" sub="Espace club · La Boule d'Or" />);
   const chosen = ramp(T, 17.0, 17.4);
-  fly("petanque", 13.6, 21.4, L(P(220, 500, chosen * 60, 0, -10), P(200, 560, chosen * 60, 0, 6)), <SportTile v={v} w={W(230, 280)} label="Pétanque" steel active={chosen} />);
+  fly("doublettes", 13.6, 21.4, L(P(220, 500, chosen * 60, 0, -10), P(200, 560, chosen * 60, 0, 6)), <SportTile v={v} w={W(230, 280)} label="Doublettes" balls={2} active={chosen} />);
   fly(
-    "foot",
+    "triplettes",
     13.9,
     21.4,
     L(P(480, 500, -chosen * 160, 0, -10, { o: mix(1, 0.4, chosen) }), P(520, 560, -chosen * 160, 0, -6, { o: mix(1, 0.4, chosen) })),
-    <SportTile v={v} w={W(230, 280)} label="Football" active={0} />,
+    <SportTile v={v} w={W(230, 280)} label="Triplettes" balls={3} active={0} />,
   );
 
   // 2. Wizard: each answer flies out and the fields assemble in depth.

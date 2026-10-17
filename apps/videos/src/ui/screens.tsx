@@ -571,50 +571,43 @@ export function ClubHome({ t, tap }: { t: number; tap: number }) {
   );
 }
 
-export function SportChoice({ t, tap, next }: { t: number; tap: number; next: number }) {
+/** First question of the form (pétanque only, no sport question): the kind of teams. */
+export function TeamsChoice({ t, tap, next }: { t: number; tap: number; next: number }) {
   const chosen = ramp(t, tap, tap + 0.2);
-  const sport = (name: string, color: string, sub: string, icon: React.ReactNode, active: number) => (
+  const option = (name: string, sub: string, balls: number, active: number) => (
     <div
       style={{
-        height: 170,
-        borderRadius: 24,
-        marginBottom: 14,
-        padding: 18,
-        background: active ? `linear-gradient(150deg, ${color}, ${color}bb)` : C.surface,
-        border: `2px solid ${active ? color : C.line}`,
+        height: 136,
+        borderRadius: 22,
+        marginBottom: 12,
+        padding: 16,
+        background: active ? `linear-gradient(150deg, ${C.accent}, ${C.accent}bb)` : C.surface,
+        border: `2px solid ${active ? C.accent : C.line}`,
         color: active ? C.stage : C.ink,
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        boxShadow: active ? `0 14px 40px ${color}66` : undefined,
+        boxShadow: active ? `0 14px 40px ${C.accent}66` : undefined,
         transform: `scale(${1 + active * 0.02 - press(t, tap) * 0.04 * (active ? 1 : 0)})`,
       }}
     >
-      {icon}
+      <div style={{ display: "flex" }}>
+        {Array.from({ length: balls }, (_, i) => (
+          <div key={i} style={{ width: 34, height: 34, borderRadius: 34, marginRight: 8, background: "radial-gradient(circle at 35% 30%, #c9ccd4, #4a4d55 45%, #1d1f23)" }} />
+        ))}
+      </div>
       <div>
-        <div style={{ ...TITLE, fontSize: 34, lineHeight: 1 }}>{name}</div>
-        <div style={{ fontSize: 15, fontWeight: 600, opacity: 0.8 }}>{sub}</div>
+        <div style={{ ...TITLE, fontSize: 30, lineHeight: 1 }}>{name}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, opacity: 0.8 }}>{sub}</div>
       </div>
     </div>
   );
   return (
     <Screen>
-      <AppBar sub="Créer un concours · 1/8" title="Quel sport ?" />
-      {sport(
-        "Pétanque",
-        C.accent,
-        "Tête-à-tête, doublettes, triplettes",
-        <div style={{ width: 54, height: 54, borderRadius: 54, background: "radial-gradient(circle at 35% 30%, #fff, #9aa3cf 45%, #3a4166)" }} />,
-        chosen,
-      )}
-      {sport(
-        "Football",
-        C.cyan,
-        "Foot à 5, à 7, à 11",
-        <div style={{ width: 54, height: 54, borderRadius: 54, background: "#fff", border: `6px solid ${C.stage}`, boxShadow: "inset 0 0 0 9px #fff, inset 0 0 0 20px #111" }} />,
-        0,
-      )}
-      <div style={{ fontSize: 15, color: C.inkSoft, textAlign: "center" }}>D'autres sports arrivent bientôt.</div>
+      <AppBar sub="Créer un concours · pétanque" title="Quelles équipes ?" />
+      {option("Tête-à-tête", "1 joueur par équipe", 1, 0)}
+      {option("Doublettes", "2 joueurs par équipe", 2, chosen)}
+      {option("Triplettes", "3 joueurs par équipe", 3, 0)}
       <BottomButton label="Continuer" pressed={press(t, next)} color={chosen ? C.accent : C.surface2} ink={chosen ? C.stage : C.inkSoft} />
     </Screen>
   );

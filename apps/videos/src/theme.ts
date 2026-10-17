@@ -5,7 +5,7 @@ export { script };
 export const FPS = 30;
 
 /**
- * Colors of the site (packages/ui/src/tokens.css, dark theme + sport accents):
+ * Colors of the site (packages/ui/src/tokens.css, dark theme, pétanque accent):
  * brand = BLUE and BLACK. Videos always use the dark « stage » palette, like the
  * 3D scenes of the site. Only status colors (success, warning, live) are not blue.
  */
@@ -23,7 +23,7 @@ export const C = {
   /** Main accent: electric blue (petanque accent, dark theme). */
   accent: "#3d74ff",
   accentInk: "#8fb0ff",
-  /** Secondary accent: cyan-blue (football accent). */
+  /** Secondary accent: cyan-blue (highlights, « good to know » cards). */
   cyan: "#2bb4ff",
   cyanInk: "#5cc6ff",
   haze: "#12307a",
