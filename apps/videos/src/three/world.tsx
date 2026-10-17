@@ -5,6 +5,8 @@ import { continueRender, delayRender, useVideoConfig } from "remotion";
 import * as THREE from "three";
 import { Reflector } from "three/examples/jsm/objects/Reflector.js";
 import { C, clamp01, mix, rand, ramp } from "../theme";
+// The boule of the landing page (task V2): smooth, very dark silver, engraved « ORGASPORT ».
+import { REST_SPIN, createEnvironment, poseBall, steelMaterial, type StageColors } from "../../../web/src/components/vitrine/ballModel";
 
 /* ======================================================================== */
 /* Shared helpers                                                            */
@@ -114,73 +116,6 @@ const envTex = () =>
     tex.mapping = THREE.EquirectangularReflectionMapping;
     return tex;
   });
-
-/** Three grooves of a « boule striée » around the equator; v = latitude (0 top … 1 bottom). */
-const GROOVES = [0.455, 0.5, 0.545];
-/** Albedo: polished steel with a faint brushed grain, grooves slightly darker. No logo, no text. */
-const bouleTex = () =>
-  cached("boule", () =>
-    canvasTexture(1024, 512, (ctx) => {
-      ctx.fillStyle = "#e6e9ef";
-      ctx.fillRect(0, 0, 1024, 512);
-      for (let i = 0; i < 1400; i++) {
-        const y = rand(i * 1.7) * 512;
-        ctx.fillStyle = rand(i * 3.3) > 0.5 ? "rgba(255,255,255,0.025)" : "rgba(40,48,70,0.025)";
-        ctx.fillRect(0, y, 1024, 1);
-      }
-      for (const v of GROOVES) {
-        ctx.fillStyle = "#5a6070";
-        ctx.fillRect(0, v * 512 - 2.5, 1024, 5);
-      }
-    }).tex,
-  );
-/** Bump: the grooves are cut into the steel (dark = lower). */
-const bouleBump = () =>
-  cached("bouleBump", () =>
-    canvasTexture(
-      1024,
-      512,
-      (ctx) => {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, 1024, 512);
-        for (const v of GROOVES) {
-          const g = ctx.createLinearGradient(0, v * 512 - 5, 0, v * 512 + 5);
-          g.addColorStop(0, "#ffffff");
-          g.addColorStop(0.35, "#202020");
-          g.addColorStop(0.65, "#202020");
-          g.addColorStop(1, "#ffffff");
-          ctx.fillStyle = g;
-          ctx.fillRect(0, v * 512 - 5, 1024, 10);
-        }
-      },
-      false,
-    ).tex,
-  );
-/** Roughness: polished (~0.25) with micro-scratches, rougher at the bottom of the grooves. */
-const bouleRough = () =>
-  cached("bouleRough", () =>
-    canvasTexture(
-      1024,
-      512,
-      (ctx) => {
-        ctx.fillStyle = "rgb(64,64,64)";
-        ctx.fillRect(0, 0, 1024, 512);
-        for (let i = 0; i < 900; i++) {
-          const x = rand(i * 5.1) * 1024;
-          const y = rand(i * 2.9) * 512;
-          ctx.strokeStyle = `rgba(${rand(i) > 0.5 ? "100,100,100" : "40,40,40"},0.25)`;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(x, y);
-          ctx.lineTo(x + 6 + rand(i * 7.7) * 30, y + (rand(i * 9.1) - 0.5) * 6);
-          ctx.stroke();
-        }
-        ctx.fillStyle = "rgb(150,150,150)";
-        for (const v of GROOVES) ctx.fillRect(0, v * 512 - 2, 1024, 4);
-      },
-      false,
-    ).tex,
-  );
 
 /** Panel of the 3D bracket: rounded frame + accent block. */
 const panelTex = () =>
@@ -504,38 +439,39 @@ export function Dust3D({ t, center = [0, 0, 0], size = [40, 10, 40], count = 260
   return <primitive object={pts} />;
 }
 
-/** A metal pétanque ball. `cut`: dissolves the part above this height (−1…1). */
-export function Boule({ pos, radius = 0.5, rot = 0, cut, glow = 0 }: { pos: V3; radius?: number; rot?: number; cut?: number; glow?: number }) {
-  const { mat, uniform } = useMemo(() => {
-    const u = { value: 2 };
-    const m = new THREE.MeshStandardMaterial({
-      color: "#ffffff",
-      metalness: 1,
-      roughness: 1,
-      map: bouleTex(),
-      roughnessMap: bouleRough(),
-      bumpMap: bouleBump(),
-      bumpScale: 1.2,
-      envMapIntensity: 1.6,
-      emissive: new THREE.Color(C.accent),
-      emissiveIntensity: 0,
-    });
-    m.onBeforeCompile = (s) => {
-      s.uniforms.uCut = u;
-      s.vertexShader = s.vertexShader
-        .replace("#include <common>", "#include <common>\nvarying float vObjY;")
-        .replace("#include <begin_vertex>", "#include <begin_vertex>\nvObjY = normalize(position).y;");
-      s.fragmentShader = s.fragmentShader
-        .replace("#include <common>", "#include <common>\nvarying float vObjY;\nuniform float uCut;")
-        .replace("void main() {", "void main() {\n  if (vObjY > uCut) discard;");
+/**
+ * The steel of the landing page's boule, lit by the same neutral grey studio
+ * (createEnvironment), built once per renderer and shared by every boule.
+ */
+const steelByRenderer = new WeakMap<THREE.WebGLRenderer, THREE.MeshStandardMaterial>();
+function useSteel() {
+  const gl = useThree((s) => s.gl);
+  let mat = steelByRenderer.get(gl);
+  if (!mat) {
+    mat = steelMaterial(1024, gl.capabilities.getMaxAnisotropy()).material;
+    const colors: StageColors = {
+      stage: new THREE.Color(C.stage),
+      light: new THREE.Color(C.ink),
+      line: new THREE.Color(C.blueSoft),
+      haze: new THREE.Color(C.haze),
+      accent: new THREE.Color(C.blueSoft),
     };
-    return { mat: m, uniform: u };
-  }, []);
-  uniform.value = cut ?? 2;
+    mat.envMap = createEnvironment(gl, colors).texture;
+    mat.emissive = new THREE.Color(C.accent);
+    steelByRenderer.set(gl, mat);
+  }
+  return mat;
+}
+
+/** A pétanque boule (the one of the landing page). `rot`: spin around its axis; `glow`: blue emissive. */
+export function Boule({ pos, radius = 0.5, rot = 0, glow = 0 }: { pos: V3; radius?: number; rot?: number; glow?: number }) {
+  const mat = useSteel();
+  const pose = useMemo(() => new THREE.Mesh(), []);
+  poseBall(pose, REST_SPIN + rot);
   mat.emissiveIntensity = glow;
   return (
-    <mesh position={pos} rotation={[0.3, rot, 0.2]} scale={radius} material={mat}>
-      <sphereGeometry args={[1, 96, 64]} />
+    <mesh position={pos} quaternion={pose.quaternion.clone()} scale={radius} material={mat}>
+      <sphereGeometry args={[1, 128, 96]} />
     </mesh>
   );
 }

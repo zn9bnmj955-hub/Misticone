@@ -243,7 +243,8 @@ function inject(src: string, chunk: string, code: string): string {
   return src.replace(tag, `${tag}\n${code}`);
 }
 
-function steelMaterial(textureSize: number, maxAnisotropy: number) {
+/** The steel of the ball (dark silver, engraved « ORGASPORT »), also used by the videos (apps/videos). */
+export function steelMaterial(textureSize: number, maxAnisotropy: number) {
   const roughnessMap = polishMap(Math.max(256, textureSize / 4));
   const decal = engravingDecal(maxAnisotropy);
   const frame = engravingFrame();
