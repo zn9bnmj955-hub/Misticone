@@ -55,10 +55,14 @@ Mot de passe pour tous les comptes : `orgasport-demo` (données locales uniqueme
 
 | Code | Concours |
 |---|---|
-| `7KQ2` | Pétanque en cours, 32 doublettes, 2e tour |
-| `GP3M` | Pétanque à venir, inscriptions ouvertes |
-| `TR8E` | Pétanque terminée il y a 3 jours (triplettes vétérans) |
-| `FT8S` | Tournoi de foot à 7, 8 équipes |
+| `7KQ2` | En cours, 32 doublettes dont 3 absentes : tour « Cadrage » avec une équipe « Office », concours B, équipes « N.H. » |
+| `GP3M` | À venir, inscriptions ouvertes |
+| `TR8E` | Terminé il y a 3 jours (triplettes vétérans) |
+| `C4DR` | Terminé, cadrage dans les concours A, B et C |
+| `2J7P` | Sur 2 jours, en pause avant les 1/4 de finale |
+| `PQ8P` | À venir, en poules (tirage automatique des tests e2e) |
+
+Tous les concours de démo sont en pétanque (détail dans `docs/DEMO.md`).
 
 Code PIN de la table de marque du concours `7KQ2` : **4821** (page `/c/7KQ2/table`).
 
