@@ -176,3 +176,48 @@ describe("draw sheets: exempt, single bracket and escaping (T2, testeur)", () =>
     expect(sheet).toContain("&lt;IMG");
   });
 });
+
+describe("draw sheets: concours C and my team when it lost (T2, testeur)", () => {
+  it("A, B and C: three sections in that order, three jump links, C titled « Concours C · … »", () => {
+    let s = withPlayers(
+      makeState({
+        teams: 16,
+        config: { bracketMode: "redraw", cadrage: { afterRound: 1 }, consolation: { enabled: true, entry: "auto" }, consolationC: { enabled: true, entry: "auto" } },
+      }),
+    );
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "t2-c" });
+    s = scoreAll(s, roundsOf(s, "main")[0]!.id);
+    for (const b of ["consolation", "consolation_c"] as const) if (canDrawNext(s, b)) s = exec(s, { type: "round.draw", bracket: b, seed: `t2-${b}` });
+    // B 1st round played so that its losers feed the C.
+    const b1 = roundsOf(s, "consolation")[0];
+    if (b1) s = scoreAll(s, b1.id);
+    if (canDrawNext(s, "consolation_c")) s = exec(s, { type: "round.draw", bracket: "consolation_c", seed: "t2-c2" });
+    expect(roundsOf(s, "consolation_c").length).toBeGreaterThan(0);
+
+    const h = page(s);
+    const a = h.indexOf('id="concours-a"');
+    const b = h.indexOf('id="concours-b"');
+    const c = h.indexOf('id="concours-c"');
+    expect(a).toBeGreaterThan(0);
+    expect(a).toBeLessThan(b);
+    expect(b).toBeLessThan(c);
+    const nav = h.match(/<p class="sheet-nav no-print">[\s\S]*?<\/p>/)![0];
+    expect(nav).toContain("Aller au concours");
+    for (const anchor of ["concours-a", "concours-b", "concours-c"]) expect(nav).toContain(`href="#${anchor}"`);
+    expect(h).toMatch(/<h3>Résultats Concours C · [^<]+<\/h3>/);
+  });
+
+  it("my team that lost is both greyed and outlined (class « l me »), the winner opposite is not greyed", () => {
+    let s = withPlayers(makeState({ teams: 8, config: { bracketMode: "redraw" } }));
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "t2-me" });
+    const game = matchesOfRound(s, roundsOf(s, "main")[0]!.id)[0]!;
+    // Side A wins 13-5: its opponent (side B) lost.
+    s = exec(s, { type: "match.score", matchId: game.id, scoreA: 13, scoreB: 5 });
+    const loser = s.teams[game.sideB[0]!]!.number;
+    const winner = s.teams[game.sideA[0]!]!.number;
+    const sheet = tables(page(s, { mine: loser }))[0]!;
+    expect(sheet).toContain(`<td class="l me"><i>${loser}</i>`);
+    expect(sheet).not.toContain(`<td class="l"><i>${winner}</i>`);
+    expect(sheet).not.toContain(`<td class="l me"><i>${winner}</i>`);
+  });
+});
