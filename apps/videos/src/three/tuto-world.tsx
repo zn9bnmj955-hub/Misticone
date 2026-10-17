@@ -83,10 +83,10 @@ function field(T: number) {
     lines[i] = l;
     on[i] = o;
   }
-  // Décalé terrains (12 games waiting) pulse in cyan during the terrains chapter.
+  // Décalé terrains (12 games waiting) glow steadily in cyan during the terrains chapter (no blinking).
   for (let b = 0; b < TERRAIN_BARS.length; b++) {
     const i = Math.floor(b / 4);
-    if (!AVAILABLE.has(i) && T > 45 && T < 55.6) cyan[b] = 0.5 * ramp(T, 45.4, 46) * (0.6 + 0.4 * Math.sin(T * 5 + i)) * (1 - ramp(T, 54.4, 55.6));
+    if (!AVAILABLE.has(i) && T > 45 && T < 55.6) cyan[b] = 0.4 * ramp(T, 45.4, 46) * (1 - ramp(T, 54.4, 55.6));
   }
   // Scores: each scored terrain flashes cyan; the undone one (terrain 8) flashes red then dims.
   for (const s of SCORED) {
@@ -99,11 +99,11 @@ function field(T: number) {
   }
   // Players: terrain 5 is « your » terrain.
   const mine = ramp(T, 124.5, 125.2) * (1 - ramp(T, 134, 135));
-  for (let e = 0; e < 4; e++) cyan[4 * 4 + e] = Math.max(cyan[4 * 4 + e], mine * (0.75 + 0.25 * Math.sin(T * 6)));
-  // Outro: everything glows softly.
+  for (let e = 0; e < 4; e++) cyan[4 * 4 + e] = Math.max(cyan[4 * 4 + e], mine);
+  // Outro: everything lights up and stays steady.
   for (let i = 0; i < 32; i++) {
     const p = ramp(T, 135.5 + i * 0.03, 136.5 + i * 0.03);
-    lines[i] = Math.max(lines[i] * (1 - ramp(T, 135, 135.6)), 0.8 * p + 0.2 * p * Math.max(0, Math.sin(T * 2 - Math.hypot(...terrainCenter(i)) * 0.15)));
+    lines[i] = Math.max(lines[i] * (1 - ramp(T, 135, 135.6)), 0.85 * p);
     on[i] = Math.max(on[i] * (1 - ramp(T, 135, 135.6)), p);
   }
   return { lines, on, cyan, red };
