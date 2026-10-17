@@ -129,6 +129,40 @@ describe("« Résultats par équipes » (T3)", () => {
     expect(h).not.toContain("<form");
   });
 
+  it("concours C: losers of the B 1re partie show « Concours C » and their path through A, B and C", () => {
+    let s = withPlayers(
+      makeState({ teams: 16, config: { bracketMode: "redraw", consolation: { enabled: true, entry: "auto" }, consolationC: { enabled: true, entry: "auto" } } }),
+    );
+    s = exec(s, { type: "round.draw", bracket: "main", seed: "t3-c" });
+    s = scoreAll(s, roundsOf(s, "main")[0]!.id);
+    if (!roundsOf(s, "consolation").length) s = exec(s, { type: "round.draw", bracket: "consolation", seed: "t3-b" });
+    s = scoreAll(s, roundsOf(s, "consolation")[0]!.id);
+    if (!roundsOf(s, "consolation_c").length) s = exec(s, { type: "round.draw", bracket: "consolation_c", seed: "t3-cc" });
+    const h = page(s);
+    const inC = rows(h).filter((r) => r.includes("Concours C : en lice"));
+    expect(inC).toHaveLength(4);
+    for (const r of inC) {
+      expect(r).toMatch(/1re partie : perdu 5-13 c\. \d+<br>B · 1re partie : perdu 5-13 c\. \d+<br>C · 1re partie : à jouer/);
+      expect(r).not.toContain("Concours B :");
+    }
+    expect(rows(h).filter((r) => r.includes("Concours B : en lice"))).toHaveLength(4);
+    expect(rows(h).filter((r) => r.includes("Concours A : en lice"))).toHaveLength(8);
+  });
+
+  it("escapes names and clubs typed by organizers or players (no HTML injection)", () => {
+    const s = withPlayers(makeState({ teams: 4 }));
+    const p1 = Object.values(s.players).find((x) => x.position === 1)!;
+    // The whole team in one club, so the club name is shown.
+    for (const x of Object.values(s.players).filter((x) => x.teamId === p1.teamId)) s.players[x.id] = { ...x, club: { number: "0130001", name: "<script>alert(2)</script>" } };
+    s.players[p1.id] = { ...s.players[p1.id]!, lastName: '<img src=x onerror="alert(1)">' };
+    const h = page(s, { status: "published" });
+    expect(h).not.toMatch(/<img src=x/i);
+    expect(h).not.toMatch(/<script>alert/i);
+    expect(h).toMatch(/&lt;script&gt;alert\(2\)/i);
+    expect(h).toContain("&lt;IMG SRC=X ONERROR=");
+    expect((h.match(/<script>/gi) ?? []).length).toBe(1);
+  });
+
   it("256 triplettes played to the end (A and B): under 100 KB", () => {
     const s = playToEnd(
       withPlayers(makeState({ teams: 256, config: { bracketMode: "redraw", cadrage: { afterRound: 1 }, consolation: { enabled: true, entry: "auto" } } })),
