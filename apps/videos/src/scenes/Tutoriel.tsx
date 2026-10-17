@@ -249,7 +249,7 @@ function Steps() {
   const FIELDS = [
     { at: 26.3, label: "Format", value: "Doublettes · élimination" },
     { at: 30.7, label: "Date", value: "Sam. 14 juin · 14 h 00" },
-    { at: 35.1, label: "Lieu", value: "Boulodrome municipal" },
+    { at: 35.1, label: "Concours B", value: "Perdants de la 1re partie" },
     { at: 39.5, label: "Équipes", value: "64 maximum" },
   ];
   FIELDS.forEach((f, j) => {
@@ -309,9 +309,9 @@ function Steps() {
     );
   });
   [[1, 12, 31], [2, 5, 44], [3, 27, 8]].forEach(([n, a, b], i) => {
-    fly(`d${n}`, 94.7 + i * 0.15, 99.6, L(P(330, 405 + i * 70, -i * 40, 0, -8), P(360, 460 + i * 92, -i * 40, 0, 0)), <LineCard v={v} w={W(480, 600)} tag={`T${n}`} text={`Éq. ${a} – Éq. ${b}`} />, { arc: 340 });
+    fly(`d${n}`, 94.7 + i * 0.15, 99.6, L(P(330, 405 + i * 70, -i * 40, 0, -8), P(360, 460 + i * 92, -i * 40, 0, 0)), <LineCard v={v} w={W(480, 600)} tag={`T.${n}`} text={`${a} contre ${b}`} />, { arc: 340 });
   });
-  fly("drawn", 95.3, 99.6, L(P(340, 642, 0, 0, -6), P(360, 770, 0, 0, 0)), <InfoCard v={v} w={W(520, 620)} color={C.cyan} icon="✦" title="Tirage fait en 1 seconde" sub="29 parties · terrains attribués" />);
+  fly("drawn", 95.3, 99.6, L(P(340, 642, 0, 0, -6), P(360, 770, 0, 0, 0)), <InfoCard v={v} w={W(520, 620)} color={C.cyan} icon="✦" title="Résultats 1re partie" sub="32 parties · cadrage ensuite, tout seul" />);
 
   // 7. Scores fly out one by one and become the history; « undo » rewinds the last one.
   const UNDO = 114.2;
@@ -352,7 +352,7 @@ function Steps() {
     );
 
   // 8. Players: next match, then « it's your turn ».
-  fly("next", 124.4, 134, L(P(350, 450, 0, 0, -8), P(360, 520, 0, 0, 0)), <InfoCard v={v} w={W(540, 640)} icon="▸" title="Terrain 5 · vers 16 h 20" sub="Tour 2 contre l'équipe 44" />);
+  fly("next", 124.4, 134, L(P(350, 450, 0, 0, -8), P(360, 520, 0, 0, 0)), <InfoCard v={v} w={W(540, 640)} icon="▸" title="Terrain 5 · 2e partie" sub="Contre l'équipe 44" />);
   fly("notif", 128.2, 134, L(P(350, 600, 60, 0, -6), P(360, 700, 60, 0, 0)), <InfoCard v={v} w={W(540, 640)} color={C.cyan} icon="!" title="« À vous ! Terrain 5 »" sub="Les équipes sont prévenues sur leur téléphone" />, { arc: 420 });
 
   return (

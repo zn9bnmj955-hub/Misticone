@@ -140,21 +140,124 @@ export function Slides({ t, items }: { t: number; items: Array<[number, (lt: num
 /* Public tournament page (/c/7KQ2) — the player's view                     */
 /* ------------------------------------------------------------------------ */
 
+/* Draw tables in the format of the public page /c/CODE (lot 2, T2): one big table */
+/* per round, columns Terrain | Équipe | Équipe | Score, the most recent on top.  */
+
+/** A team cell: its number, then « NOM PRÉNOM » of each player, then (club) or (N.H.). */
+export type DrawTeam = { n: number; names: string; club?: string };
+export type DrawRow = { terrain?: number; a: DrawTeam; b?: DrawTeam; sa?: number; sb?: number; mine?: boolean };
+
+/**
+ * One round as on the site: grey for the loser and for « Office » (a team qualified
+ * without playing, at the cadrage), « ** » while the game is not played, my team framed.
+ */
+export function DrawTable({
+  title,
+  rows,
+  t = 99,
+  at = 0,
+  scale = 1,
+  style,
+}: {
+  title: string;
+  rows: DrawRow[];
+  t?: number;
+  at?: number;
+  scale?: number;
+  style?: React.CSSProperties;
+}) {
+  const f = (px: number) => px * scale;
+  const cell = (team: DrawTeam | undefined, lost: boolean, mine: boolean) => (
+    <div
+      style={{
+        flex: 1,
+        minWidth: 0,
+        padding: `${f(3)}px ${f(5)}px`,
+        borderLeft: `1px solid ${C.line}`,
+        color: !team || lost ? C.inkSoft : C.ink,
+        opacity: !team || lost ? 0.55 : 1,
+        outline: mine ? `${f(2)}px solid ${C.accentInk}` : undefined,
+        outlineOffset: -f(2),
+        borderRadius: mine ? f(4) : 0,
+      }}
+    >
+      {team ? (
+        <>
+          <span style={{ fontWeight: 800, ...NUM }}>{team.n} </span>
+          <span style={{ fontWeight: 600 }}>{team.names}</span>
+          <span style={{ color: C.inkSoft }}> ({team.club ?? "N.H."})</span>
+        </>
+      ) : (
+        <span style={{ fontWeight: 700 }}>Office</span>
+      )}
+    </div>
+  );
+  return (
+    <div style={{ fontSize: f(12), lineHeight: 1.25, ...style }}>
+      <div style={{ ...TITLE, fontSize: f(19), marginBottom: f(5), opacity: ramp(t, at, at + 0.3) }}>{title}</div>
+      <div style={{ border: `1px solid ${C.line}`, borderRadius: f(8), overflow: "hidden", background: C.surface }}>
+        <div style={{ display: "flex", background: C.surface2, fontWeight: 700, color: C.inkSoft, fontSize: f(11) }}>
+          <div style={{ width: f(40), padding: `${f(3)}px ${f(5)}px` }}>Terrain</div>
+          <div style={{ flex: 1, padding: `${f(3)}px ${f(5)}px`, borderLeft: `1px solid ${C.line}` }}>Équipe</div>
+          <div style={{ flex: 1, padding: `${f(3)}px ${f(5)}px`, borderLeft: `1px solid ${C.line}` }}>Équipe</div>
+          <div style={{ width: f(50), padding: `${f(3)}px ${f(5)}px`, borderLeft: `1px solid ${C.line}` }}>Score</div>
+        </div>
+        {rows.map((r, i) => {
+          const k = ramp(t, at + 0.1 + i * 0.08, at + 0.4 + i * 0.08);
+          const played = r.sa !== undefined && r.sb !== undefined;
+          return (
+            <div
+              key={i}
+              style={{ display: "flex", alignItems: "stretch", borderTop: `1px solid ${C.line}`, opacity: k, transform: `translateY(${(1 - k) * 8}px)` }}
+            >
+              <div style={{ width: f(40), padding: `${f(3)}px ${f(5)}px`, fontWeight: 800, color: C.accentInk, ...NUM }}>{r.terrain ? `T.${r.terrain}` : ""}</div>
+              {cell(r.a, played && r.sa! < r.sb!, !!r.mine)}
+              {cell(r.b, played && r.sb! < r.sa!, false)}
+              <div style={{ width: f(50), padding: `${f(3)}px ${f(5)}px`, borderLeft: `1px solid ${C.line}`, fontWeight: 800, whiteSpace: "nowrap", ...NUM }}>
+                {r.b ? (played ? `${r.sa} - ${r.sb}` : "**") : ""}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Teams of the demo draws (fictional names, clubs of the Pays d'Aubagne). */
+export const DT: Record<number, DrawTeam> = {
+  3: { n: 3, names: "LEROY ALICE BONNET LOUIS", club: "LES CIGALES" },
+  5: { n: 5, names: "GARCIA LUC PETIT PAUL" },
+  8: { n: 8, names: "BLANC LAURA MOREAU TOM", club: "AB CUGES" },
+  9: { n: 9, names: "RICHARD SYLVIE DUBOIS LÉO", club: "AS PLATANES" },
+  12: { n: 12, names: "DUPONT JEAN MARTIN PAUL", club: "BOULE D'OR" },
+  14: { n: 14, names: "MOREAU ANNE SIMON MARC" },
+  19: { n: 19, names: "ROUX PIERRE FAURE EMMA", club: "BOULE JOYEUSE" },
+  22: { n: 22, names: "BERTRAND ROBERT BENALI MARC" },
+  27: { n: 27, names: "HENRY GÉRARD MOREAU LUCAS", club: "BOULE JOYEUSE" },
+  31: { n: 31, names: "GIRARD THOMAS NICOLAS LÉA", club: "LES CIGALES" },
+  38: { n: 38, names: "ROSSI LAURA MARTIN ISA", club: "AS PLATANES" },
+  44: { n: 44, names: "LEROY MAX FAURE NINA" },
+  50: { n: 50, names: "MULLER MARTINE GIORDANO C.", club: "BOULE D'OR" },
+  57: { n: 57, names: "PERRIN JEAN BENALI NATHAN", club: "PÉTANQUE GÉMENOS" },
+};
+
+/** The public page of the tournament, on the phone of a player of team 12. */
 export function TerrainPage({ t, highlight = 0 }: { t: number; highlight?: number }) {
   const card = ramp(t, 0.25, 0.8);
   return (
-    <Screen style={{ padding: "54px 16px 16px" }}>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
+    <Screen style={{ padding: "54px 12px 12px" }}>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
         <Logo size={20} accent={C.accent} />
         <span style={{ flex: 1 }} />
         <LiveBadge />
       </div>
-      <div style={{ ...TITLE, fontSize: 28, lineHeight: 1.05 }}>Grand Prix d'automne</div>
-      <div style={{ fontSize: 15, color: C.inkSoft, marginBottom: 12, ...NUM }}>Pétanque · doublettes · tour 2</div>
+      <div style={{ ...TITLE, fontSize: 26, lineHeight: 1.05 }}>Grand Prix d'automne</div>
+      <div style={{ fontSize: 14, color: C.inkSoft, marginBottom: 10, ...NUM }}>Pétanque · doublettes · 7KQ2</div>
       <div
         style={{
-          borderRadius: 22,
-          padding: "16px 18px",
+          borderRadius: 20,
+          padding: "12px 16px",
           background: `linear-gradient(150deg, ${C.accent}, #00c2ff)`,
           color: C.stage,
           transform: `translateY(${(1 - card) * 40}px) scale(${mix(0.92, 1, card) + highlight * 0.03})`,
@@ -163,42 +266,25 @@ export function TerrainPage({ t, highlight = 0 }: { t: number; highlight?: numbe
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ ...TITLE, fontSize: 30 }}>À vous !</span>
-          <span style={{ fontSize: 14, fontWeight: 800, background: "rgba(4,6,12,0.12)", padding: "3px 10px", borderRadius: 99 }}>Équipe 12</span>
+          <span style={{ ...TITLE, fontSize: 28 }}>À vous !</span>
+          <span style={{ fontSize: 13, fontWeight: 800, background: "rgba(4,6,12,0.12)", padding: "3px 10px", borderRadius: 99 }}>Équipe 12</span>
         </div>
-        <div style={{ display: "flex", alignItems: "baseline", marginTop: 4 }}>
-          <span style={{ ...TITLE, fontSize: 64, lineHeight: 1, ...NUM }}>Terrain 12</span>
-        </div>
-        <div style={{ ...TITLE, fontSize: 34, lineHeight: 1.1, ...NUM }}>15 h 40</div>
-        <div style={{ fontSize: 15, fontWeight: 700, marginTop: 4 }}>contre Équipe 31 · Garcia – Petit</div>
+        <div style={{ ...TITLE, fontSize: 58, lineHeight: 1, ...NUM }}>Terrain 12</div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4 }}>2e partie contre l'équipe 31 · Girard – Nicolas</div>
       </div>
-      <div style={{ fontSize: 14, color: C.inkSoft, fontWeight: 700, margin: "16px 0 8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-        Tour 2 · tous les matchs
-      </div>
-      {[
-        ["1", "Éq. 3 – Éq. 50", "15 h 40"],
-        ["2", "Éq. 38 – Éq. 14", "15 h 40"],
-        ["3", "Éq. 22 – Éq. 57", "15 h 40"],
-        ["4", "Éq. 9 – Éq. 41", "15 h 55"],
-        ["5", "Éq. 27 – Éq. 8", "15 h 55"],
-      ].map(([n, m, h], i) => (
-        <div
-          key={n}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            height: 46,
-            borderBottom: `1px solid ${C.line}`,
-            fontSize: 16,
-            opacity: ramp(t, 0.5 + i * 0.08, 0.9 + i * 0.08),
-            ...NUM,
-          }}
-        >
-          <span style={{ ...TITLE, width: 44, color: C.accentInk, fontSize: 20 }}>T{n}</span>
-          <span style={{ flex: 1, fontWeight: 600 }}>{m}</span>
-          <span style={{ color: C.inkSoft }}>{h}</span>
-        </div>
-      ))}
+      <div style={{ fontSize: 12, color: C.inkSoft, fontWeight: 700, margin: "12px 0 6px" }}>Concours A · Résultats par équipes · Ctrl+F / F5</div>
+      <DrawTable
+        t={t}
+        at={0.5}
+        title="Résultats 2e partie"
+        rows={[
+          { terrain: 12, a: DT[12], b: DT[31], mine: true },
+          { terrain: 1, a: DT[3], b: DT[50], sa: 13, sb: 6 },
+          { terrain: 2, a: DT[38], b: DT[14] },
+          { terrain: 3, a: DT[22], b: DT[57], sa: 9, sb: 13 },
+          { terrain: 4, a: DT[9], b: DT[27] },
+        ]}
+      />
     </Screen>
   );
 }
@@ -548,9 +634,11 @@ const STEPS: Array<{ title: string; body: (t: number) => React.ReactNode }> = [
         <Chip label="Poules" />
         <Chip label="Suisse" />
         <Card style={{ marginTop: 10 }}>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>Nouveau tirage à chaque tour</div>
-          <div style={{ fontSize: 13.5, color: C.inkSoft }}>Valeur par défaut en pétanque</div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>Cadrage après la 1re partie</div>
+          <div style={{ fontSize: 13.5, color: C.inkSoft }}>Nouveau tirage à chaque partie</div>
         </Card>
+        <Chip label="Concours B" active accent={C.blueSoft} />
+        <Chip label="Concours C" accent={C.blueSoft} />
       </>
     ),
   },
@@ -662,10 +750,10 @@ export function TerrainsStep({ t, help }: { t: number; help: number }) {
         >
           <div style={{ ...TITLE, fontSize: 22, marginBottom: 8, color: C.blueInk }}>✦ Notre conseil</div>
           <div style={{ fontSize: 16, lineHeight: 1.4, marginBottom: 12 }}>
-            Pour 64 doublettes et 20 terrains : <b>élimination avec nouveau tirage</b>, et un <b>complémentaire</b> pour les perdants du 1er tour.
+            Pour 64 doublettes et 20 terrains : <b>élimination avec nouveau tirage</b>, et un <b>concours B</b> pour les perdants de la 1re partie.
           </div>
           <Chip label="Élimination" active />
-          <Chip label="+ complémentaire" active accent={C.blueSoft} />
+          <Chip label="+ concours B" active accent={C.blueSoft} />
           <div style={{ fontSize: 14, color: C.inkSoft, marginTop: 6 }}>32 terrains pour jouer le 1er tour d'un coup</div>
         </div>
       ) : null}
@@ -683,7 +771,7 @@ export function Recap({ t, pay }: { t: number; pay: number }) {
       <Card style={{ marginBottom: 12 }}>
         {[
           ["Sport", "Pétanque · doublettes"],
-          ["Format", "Élimination + complémentaire"],
+          ["Format", "Élimination + concours B"],
           ["Date", "samedi 14 juin · 14 h"],
           ["Équipes", "64 maximum"],
           ["Terrains", "20 · 32 nécessaires au 1er tour"],
@@ -843,39 +931,28 @@ export function CheckIn({ t, ticks, launch }: { t: number; ticks: number[]; laun
 }
 
 export function DrawResult({ t }: { t: number }) {
-  const rows = [
-    [1, 12, 31], [2, 5, 44], [3, 27, 8], [4, 63, 19], [5, 3, 50], [6, 38, 14], [7, 22, 57], [8, 9, 41], [9, 16, 33], [10, 47, 2],
-  ];
   return (
-    <Screen style={{ padding: "54px 14px 14px" }}>
+    <Screen style={{ padding: "54px 12px 12px" }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
         <span style={{ ...TITLE, fontSize: 22, flex: 1 }}>Table de marque</span>
         <Witness state="live" />
       </div>
       <Tabs active="Tirage" small />
-      <div style={{ ...TITLE, fontSize: 22, marginBottom: 2 }}>Tour 1 · tirage fait</div>
-      <div style={{ fontSize: 14, color: C.inkSoft, marginBottom: 10 }}>29 parties · 20 terrains · 9 en attente de terrain</div>
-      {rows.map(([n, a, b], i) => (
-        <div
-          key={n}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            height: 44,
-            borderBottom: `1px solid ${C.line}`,
-            fontSize: 16,
-            fontWeight: 600,
-            opacity: ramp(t, 0.15 + i * 0.12, 0.45 + i * 0.12),
-            transform: `translateX(${(1 - ramp(t, 0.15 + i * 0.12, 0.45 + i * 0.12)) * 30}px)`,
-            ...NUM,
-          }}
-        >
-          <span style={{ ...TITLE, width: 48, fontSize: 19, color: C.accentInk }}>T{n}</span>
-          <span style={{ flex: 1 }}>Éq. {a}</span>
-          <span style={{ color: C.inkSoft, margin: "0 8px" }}>contre</span>
-          <span style={{ flex: 1, textAlign: "right" }}>Éq. {b}</span>
-        </div>
-      ))}
+      <div style={{ fontSize: 13, color: C.inkSoft, marginBottom: 8 }}>64 équipes · 32 parties · 20 terrains, les autres attendent une place</div>
+      <DrawTable
+        t={t}
+        at={0.1}
+        title="Concours A · Résultats 1re partie"
+        rows={[
+          { terrain: 1, a: DT[12], b: DT[31] },
+          { terrain: 2, a: DT[5], b: DT[44] },
+          { terrain: 3, a: DT[27], b: DT[8] },
+          { terrain: 4, a: DT[19], b: DT[3] },
+          { terrain: 5, a: DT[50], b: DT[38] },
+          { terrain: 6, a: DT[14], b: DT[22] },
+          { terrain: 7, a: DT[57], b: DT[9] },
+        ]}
+      />
     </Screen>
   );
 }
@@ -969,7 +1046,7 @@ export function PlayerFind({ t, tap }: { t: number; tap: number }) {
         <LiveBadge />
       </div>
       <div style={{ ...TITLE, fontSize: 28 }}>Grand Prix d'automne</div>
-      <div style={{ fontSize: 15, color: C.inkSoft, marginBottom: 14 }}>Pétanque · doublettes · tour 2</div>
+      <div style={{ fontSize: 15, color: C.inkSoft, marginBottom: 14 }}>Pétanque · doublettes · 2e partie</div>
       <Field label="Trouver mon équipe" value={<>{q || <span style={{ color: C.inkSoft, fontWeight: 500 }}>Nom ou numéro</span>}<Caret on={t > 1 && t < 2.6} /></>} focus={t > 1 && t < tap} />
       {res > 0 ? (
         <Card accent={C.accent} style={{ opacity: res, transform: `scale(${1 - press(t, tap) * 0.04})` }}>
@@ -989,7 +1066,7 @@ export function PlayerTeam({ t, notif }: { t: number; notif: number }) {
   const wiggle = t > notif && t < notif + 0.6 ? Math.sin((t - notif) * 60) * 3 : 0;
   return (
     <Screen>
-      <Notification title="À vous ! Terrain 5 · 16 h 20" body="Tour 2 contre Équipe 44 · Leroy – Faure" k={k} style={{ transform: `translateY(${(1 - k) * -130}px) translateX(${wiggle}px)` }} />
+      <Notification title="À vous ! Terrain 5 · 2e partie" body="Contre l'équipe 44 · Leroy – Faure" k={k} style={{ transform: `translateY(${(1 - k) * -130}px) translateX(${wiggle}px)` }} />
       <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
         <Logo size={20} accent={C.accent} />
         <span style={{ flex: 1 }} />
@@ -1011,9 +1088,9 @@ export function PlayerTeam({ t, notif }: { t: number; notif: number }) {
           boxShadow: k > 0 ? `0 14px 40px ${C.accent}77` : undefined,
         }}
       >
-        <div style={{ fontSize: 15, fontWeight: 700 }}>{k > 0 ? "À vous !" : "Prochain match · tour 2"}</div>
+        <div style={{ fontSize: 15, fontWeight: 700 }}>{k > 0 ? "À vous !" : "Prochain match"}</div>
         <div style={{ ...TITLE, fontSize: 50, lineHeight: 1, ...NUM }}>Terrain 5</div>
-        <div style={{ ...TITLE, fontSize: 28, ...NUM }}>vers 16 h 20</div>
+        <div style={{ ...TITLE, fontSize: 28, ...NUM }}>2e partie</div>
         <div style={{ fontSize: 15, fontWeight: 700 }}>contre Équipe 44 · Leroy – Faure</div>
       </div>
     </Screen>

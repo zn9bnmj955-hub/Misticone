@@ -302,9 +302,9 @@ function ScoreTable() {
         { x: 1175, y: 330, rot: 7 },
       ];
   const notes = [
-    { title: "À vous !", big: "Terrain 4", sub: "15 h 55", color: C.accent },
-    { title: "Équipe 12", big: "Qualifiée", sub: "Tour 3", color: C.success },
-    { title: "Équipe 31", big: "Terrain 18", sub: "Complémentaire", color: C.blueSoft },
+    { title: "À vous !", big: "Terrain 4", sub: "2e partie", color: C.accent },
+    { title: "Équipe 12", big: "Qualifiée", sub: "3e partie", color: C.success },
+    { title: "Équipe 31", big: "Terrain 18", sub: "Concours B", color: C.blueSoft },
   ];
   const src = vertical ? { x: 360, y: 560 } : { x: 600, y: 300 };
   return (
