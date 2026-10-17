@@ -5,10 +5,14 @@
  * TM2: the scoring table (/c/CODE/table) asks, once opened online, to keep
  * its page and every build file it loaded ("cache-page" message), so it can
  * be reloaded without network; its state and outbox come from localStorage.
+ * T4: the teams page (/c/CODE/equipes) is kept too, and the live refreshes
+ * (?fragment=1) are kept so that an offline reload shows the LAST draw: the
+ * newest fragment replaces the #live block of the cached page (between
+ * <div id="live" and the <!--/live--> marker written by render.ts).
  */
 const CACHE = "terrain-v1";
 const STATIC = "static-v1";
-const TERRAIN = /^\/c\/[2-9A-HJKMNP-Z]{4,6}(\/affiche|\/table)?$/;
+const TERRAIN = /^\/c\/[2-9A-HJKMNP-Z]{4,6}(\/affiche|\/table|\/equipes)?$/;
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
@@ -39,11 +43,13 @@ self.addEventListener("fetch", (event) => {
   // React Server Components payloads (client navigation, prefetch): never
   // answer them with a cached HTML page.
   if (url.searchParams.has("_rsc") || request.headers.get("RSC")) return;
+  // "Enregistrer pour hors ligne" downloads a file: never cached, never replayed.
+  if (url.searchParams.has("enregistrer")) return;
   const isFragment = url.searchParams.has("fragment");
   event.respondWith(
     fetch(request)
       .then((response) => {
-        if (response.ok && !isFragment) {
+        if (response.ok) {
           const copy = response.clone();
           caches.open(CACHE).then((cache) => cache.put(request, copy));
         }
@@ -53,12 +59,42 @@ self.addEventListener("fetch", (event) => {
         isFragment
           ? new Response("", { status: 503 })
           : caches
-          .open(CACHE)
-          .then((cache) => cache.match(request).then((hit) => hit || cache.match(url.pathname, { ignoreSearch: true })))
+              .open(CACHE)
+              .then((cache) =>
+                cache
+                  .match(request)
+                  .then((hit) => hit || anyPageOf(cache, url.pathname))
+                  .then((hit) => (hit ? withLastFragment(cache, url, hit) : null)),
+              )
               .then((hit) => hit || new Response("Hors connexion", { status: 503, headers: { "content-type": "text/plain; charset=utf-8" } })),
       ),
   );
 });
+
+/** Any cached version of this page (other ?vue=…), never a live fragment. */
+function anyPageOf(cache, pathname) {
+  return cache.keys(pathname, { ignoreSearch: true }).then((keys) => {
+    const page = keys.find((key) => !new URL(key.url).searchParams.has("fragment"));
+    return page ? cache.match(page) : undefined;
+  });
+}
+
+/** Cached page + the newest live fragment kept for the same address (if newer). */
+function withLastFragment(cache, url, page) {
+  const key = url.pathname + url.search + (url.search ? "&" : "?") + "fragment=1";
+  return cache.match(key).then((frag) => {
+    if (!frag) return page;
+    return Promise.all([page.clone().text(), frag.text()]).then(([body, live]) => {
+      const start = body.indexOf('<div id="live"');
+      const end = body.indexOf("<!--/live-->");
+      if (start < 0 || end < start || live.indexOf('<div id="live"') !== 0) return page;
+      const version = (text) => Number((/data-version="(\d+)"/.exec(text) || [])[1] || 0);
+      if (version(live) < version(body.slice(start, end))) return page;
+      const merged = body.slice(0, start) + live + body.slice(end).replace(/var OS_V=\d+/, "var OS_V=" + version(live));
+      return new Response(merged, { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
+    });
+  });
+}
 
 // TM2: keep the page that is open right now (and its build files) for a
 // reload without network. Only terrain pages and fingerprinted build files.
