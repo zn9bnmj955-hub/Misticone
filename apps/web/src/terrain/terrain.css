@@ -81,6 +81,10 @@ table.sheet{table-layout:fixed;border:2px solid var(--os-ink);font-size:14px;lin
 .info dd{margin:2px 0 0}
 .offline{display:none;background:var(--os-warning);color:var(--os-on-status);font-weight:800;padding:8px 12px;border-radius:10px;margin:8px 0}
 html.is-offline .offline{display:block}
+/* « Enregistrer pour hors ligne »: the saved file (html.saved) has no script and no form */
+.save{margin:24px 0 0}
+.save small{display:block;margin-top:6px;color:var(--os-ink-soft);font-weight:600;font-size:14px}
+html.saved .tabs,html.saved .score-form,html.saved .notify,html.saved .cta,html.saved .find{display:none}
 .foot{margin-top:28px;font-size:14px;color:var(--os-ink-soft)}
 .foot a{margin-right:14px}
 .score-form{padding:12px 14px;border-top:1px solid var(--os-line)}
@@ -122,6 +126,6 @@ details.rules p{white-space:pre-line}
   .sheet th,.sheet td{border-color:var(--os-paper-line)}
   .sheet td.l{background:var(--os-paper-shade);color:var(--os-paper-ink)}
   .sheet td.me{box-shadow:none}
-  .sheet-nav{display:none}
+  .sheet-nav,.save{display:none}
   a{text-decoration:none}
 }

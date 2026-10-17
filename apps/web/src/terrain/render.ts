@@ -403,7 +403,13 @@ function registerLink(t: RenderInput): SafeHtml {
   return html`<p class="cta no-print"><a class="btn" href="/c/${t.meta.short_code}/inscription">${window === "waitlist" ? r.waitlist : r.open}</a></p>`;
 }
 
-export function renderTerrainPage(t: RenderInput, opts: { fragment: boolean }): string {
+/**
+ * opts.standalone (« Enregistrer pour hors ligne », ?enregistrer=1): a self-contained
+ * file that opens from file:// without network — CSS inlined, no script, no external
+ * link (icons, manifest), no form; `origin` makes « Version à jour » an absolute link
+ * to the live page (for when the network is back).
+ */
+export function renderTerrainPage(t: RenderInput, opts: { fragment: boolean; standalone?: boolean; origin?: string }): string {
   const m = getMessages();
   const teams = buildTeamViews(t.state, t.meta.name_display);
   const venues = new Map(Object.values(t.state.venues).map((v) => [v.id, v.label]));
@@ -433,18 +439,23 @@ export function renderTerrainPage(t: RenderInput, opts: { fragment: boolean }): 
   const wsUrl = env.supabaseUrl && env.supabaseKey ? `${env.supabaseUrl.replace(/^http/, "ws")}/realtime/v1/websocket?apikey=${env.supabaseKey}&vsn=1.0.0` : "";
   const sportToken = t.sport.accentToken;
   const format = t.sport.teamFormats.find((f) => f.id === t.meta.team_format)?.label;
+  const saved = opts.standalone === true;
+  const viewParam = t.view === "tirage" ? null : t.view;
+  const head = saved
+    ? html`<style>${raw(TERRAIN_CSS)}</style>`
+    : html`<noscript><meta http-equiv="refresh" content="30"></noscript>
+<script>${raw('try{var th=localStorage.getItem("os_theme");if(th==="light"||th==="dark")document.documentElement.setAttribute("data-theme",th)}catch(e){}')}</script>
+<style>${raw(TERRAIN_CSS)}</style>
+${raw(TERRAIN_HEAD_LINKS)}`;
   const page = html`<!doctype html>
-<html lang="fr" data-sport="${sportToken}">
+<html lang="fr" data-sport="${sportToken}"${saved ? raw(' class="saved"') : ""}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${t.meta.name} · ${code}</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="${THEME_COLOR}">
-<noscript><meta http-equiv="refresh" content="30"></noscript>
-<script>${raw('try{var th=localStorage.getItem("os_theme");if(th==="light"||th==="dark")document.documentElement.setAttribute("data-theme",th)}catch(e){}')}</script>
-<style>${raw(TERRAIN_CSS)}</style>
-${raw(TERRAIN_HEAD_LINKS)}
+${head}
 </head>
 <body data-code="${code}" data-ws="${wsUrl}">
 <div class="wrap">
@@ -452,23 +463,32 @@ ${raw(TERRAIN_HEAD_LINKS)}
     <a class="brand" href="/">Orga<b>Sport</b></a><span class="code">${code}</span>
     <h1>${t.meta.name}</h1>
     <p class="meta">${[t.sport.name, format, t.meta.city].filter(Boolean).join(" · ")} · ${formatDay(t.meta.starts_at)}</p>
-    ${registerLink(t)}
+    ${saved ? "" : registerLink(t)}
   </header>
-  <p class="offline" role="status">${tm.offline}</p>
+  ${
+    saved
+      ? html`<p class="msg">${fmt(tm.saved.note, { day: formatDay(t.now.toISOString()), time: formatTime(t.now.toISOString()) })} <a href="${opts.origin ?? ""}/c/${code}">${tm.saved.live}</a></p>`
+      : html`<p class="offline" role="status">${tm.offline}</p>
   <form class="find" method="get" action="/c/${code}" role="search">
     <label for="q">${tm.findLabel}</label>
     <div class="row"><input id="q" name="equipe" value="${t.query ?? ""}" placeholder="${tm.findPlaceholder}" autocomplete="off" inputmode="search"><button type="submit">${tm.findButton}</button></div>
-  </form>
-  ${live}
-  <footer class="foot no-print">
+  </form>`
+  }
+  ${live}<!--/live-->
+  ${
+    saved
+      ? ""
+      : html`<p class="save no-print"><a class="btn secondary" href="${link(ctx, { vue: viewParam, enregistrer: 1 })}" download>${tm.saved.button}</a><small>${tm.saved.help}</small></p>`
+  }
+  ${saved ? "" : html`<footer class="foot no-print">
     <a href="/c/${code}/affiche">${tm.poster}</a>
     <a href="/c/${code}/table">${tm.table}</a>
     <a href="/">${tm.poweredBy}</a>
     ${legalLinks()}
-  </footer>
+  </footer>`}
 </div>
-${found?.length === 1 && !["finished", "archived"].includes(t.meta.status) ? notifyScriptTag() : ""}
-<script>var OS_V=${jsonForScript(t.version)};${raw(LIVE_SCRIPT)}</script>
+${!saved && found?.length === 1 && !["finished", "archived"].includes(t.meta.status) ? notifyScriptTag() : ""}
+${saved ? "" : html`<script>var OS_V=${jsonForScript(t.version)};${raw(LIVE_SCRIPT)}</script>`}
 </body>
 </html>`;
   return page.value;

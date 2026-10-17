@@ -305,6 +305,12 @@ export const fr = {
     notMine: "Changer d'équipe",
     updatedAt: "Mis à jour à {time}",
     offline: "Hors connexion : dernier tirage enregistré sur cet appareil.",
+    saved: {
+      button: "Enregistrer pour hors ligne",
+      help: "Télécharge cette page en fichier, lisible sans réseau. Sans réseau, la page déjà ouverte reste lisible ; pour actualiser : F5.",
+      note: "Copie enregistrée le {day} à {time}, sans actualisation.",
+      live: "Version à jour",
+    },
     yourTurn: "À vous !",
     playingOn: "En cours · {venue} {label}",
     nextMatch: "Prochain match",

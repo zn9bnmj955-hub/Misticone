@@ -75,6 +75,8 @@ export async function GET(request: NextRequest, { params }: Ctx) {
   const ERRORS = new Set(["badCode", "invalid", "notPlayable", "limited"]);
   const message = msgKey && captain[msgKey] ? `${ERRORS.has(msgKey) ? "!" : ""}${captain[msgKey]}` : null;
 
+  // « Enregistrer pour hors ligne »: the same page as a self-contained file (no script, CSS inlined).
+  const saved = sp.has("enregistrer") && !sp.has("fragment");
   const body = renderTerrainPage(
     {
       meta: loaded.meta,
@@ -87,13 +89,17 @@ export async function GET(request: NextRequest, { params }: Ctx) {
       message,
       now: new Date(),
     },
-    { fragment: sp.has("fragment") },
+    { fragment: sp.has("fragment"), standalone: saved, origin: request.nextUrl.origin },
   );
 
   // Safety net for automatic draws if the scheduler is late.
   const autoAt = loaded.state.tournament.config.autoDrawAt;
   if (autoAt && Date.parse(autoAt) <= Date.now() && Object.keys(loaded.state.rounds).length === 0) {
     after(() => processDueDraws(code));
+  }
+  if (saved) {
+    const file = `orgasport-${code}${view === "tirage" ? "" : `-${view}`}.html`;
+    return new Response(body, { headers: { ...HTML_HEADERS, "content-disposition": `attachment; filename="${file}"` } });
   }
   // Live refreshes (?fragment=1) without a team cookie are shared a few seconds at the CDN, keyed on that cookie.
   const headers = { ...HTML_HEADERS, ...terrainCacheHeaders({ code, fragment: sp.has("fragment"), mine: Boolean(mineCookie), message: Boolean(msgKey) }) };
