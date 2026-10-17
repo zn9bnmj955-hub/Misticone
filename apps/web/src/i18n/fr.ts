@@ -445,6 +445,8 @@ export const fr = {
     pinSubmit: "Ouvrir la table de marque",
     pinInvalid: "Code PIN incorrect.",
     pinLimited: "Trop d'essais. Réessayez dans quelques minutes.",
+    closedTitle: "Lien clôturé",
+    closedText: "Ce concours est terminé et clos définitivement : la table de marque ne s'ouvre plus avec un code PIN. Les résultats restent visibles sur la page publique.",
     orLogin: "Vous êtes l'organisateur ?",
     login: "Se connecter avec votre compte",
     loading: "Chargement du concours…",

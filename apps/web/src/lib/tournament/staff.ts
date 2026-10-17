@@ -68,7 +68,11 @@ async function isClubOrPlatformAdmin(supabase: Awaited<ReturnType<typeof createC
   return Boolean(clubAdmin);
 }
 
-export async function getStaffActor(tournament: { id: string; short_code: string | null }): Promise<StaffActor | null> {
+/**
+ * `status`: once the tournament is closed for good (archived), a PIN no longer
+ * opens anything (the signed-in organizer still sees the read-only table).
+ */
+export async function getStaffActor(tournament: { id: string; short_code: string | null; status?: string }): Promise<StaffActor | null> {
   // 1. Signed-in organizer.
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
@@ -86,8 +90,8 @@ export async function getStaffActor(tournament: { id: string; short_code: string
       return { kind: "account", userId, staffId: staff?.id ?? null, label: profile?.display_name || (data?.claims?.email as string) || "Organisateur", canManageAccess };
     }
   }
-  // 2. Volunteer with a PIN.
-  if (!tournament.short_code) return null;
+  // 2. Volunteer with a PIN (never after the closing).
+  if (!tournament.short_code || tournament.status === "archived") return null;
   const staffId = await readPinSession(tournament.short_code, tournament.id);
   if (!staffId) return null;
   const { data: staff } = await createAdminClient()

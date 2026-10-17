@@ -21,7 +21,7 @@ export function PinForm({ code }: { code: string }) {
           const res = await fetch(`/api/t/${code}/pin`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pin }) }).catch(() => null);
           setBusy(false);
           if (res?.ok) window.location.reload();
-          else setError(res?.status === 429 ? t.pinLimited : t.pinInvalid);
+          else setError(res?.status === 429 ? t.pinLimited : res?.status === 403 ? t.closedText : t.pinInvalid);
         }}
       >
         <h1 className="display text-4xl">{t.pinTitle}</h1>
