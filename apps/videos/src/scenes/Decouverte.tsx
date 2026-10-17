@@ -425,7 +425,7 @@ function Brackets() {
       {BRACKETS.map((b, i) => {
         const at = 0.6 + i * 1.3;
         const k = ramp(t, at, at + 0.7);
-        const box = vertical ? { left: 40, top: 360 + i * 300, width: 640, height: 270 } : { left: 40 + i * 406, top: 70, width: 388, height: 400 };
+        const box = vertical ? { left: 40, top: 365 + i * 300, width: 640, height: 280 } : { left: 40 + i * 406, top: 70, width: 388, height: 400 };
         return (
           <Panel
             key={b.title}
@@ -440,7 +440,7 @@ function Brackets() {
               transform: `perspective(1400px) translateY(${(1 - k) * 60}px) rotateX(${(1 - k) * 18}deg)`,
             }}
           >
-            <DrawTable t={t} at={at + 0.2} title={b.title} rows={b.rows} scale={vertical ? 1.3 : 1.1} />
+            <DrawTable t={t} at={at + 0.2} title={b.title} rows={b.rows} scale={vertical ? 1.2 : 1.1} />
           </Panel>
         );
       })}

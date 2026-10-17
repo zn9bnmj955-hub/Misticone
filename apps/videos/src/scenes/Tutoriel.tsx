@@ -126,7 +126,7 @@ function PhoneContent({ t }: { t: number }) {
         ]}
       />
       <Tap at={3.6} x={180} y={150} />
-      <Tap at={9.2} x={200} y={205} />
+      <Tap at={9.2} x={200} y={325} />
       <Tap at={12.6} x={BOTTOM_BTN[0]} y={BOTTOM_BTN[1]} />
       {WIZARD_TAPS.map((x) => (
         <Tap key={x} at={14 + x} x={BOTTOM_BTN[0]} y={BOTTOM_BTN[1]} />
