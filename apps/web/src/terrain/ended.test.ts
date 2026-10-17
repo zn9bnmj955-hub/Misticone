@@ -8,7 +8,7 @@ import { renderTerrainPage, type RenderInput } from "./render";
 /** Lot 2, T5: /c/CODE of a finished tournament, then of a closed one (« Lien clôturé »). */
 
 const meta = {
-  short_code: "FIN2",
+  short_code: "FAN2",
   name: "Concours fini",
   status: "live",
   starts_at: "2026-10-12T12:00:00Z",

@@ -16,6 +16,8 @@ export const registration = {
     waitlist: "Le concours est complet : votre équipe sera inscrite sur liste d'attente. L'organisateur vous contactera si une place se libère.",
     full: "Le concours est complet et n'a pas de liste d'attente.",
     closed: "Les inscriptions en ligne sont closes.",
+    finished: "Ce concours est terminé : les inscriptions ne sont plus possibles.",
+    archived: "Lien clôturé : ce concours est terminé, plus aucune inscription n'est possible.",
     onsite_only: "Les inscriptions se font uniquement sur place, le jour du concours.",
     busy: "Beaucoup d'inscriptions en même temps : réessayez dans quelques secondes.",
     limited: "Trop de tentatives depuis cet appareil. Réessayez dans quelques minutes.",

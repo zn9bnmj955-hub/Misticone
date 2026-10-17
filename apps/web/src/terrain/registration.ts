@@ -302,7 +302,7 @@ export function renderRegistrationPage(o: FormOpts): string {
     ${summary(o.meta)}
     ${o.notice ? html`<p class="msg err" role="alert">${o.notice}</p>` : ""}
     ${o.window === "waitlist" ? html`<p class="msg" role="status">${r.window.waitlist}</p>` : ""}
-    ${canRegister ? form : html`<p class="msg">${r.window[o.window as "closed" | "full" | "onsite_only"]}</p><p><a class="btn" href="/c/${code}">${r.back}</a></p>`}`;
+    ${canRegister ? form : html`<p class="msg">${o.meta.status === "finished" || o.meta.status === "archived" ? r.window[o.meta.status] : r.window[o.window as "closed" | "full" | "onsite_only"]}</p><p><a class="btn" href="/c/${code}">${r.back}</a></p>`}`;
 
   return terrainDocument({
     title: fmt(r.pageTitle, { name: o.meta.name }),

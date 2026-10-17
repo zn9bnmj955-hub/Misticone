@@ -102,6 +102,27 @@ describe("registration page", () => {
     expect(page).not.toContain("<form");
   });
 
+  it.each([
+    ["finished", "Ce concours est terminé : les inscriptions ne sont plus possibles."],
+    ["archived", "Lien clôturé : ce concours est terminé, plus aucune inscription n&#39;est possible."],
+  ])("T5: says why when the tournament is %s, without the form", (status, text) => {
+    const page = renderRegistrationPage({
+      meta: { ...meta, status } as TournamentMeta,
+      sport: requireSport("petanque"),
+      shape,
+      window: "closed",
+      values: {},
+      issues: [],
+      notice: null,
+      signedIn: false,
+      turnstileSiteKey: null,
+      rulesPdfUrl: null,
+    });
+    expect(page).toContain(text);
+    expect(page).not.toContain("Les inscriptions en ligne sont closes.");
+    expect(page).not.toContain("<form");
+  });
+
   it("informs players about their data and asks the captain to inform teammates", () => {
     const opts = {
       sport: requireSport("petanque"),

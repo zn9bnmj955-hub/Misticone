@@ -131,6 +131,8 @@ export async function POST(request: NextRequest, { params }: Ctx) {
   const parsed = parseRegistrationForm(form, shape);
   const prefill = await viewerPrefill();
   const signedIn = Boolean(prefill.userId);
+  // Finished or closed: refused at once, with the clear message of the page (window "closed").
+  if (loaded.meta.status === "finished" || loaded.meta.status === "archived") return page(loaded, { values: parsed.values, signedIn }, 409);
 
   if (!sameOrigin(request) || parsed.honeypot) {
     return page(loaded, { values: parsed.values, notice: m.window.robot, signedIn }, 400);

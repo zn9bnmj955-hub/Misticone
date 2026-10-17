@@ -17,8 +17,8 @@ const { POST } = await import("./route");
 
 const send = () =>
   POST(
-    new NextRequest("http://localhost/c/FIN2/score", { method: "POST", body: new URLSearchParams({ equipe: "3", us: "13", them: "7", code: "1234" }) }),
-    { params: Promise.resolve({ code: "FIN2" }) },
+    new NextRequest("http://localhost/c/FAN2/score", { method: "POST", body: new URLSearchParams({ equipe: "3", us: "13", them: "7", code: "1234" }) }),
+    { params: Promise.resolve({ code: "FAN2" }) },
   );
 
 describe("POST /c/CODE/score after the end", () => {
@@ -35,7 +35,7 @@ describe("POST /c/CODE/score after the end", () => {
     const res = await send();
     expect(res.status).toBe(303);
     const url = new URL(res.headers.get("location")!);
-    expect(url.pathname).toBe("/c/FIN2");
+    expect(url.pathname).toBe("/c/FAN2");
     expect(url.searchParams.get("msg")).toBe(msg);
     expect(url.searchParams.get("equipe")).toBe("3");
     expect(executeCommand).not.toHaveBeenCalled();
