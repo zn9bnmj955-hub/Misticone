@@ -30,6 +30,12 @@ function worker(opts: { online: boolean }) {
         const hit = m.get(k) ?? (o?.ignoreSearch ? m.get(k.split("?")[0]!) : undefined);
         return hit?.clone();
       },
+      keys: async (req?: string | Request, o?: { ignoreSearch?: boolean }) => {
+        const all = [...m.keys()];
+        if (req === undefined) return all.map((u) => new Request(u));
+        const k = key(req);
+        return all.filter((u) => (o?.ignoreSearch ? u.split("?")[0] === k.split("?")[0] : u === k)).map((u) => new Request(u));
+      },
     };
   };
   const self = {
@@ -78,7 +84,7 @@ function worker(opts: { online: boolean }) {
   }
 
   const keys = (name: string) => [...(stores.get(name)?.keys() ?? [])].map((k) => k.replace(ORIGIN, ""));
-  return { message, request, keys, fetched, setOnline: (v: boolean) => (opts.online = v) };
+  return { message, request, keys, fetched, open: store, setOnline: (v: boolean) => (opts.online = v) };
 }
 
 describe("service worker: scoring table without network (TM2)", () => {
@@ -129,5 +135,28 @@ describe("service worker: scoring table without network (TM2)", () => {
     const sw = worker({ online: false });
     expect(await sw.request("/c/7KQ2/table?_rsc=abc")).toBeNull();
     expect(await sw.request("/c/7KQ2/table", { RSC: "1" })).toBeNull();
+  });
+
+  it("T4: an offline reload shows the newest live fragment in the cached page, never an older one, never a fragment alone", async () => {
+    const sw = worker({ online: true });
+    await sw.message({ type: "cache-page", urls: ["/c/7KQ2"] });
+    const page = '<html><body><div id="live" data-version="5"><p>ancien</p></div><!--/live--><script>var OS_V=5;</script></body></html>';
+    const cache = sw.open("terrain-v1");
+    await cache.put("/c/7KQ2", new Response(page));
+    await cache.put("/c/7KQ2?fragment=1", new Response('<div id="live" data-version="7"><p>récent</p></div>'));
+    sw.setOnline(false);
+    const merged = await (await sw.request("/c/7KQ2"))!.text();
+    expect(merged).toBe('<html><body><div id="live" data-version="7"><p>récent</p></div><!--/live--><script>var OS_V=7;</script></body></html>');
+    // Another view of the same page (?vue=…) never opened: the cached page, not the fragment alone.
+    expect(await (await sw.request("/c/7KQ2?vue=tableau"))!.text()).toContain("<html>");
+    await cache.put("/c/7KQ2?fragment=1", new Response('<div id="live" data-version="3"><p>vieux</p></div>'));
+    expect(await (await sw.request("/c/7KQ2"))!.text()).toBe(page);
+  });
+
+  it("T4: keeps the teams page, and never caches the « Enregistrer pour hors ligne » download", async () => {
+    const sw = worker({ online: true });
+    await sw.message({ type: "cache-page", urls: ["/c/7KQ2/equipes"] });
+    expect(sw.keys("terrain-v1")).toEqual(["/c/7KQ2/equipes"]);
+    expect(await sw.request("/c/7KQ2?enregistrer=1")).toBeNull();
   });
 });

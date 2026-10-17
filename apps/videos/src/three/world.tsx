@@ -287,6 +287,10 @@ export function Floor({ veil = 0.8 }: { veil?: number }) {
       color: 0x8890b0,
     });
     m.rotation.x = -Math.PI / 2;
+    // Anti-flicker: the mirror and its veil are drawn first and never write depth, so the
+    // lines, numbers and halos laid a few millimetres above them can't z-fight with them
+    // in the distance (nothing in the scene is ever below the floor).
+    (m.material as THREE.Material).depthWrite = false;
     return m;
   }, [width, height]);
   return (
@@ -294,7 +298,7 @@ export function Floor({ veil = 0.8 }: { veil?: number }) {
       <primitive object={mirror} renderOrder={-2} />
       <mesh rotation-x={-Math.PI / 2} position-y={0.003} renderOrder={-1}>
         <planeGeometry args={[600, 600]} />
-        <meshBasicMaterial color={C.stage} transparent opacity={veil} />
+        <meshBasicMaterial color={C.stage} transparent opacity={veil} depthWrite={false} />
       </mesh>
     </>
   );
@@ -305,6 +309,37 @@ export function Floor({ veil = 0.8 }: { veil?: number }) {
 /* ======================================================================== */
 
 export type Bar = { a: V3; b: V3; n?: V3 };
+
+/**
+ * Anti-flicker for thin neon lines: a bar is never drawn thinner than `uMinPx`
+ * pixels on screen. When it would be, the quad is widened to that width and its
+ * light is divided by the same factor (additive blending: same total light), so a
+ * distant line stays a steady faint line instead of popping in and out between
+ * pixels while the camera moves.
+ */
+function withMinWidth(mat: THREE.MeshBasicMaterial, minPx: number, res: { value: THREE.Vector2 }) {
+  mat.onBeforeCompile = (s) => {
+    s.uniforms.uRes = res;
+    s.uniforms.uMinPx = { value: minPx };
+    s.vertexShader = s.vertexShader
+      .replace("#include <common>", "#include <common>\nuniform vec2 uRes;\nuniform float uMinPx;\nvarying float vOsFade;")
+      .replace(
+        "#include <project_vertex>",
+        `vec4 osA = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(transformed.x, 0.0, 0.0, 1.0);
+        vec4 osB = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(transformed.x, 1.0, 0.0, 1.0);
+        float osPx = length((osB.xy / max(osB.w, 1e-3) - osA.xy / max(osA.w, 1e-3)) * uRes * 0.5);
+        float osK = clamp(uMinPx / max(osPx, 1e-4), 1.0, 40.0);
+        transformed.y *= osK;
+        vOsFade = 1.0 / osK;
+        #include <project_vertex>`,
+      );
+    s.fragmentShader = s.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying float vOsFade;")
+      .replace("#include <color_fragment>", "#include <color_fragment>\ndiffuseColor.rgb *= vOsFade;");
+  };
+  mat.customProgramCacheKey = () => `osMinWidth${mat.map ? "Map" : ""}`;
+  return mat;
+}
 
 /**
  * Instanced glowing bars: a thin core and a wide soft glow. `bright[i]` (0–1+)
@@ -327,6 +362,9 @@ export function Bars({
   glow?: number;
   glowStrength?: number;
 }) {
+  const size = useThree((st) => st.size);
+  const res = useMemo(() => ({ value: new THREE.Vector2() }), []);
+  res.value.set(size.width, size.height);
   const meshes = useMemo(() => {
     const geo = new THREE.PlaneGeometry(1, 1);
     const coreMat = new THREE.MeshBasicMaterial({
@@ -339,6 +377,8 @@ export function Bars({
     });
     const glowMat = coreMat.clone();
     glowMat.map = lineGlowTex();
+    withMinWidth(coreMat, 1.5, res);
+    withMinWidth(glowMat, 4, res);
     const a = new THREE.InstancedMesh(geo, coreMat, bars.length);
     const b = new THREE.InstancedMesh(geo, glowMat, bars.length);
     for (const m of [a, b]) {
@@ -346,7 +386,7 @@ export function Bars({
       for (let i = 0; i < bars.length; i++) m.setColorAt(i, new THREE.Color(0, 0, 0));
     }
     return { a, b };
-  }, [bars]);
+  }, [bars, res]);
   const base = new THREE.Color(color);
   const tmp = new THREE.Color();
   const mat = new THREE.Matrix4();
@@ -455,8 +495,9 @@ export function Dust3D({ t, center = [0, 0, 0], size = [40, 10, 40], count = 260
   }, [count, color]);
   const arr = (pts.geometry.getAttribute("position") as THREE.BufferAttribute).array as Float32Array;
   for (let i = 0; i < count; i++) {
+    // Slow, steady drift (no wrap-around: a grain never pops in or out of the frame).
     arr[i * 3] = center[0] + (rand(i) - 0.5) * size[0] + Math.sin(t * 0.4 + i) * 0.3;
-    arr[i * 3 + 1] = center[1] + ((rand(i + 7) * size[1] + t * (0.15 + rand(i + 3) * 0.3)) % size[1]);
+    arr[i * 3 + 1] = center[1] + rand(i + 7) * size[1] + t * (0.04 + rand(i + 3) * 0.08);
     arr[i * 3 + 2] = center[2] + (rand(i + 13) - 0.5) * size[2];
   }
   pts.geometry.getAttribute("position").needsUpdate = true;
@@ -663,9 +704,9 @@ export function WorldScene({ t, mode, vertical }: { t: number; mode: "drop" | "t
     );
   } else {
     for (let i = 0; i < 32; i++) {
-      const pulse = mode === "outro" ? 0.25 * Math.max(0, Math.sin(t * 2 - Math.hypot(...terrainCenter(i)) * 0.15)) : 0;
+      // Steady neons (no pulsing light: it reads as blinking once encoded).
       on[i] = ramp(t, 0.1 + i * 0.03, 0.6 + i * 0.03);
-      lines[i] = 0.85 * on[i] + pulse;
+      lines[i] = 0.85 * on[i];
     }
     const a = mode === "title" ? mix(-0.5, 0.1, t / 8) : mix(0.4, -0.2, t / 15);
     const r = (mode === "title" ? 36 : mix(30, 44, t / 15)) * (vertical ? 1.25 : 1);
@@ -1082,7 +1123,7 @@ export function FranceScene({ t, vertical }: { t: number; vertical: boolean }) {
     const p = geo(...c);
     const st = 3.2 + rand(i * 5) * 3.2;
     const k = ramp(t, st, st + 0.4);
-    const pulse = 1 + 0.25 * Math.sin(t * 3 + i);
+    const pulse = 1 + 0.12 * Math.sin(t * 1.5 + i);
     const col = new THREE.Color(i % 4 === 3 ? C.cyanInk : C.accentInk);
     mtx.makeScale(4.2 * k * pulse, 1, 4.2 * k * pulse).setPosition(p[0], 0.05, p[2]);
     dots.halo.setMatrixAt(i, mtx);
@@ -1090,7 +1131,8 @@ export function FranceScene({ t, vertical }: { t: number; vertical: boolean }) {
     const rk = ((t - st) % 1.6) / 1.6;
     mtx.makeScale(0.8 + rk * 5, 1, 0.8 + rk * 5).setPosition(p[0], 0.04, p[2]);
     dots.ring.setMatrixAt(i, mtx);
-    dots.ring.setColorAt(i, col.clone().multiplyScalar(t > st ? (1 - rk) * 0.7 : 0));
+    // Each ripple fades in and out (never restarts at full brightness: no blink).
+    dots.ring.setColorAt(i, col.clone().multiplyScalar(t > st ? (1 - rk) * Math.min(1, rk * 6) * 0.7 : 0));
   });
   for (const m of [dots.halo, dots.ring]) {
     m.instanceMatrix.needsUpdate = true;
